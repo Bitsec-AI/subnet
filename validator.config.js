@@ -1,0 +1,23 @@
+module.exports = {
+  apps: [{
+    name: "bittensor-validator",
+    script: "python",
+    args: [
+      "-m",
+      "neurons.validator",
+      "--netuid",
+      "209",
+      "--subtensor.chain_endpoint",
+      "test",
+      "--wallet.name",
+      "validator",
+      "--wallet.hotkey",
+      "default",
+      "--axon.port",
+      "8091",
+      "--axon.external_port",
+      "8091",
+      "--logging.debug"
+    ]
+  }]
+}
