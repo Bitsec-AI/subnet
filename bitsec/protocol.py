@@ -141,16 +141,26 @@ class PredictionResponse(pydantic.BaseModel):
     def to_tuple(self) -> Tuple[bool, List[Vulnerability]]:
         return (self.prediction, self.vulnerabilities)
 
+class TaskCategory(pydantic.BaseModel):
+    """Category of task."""
+    CODE_CHALLENGE = "code_challenge"
+    SUBNET_ECONOMIC_ANALYSIS = "subnet_economic_analysis"
+
 class CodeSynapse(bt.Synapse):
     """
     This protocol helps in handling code/prediction request and response communication between
     the miner and the validator.
 
     Attributes:
+    - task_category: enum of the category of the task
     - code: a str of code
     - prediction: a bool indicating the probabilty that the code has a critical / severe vulnerability.
         True is considered generated/modified, False is considered real.
     """
+    task_category: TaskCategory = pydantic.Field(
+        default=TaskCategory.CODE_CHALLENGE,
+        description="The category of the task that the code is for."
+    )
 
     # Required request input, filled by sending dendrite caller.
     code: str
