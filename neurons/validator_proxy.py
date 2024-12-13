@@ -10,7 +10,7 @@ import random
 import numpy as np
 import socket
 
-from bitsec.protocol import prepare_code_synapse
+from bitsec.protocol import prepare_code_synapse, TaskCategory
 from bitsec.utils.uids import get_random_uids
 from bitsec.validator.proxy import ProxyCounter
 
@@ -140,6 +140,7 @@ class ValidatorProxy:
         bt.logging.info("Received an organic request!")
 
         payload = await request.json()
+        task_category = TaskCategory.from_string(payload.get("task_category"))
 
         if "seed" not in payload:
             payload["seed"] = random.randint(0, 1e9)
@@ -156,7 +157,7 @@ class ValidatorProxy:
         responses = await self.dendrite(
             # Send the query to selected miner axons in the network.
             axons=[metagraph.axons[uid] for uid in miner_uids],
-            synapse=prepare_code_synapse(code=payload['code']),
+            synapse=prepare_code_synapse(code=payload['code'], task_category=task_category),
             deserialize=True,
         )
         

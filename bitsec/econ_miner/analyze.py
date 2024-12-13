@@ -1,6 +1,3 @@
-# Sample miner uses LLM prompts to find vulnerabilities in code
-# This example uses a basic prompt template for demonstration purposes
-
 import openai
 import json
 import re

@@ -2,7 +2,7 @@ import os
 import pytest
 from flaky import flaky
 import bittensor as bt
-from bitsec.miner.prompt import analyze_code
+from bitsec.miner.analyze import analyze_code
 from bitsec.protocol import PredictionResponse, Vulnerability, LineRange
 from bitsec.utils.data import get_all_code_samples, load_sample_file
 from bitsec.validator.reward import score_response
