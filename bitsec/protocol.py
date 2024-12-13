@@ -17,6 +17,7 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from enum import Enum
 import json
 import bittensor as bt
 import pydantic
@@ -141,7 +142,7 @@ class PredictionResponse(pydantic.BaseModel):
     def to_tuple(self) -> Tuple[bool, List[Vulnerability]]:
         return (self.prediction, self.vulnerabilities)
 
-class TaskCategory(pydantic.BaseModel):
+class TaskCategory(Enum):
     """Category of task."""
     CODE_CHALLENGE = "code_challenge"
     SUBNET_ECONOMIC_ANALYSIS = "subnet_economic_analysis"
@@ -154,17 +155,19 @@ class CodeSynapse(bt.Synapse):
     Attributes:
     - task_category: enum of the category of the task
     - code: a str of code
+    - miner_did_work: a bool indicating whether the miner did work on the code or not.
     - prediction: a bool indicating the probabilty that the code has a critical / severe vulnerability.
         True is considered generated/modified, False is considered real.
     """
-    task_category: TaskCategory = pydantic.Field(
-        default=TaskCategory.CODE_CHALLENGE,
-        description="The category of the task that the code is for."
-    )
+    # Required request input, filled by sending dendrite caller.
+    task_category: TaskCategory
 
     # Required request input, filled by sending dendrite caller.
     code: str
 
+    # Optional request output, filled by receiving axon. Whether the miner did work on the code or not. If not, the validator should not check the response.
+    miner_did_work: bool
+    
     # Optional request output, filled by receiving axon.
     response: PredictionResponse = pydantic.Field(
         default_factory=lambda: PredictionResponse(prediction=False, vulnerabilities=[]),

@@ -26,17 +26,14 @@ import bitsec
 
 # import base miner class which takes care of most of the boilerplate
 from bitsec.base.miner import BaseMinerNeuron
-from bitsec.protocol import CodeSynapse
-from bitsec.miner.predict import predict
+from bitsec.protocol import CodeSynapse, TaskCategory
+from bitsec.miner.analyze import analyze_code as miner_analyze
+from bitsec.econ_miner.analyze import analyze_code as econ_analyze
 
 
 class Miner(BaseMinerNeuron):
     """
-    Your miner neuron class. You should use this class to define your miner's behavior. In particular, you should replace the forward function with your own logic. You may also want to override the blacklist and priority functions according to your needs.
-
-    This class inherits from the BaseMinerNeuron class, which in turn inherits from BaseNeuron. The BaseNeuron class takes care of routine tasks such as setting up wallet, subtensor, metagraph, logging directory, parsing config, etc. You can override any of the methods in BaseNeuron if you need to customize the behavior.
-
-    This class provides reasonable default behavior for a miner such as blacklisting unrecognized hotkeys, prioritizing requests based on stake, and forwarding requests to the forward function. If you need to define custom
+    Bitsec miner neuron class, used to perform vulnerability analysis of code. Calls different prediction functions based on the task category.
     """
 
     def __init__(self, config=None):
@@ -46,27 +43,26 @@ class Miner(BaseMinerNeuron):
         self, synapse: CodeSynapse
     ) -> CodeSynapse:
         """
-        Processes the incoming 'Dummy' synapse by performing a predefined operation on the input data.
-        This method should be replaced with actual logic relevant to the miner's purpose.
+        Processes the incoming synapse by analyzing the code and returning a prediction of vulnerabilities.
 
         Args:
-            synapse (CodeSynapse): The synapse object containing the 'code' data.
+            synapse (CodeSynapse): The synapse object containing the 'code' data, the task category, and did work flag.
 
         Returns:
-            CodeSynapse: The synapse object with the 'response' field set to then miner's prediction results.
-
-        The 'forward' function is a placeholder and should be overridden with logic that is appropriate for
-        the miner's intended operation. This method demonstrates a basic transformation of input data.
+            CodeSynapse: The synapse object. If the miner did work, the did work flag will be set to True and the 'response' field will be set to the miner's prediction results.
         """
         try:
-            challenge = synapse.code
-            synapse.response = predict(challenge)
+            if synapse.task_category == TaskCategory.CODE_CHALLENGE:
+                synapse.prediction = miner_analyze(synapse.code)
+            elif synapse.task_category == TaskCategory.SUBNET_ECONOMIC_ANALYSIS:
+                synapse.prediction = econ_analyze(synapse.code)
+            else:
+                raise ValueError(f"Unsupported task category: {synapse.task_category}")
+            synapse.miner_did_work = True
         except Exception as e:
             bt.logging.error("Error performing inference")
             bt.logging.error(e)
 
-        bt.logging.info(f"PREDICTION: {synapse.response.prediction}")
-        bt.logging.info(f"VULNERABILITIES: {synapse.response.vulnerabilities}")
         return synapse
 
     async def blacklist(
