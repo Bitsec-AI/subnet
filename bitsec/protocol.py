@@ -147,6 +147,22 @@ class TaskCategory(Enum):
     CODE_CHALLENGE = "code_challenge"
     SUBNET_ECONOMIC_ANALYSIS = "subnet_economic_analysis"
 
+    @classmethod
+    def from_string(cls, value: str | None = None) -> 'TaskCategory':
+        """
+        Convert string to TaskCategory enum value, defaults to CODE_CHALLENGE if missing or invalid.
+
+        Args:
+            value (str): String representation of task category
+
+        Returns:
+            TaskCategory: Corresponding enum value, defaults to CODE_CHALLENGE if invalid
+        """
+        try:
+            return cls(value)
+        except ValueError:
+            return cls.CODE_CHALLENGE
+
 class CodeSynapse(bt.Synapse):
     """
     This protocol helps in handling code/prediction request and response communication between
