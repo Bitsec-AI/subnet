@@ -6,3 +6,4 @@ numpy>=1
 setuptools>=68
 tenacity>=9
 openai>=1.47
+wandb>=0.19.4

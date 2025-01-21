@@ -68,6 +68,18 @@ class BaseNeuron(ABC):
         # Set up logging with the provided configuration.
         bt.logging.set_config(config=self.config.logging)
 
+        # Initialize wandb if it's enabled
+        if not self.config.wandb.off:
+            import wandb
+            wandb.init(
+                project=self.config.wandb.project_name,
+                entity=self.config.wandb.entity,
+                config=self.config,
+                mode="offline" if self.config.wandb.offline else "online",
+                notes=self.config.wandb.notes,
+                name=f"{self.config.wallet.name}:{self.config.wallet.hotkey}"
+            )
+
         # If a gpu is required, set the device to cuda:N (e.g. cuda:0)
         self.device = self.config.neuron.device
 

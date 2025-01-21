@@ -21,6 +21,16 @@ import subprocess
 import argparse
 import bittensor as bt
 from .logging import setup_events_logger
+from bitsec.config import (
+    MAINNET_UID,
+    TESTNET_UID,
+    WANDB_ENTITY,
+    MAINNET_WANDB_PROJECT,
+    TESTNET_WANDB_PROJECT,
+    VALIDATOR_CONFIG,
+    MINER_CONFIG
+)
+from typing import Any, Optional
 
 def is_cuda_available():
     try:
@@ -40,6 +50,16 @@ def is_cuda_available():
 def check_config(cls, config: "bt.Config"):
     r"""Checks/validates the config namespace object."""
     bt.logging.check_config(config)
+
+    # Set the wandb project name based on netuid if not explicitly provided
+    if config.wandb.project_name is None:
+        config.wandb.project_name = (
+            MAINNET_WANDB_PROJECT 
+            if config.netuid == MAINNET_UID 
+            else TESTNET_WANDB_PROJECT
+        )
+    print("FFFFFFFFFF config.wandb:", config.wandb)
+
 
     full_path = os.path.expanduser(
         "{}/{}/{}/netuid{}/{}".format(
@@ -66,9 +86,36 @@ def check_config(cls, config: "bt.Config"):
 def add_args(cls, parser):
     """
     Adds relevant arguments to the parser for operation.
+    
+    The priority order is:
+    1. Command line arguments
+    2. Environment variables
+    3. Default values from bitsec.config
     """
+    # Network arguments
+    parser.add_argument(
+        "--netuid",
+        type=int,
+        help=f"Subnet netuid ({TESTNET_UID} for testnet, {MAINNET_UID} for mainnet)",
+        default=TESTNET_UID,
+    )
 
-    parser.add_argument("--netuid", type=int, help="Subnet netuid", default=1)
+    # Wandb arguments
+    parser.add_argument(
+        "--wandb.entity",
+        type=str,
+        help="Wandb entity to log to, optional",
+        # default=WANDB_ENTITY,
+        default=None,
+    )
+
+    # The project name is determined dynamically but can be overridden
+    parser.add_argument(
+        "--wandb.project_name",
+        type=str,
+        help="Override the default wandb project name",
+        default=None,  # Will be set in check_config based on netuid
+    )
 
     parser.add_argument(
         "--neuron.device",
@@ -229,20 +276,6 @@ def add_validator_args(cls, parser):
     )
 
     parser.add_argument(
-        "--wandb.project_name",
-        type=str,
-        help="The name of the project where you are sending the new run.",
-        default="template-validators",
-    )
-
-    parser.add_argument(
-        "--wandb.entity",
-        type=str,
-        help="The name of the project where you are sending the new run.",
-        default="opentensor-dev",
-    )
-
-    parser.add_argument(
         "--proxy.port",
         type=int,
         help="The port to run the proxy on.",
@@ -250,11 +283,38 @@ def add_validator_args(cls, parser):
     )
 
 
+class EnvArgumentParser(argparse.ArgumentParser):
+    """
+    Custom ArgumentParser that supports environment variables through an 'env' parameter.
+    """
+    
+    def add_argument(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Add argument with environment variable support.
+        
+        Args:
+            *args: Positional arguments passed to ArgumentParser.add_argument
+            **kwargs: Keyword arguments passed to ArgumentParser.add_argument
+        """
+        # Check for environment variable
+        env_key = kwargs.pop('env', None)
+        if env_key and env_key in os.environ:
+            env_value = os.environ[env_key]
+            # Convert environment value to proper type if specified
+            if 'type' in kwargs:
+                try:
+                    env_value = kwargs['type'](env_value)
+                    kwargs['default'] = env_value
+                except (ValueError, TypeError):
+                    pass
+                    
+        super().add_argument(*args, **kwargs)
+
 def config(cls):
     """
     Returns the configuration object specific to this miner or validator after adding relevant arguments.
     """
-    parser = argparse.ArgumentParser()
+    parser = EnvArgumentParser()
     bt.wallet.add_args(parser)
     bt.subtensor.add_args(parser)
     bt.logging.add_args(parser)

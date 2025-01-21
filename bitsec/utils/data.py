@@ -4,6 +4,7 @@ import random
 import tempfile
 import subprocess
 import bittensor as bt
+import wandb
 from typing import List, Tuple
 from bitsec.protocol import PredictionResponse
 from bitsec.utils.llm import chat_completion
@@ -120,6 +121,7 @@ def create_challenge(vulnerable: bool, secure_filename: str | None = None, vulne
 
     bt.logging.info(f"\tvulnerability: {shorten_to_filename(vulnerability_filename)}")
     vulnerability_description = open(vulnerability_filename, 'r').read()
+    wandb.log({"created challenge, vulnerability description": vulnerability_description})
     
     # Create a prompt to inject the vulnerability
     prompt = f"""You are a smart contract security expert. Your task is to modify the given smart contract code to inject a vulnerability.

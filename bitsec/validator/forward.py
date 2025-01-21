@@ -18,6 +18,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 import random
+import wandb
 import bittensor as bt
 
 from bitsec.protocol import prepare_code_synapse
@@ -63,6 +64,7 @@ async def forward(self):
 
     # Log the results for monitoring purposes.
     bt.logging.info(f"Received responses: {responses}")
+    wandb.log({"received responses": responses})
 
     # TODO(developer): Define how the validator scores responses.
     # Adjust the scores based on responses from miners.

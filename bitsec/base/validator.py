@@ -17,7 +17,6 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-
 import copy
 import time
 import numpy as np
@@ -36,6 +35,8 @@ from bitsec.base.utils.weight_utils import (
 )  # TODO: Replace when bittensor switches to numpy
 from bitsec.mock import MockDendrite
 from bitsec.utils.config import add_validator_args
+import wandb
+from bitsec.utils.wandb import init_wandb_run
 
 
 class BaseValidatorNeuron(BaseNeuron):
@@ -55,6 +56,8 @@ class BaseValidatorNeuron(BaseNeuron):
 
         # Save a copy of the hotkeys to local memory.
         self.hotkeys = copy.deepcopy(self.metagraph.hotkeys)
+
+        init_wandb_run()
 
         # Dendrite lets us send messages to other nodes (axons) in the network.
         if self.config.mock:
@@ -100,6 +103,7 @@ class BaseValidatorNeuron(BaseNeuron):
                 bt.logging.info(
                     f"Running validator {self.axon} on network: {self.config.subtensor.chain_endpoint} with netuid: {self.config.netuid}"
                 )
+                wandb.log({"serve_axon": self.axon})
             except Exception as e:
                 bt.logging.error(f"Failed to serve Axon with exception: {e}")
                 pass
