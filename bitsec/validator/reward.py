@@ -69,8 +69,9 @@ def jaccard_score(expected_response: PredictionResponse, response: PredictionRes
     # Handle empty union case to prevent division by zero
     if len(category_union) == 0:
         return 1.0
-    else:
-        score = len(category_intersection) / len(category_union)
+
+    
+    score = len(category_intersection) / len(category_union)
 
     # TODO: line range
     # TODO: description
