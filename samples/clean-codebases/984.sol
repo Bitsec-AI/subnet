@@ -1,2818 +1,1839 @@
-/*
-  Copyright 2019-2021 StarkWare Industries Ltd.
-
-  Licensed under the Apache License, Version 2.0 (the "License").
-  You may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-  https://www.starkware.co/open-source-license/
-
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions
-  and limitations under the License.
+/**
+ *Submitted for verification at Etherscan.io on 2021-05-05
 */
-// ---------- The following code was auto-generated. PLEASE DO NOT EDIT. ----------
-// SPDX-License-Identifier: Apache-2.0.
-pragma solidity ^0.6.11;
 
-import "MemoryMap.sol";
-import "StarkParameters.sol";
-
-contract CpuOods is MemoryMap, StarkParameters {
-    // For each query point we want to invert (2 + N_ROWS_IN_MASK) items:
-    //  The query point itself (x).
-    //  The denominator for the constraint polynomial (x-z^constraintDegree)
-    //  [(x-(g^rowNumber)z) for rowNumber in mask].
-    uint256 constant internal BATCH_INVERSE_CHUNK = (2 + N_ROWS_IN_MASK);
-    uint256 constant internal BATCH_INVERSE_SIZE = MAX_N_QUERIES * BATCH_INVERSE_CHUNK;
-
-    /*
-      Builds and sums boundary constraints that check that the prover provided the proper evaluations
-      out of domain evaluations for the trace and composition columns.
-
-      The inputs to this function are:
-          The verifier context.
-
-      The boundary constraints for the trace enforce claims of the form f(g^k*z) = c by
-      requiring the quotient (f(x) - c)/(x-g^k*z) to be a low degree polynomial.
-
-      The boundary constraints for the composition enforce claims of the form h(z^d) = c by
-      requiring the quotient (h(x) - c)/(x-z^d) to be a low degree polynomial.
-      Where:
-            f is a trace column.
-            h is a composition column.
-            z is the out of domain sampling point.
-            g is the trace generator
-            k is the offset in the mask.
-            d is the degree of the composition polynomial.
-            c is the evaluation sent by the prover.
-    */
-    fallback() external {
-        // This funciton assumes that the calldata contains the context as defined in MemoryMap.sol.
-        // Note that ctx is a variable size array so the first uint256 cell contrains it's length.
-        uint256[] memory ctx;
-        assembly {
-            let ctxSize := mul(add(calldataload(0), 1), 0x20)
-            ctx := mload(0x40)
-            mstore(0x40, add(ctx, ctxSize))
-            calldatacopy(ctx, 0, ctxSize)
-        }
-        uint256[] memory batchInverseArray = new uint256[](2 * BATCH_INVERSE_SIZE);
-
-        oodsPrepareInverses(ctx, batchInverseArray);
-
-        uint256 kMontgomeryRInv_ = PrimeFieldElement0.K_MONTGOMERY_R_INV;
-
-        assembly {
-            let PRIME := 0x800000000000011000000000000000000000000000000000000000000000001
-            let kMontgomeryRInv := kMontgomeryRInv_
-            let context := ctx
-            let friQueue := /*friQueue*/ add(context, 0xdc0)
-            let friQueueEnd := add(friQueue,  mul(/*n_unique_queries*/ mload(add(context, 0x140)), 0x60))
-            let traceQueryResponses := /*traceQueryQesponses*/ add(context, 0x6f80)
-
-            let compositionQueryResponses := /*composition_query_responses*/ add(context, 0xab80)
-
-            // Set denominatorsPtr to point to the batchInverseOut array.
-            // The content of batchInverseOut is described in oodsPrepareInverses.
-            let denominatorsPtr := add(batchInverseArray, 0x20)
-
-            for {} lt(friQueue, friQueueEnd) {friQueue := add(friQueue, 0x60)} {
-                // res accumulates numbers modulo PRIME. Since 31*PRIME < 2**256, we may add up to
-                // 31 numbers without fear of overflow, and use addmod modulo PRIME only every
-                // 31 iterations, and once more at the very end.
-                let res := 0
-
-                // Trace constraints.
-
-                // Mask items for column #0.
-                {
-                // Read the next element.
-                let columnValue := mulmod(mload(traceQueryResponses), kMontgomeryRInv, PRIME)
-
-                // res += c_0*(f_0(x) - f_0(z)) / (x - z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - z)^(-1)*/ mload(denominatorsPtr),
-                                  /*oods_coefficients[0]*/ mload(add(context, 0x5ea0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[0]*/ mload(add(context, 0x47c0)))),
-                           PRIME))
-
-                // res += c_1*(f_0(x) - f_0(g * z)) / (x - g * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g * z)^(-1)*/ mload(add(denominatorsPtr, 0x20)),
-                                  /*oods_coefficients[1]*/ mload(add(context, 0x5ec0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[1]*/ mload(add(context, 0x47e0)))),
-                           PRIME))
-
-                // res += c_2*(f_0(x) - f_0(g^2 * z)) / (x - g^2 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^2 * z)^(-1)*/ mload(add(denominatorsPtr, 0x40)),
-                                  /*oods_coefficients[2]*/ mload(add(context, 0x5ee0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[2]*/ mload(add(context, 0x4800)))),
-                           PRIME))
-
-                // res += c_3*(f_0(x) - f_0(g^3 * z)) / (x - g^3 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^3 * z)^(-1)*/ mload(add(denominatorsPtr, 0x60)),
-                                  /*oods_coefficients[3]*/ mload(add(context, 0x5f00)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[3]*/ mload(add(context, 0x4820)))),
-                           PRIME))
-
-                // res += c_4*(f_0(x) - f_0(g^4 * z)) / (x - g^4 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^4 * z)^(-1)*/ mload(add(denominatorsPtr, 0x80)),
-                                  /*oods_coefficients[4]*/ mload(add(context, 0x5f20)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[4]*/ mload(add(context, 0x4840)))),
-                           PRIME))
-
-                // res += c_5*(f_0(x) - f_0(g^5 * z)) / (x - g^5 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^5 * z)^(-1)*/ mload(add(denominatorsPtr, 0xa0)),
-                                  /*oods_coefficients[5]*/ mload(add(context, 0x5f40)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[5]*/ mload(add(context, 0x4860)))),
-                           PRIME))
-
-                // res += c_6*(f_0(x) - f_0(g^6 * z)) / (x - g^6 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^6 * z)^(-1)*/ mload(add(denominatorsPtr, 0xc0)),
-                                  /*oods_coefficients[6]*/ mload(add(context, 0x5f60)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[6]*/ mload(add(context, 0x4880)))),
-                           PRIME))
-
-                // res += c_7*(f_0(x) - f_0(g^7 * z)) / (x - g^7 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^7 * z)^(-1)*/ mload(add(denominatorsPtr, 0xe0)),
-                                  /*oods_coefficients[7]*/ mload(add(context, 0x5f80)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[7]*/ mload(add(context, 0x48a0)))),
-                           PRIME))
-
-                // res += c_8*(f_0(x) - f_0(g^8 * z)) / (x - g^8 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^8 * z)^(-1)*/ mload(add(denominatorsPtr, 0x100)),
-                                  /*oods_coefficients[8]*/ mload(add(context, 0x5fa0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[8]*/ mload(add(context, 0x48c0)))),
-                           PRIME))
-
-                // res += c_9*(f_0(x) - f_0(g^9 * z)) / (x - g^9 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^9 * z)^(-1)*/ mload(add(denominatorsPtr, 0x120)),
-                                  /*oods_coefficients[9]*/ mload(add(context, 0x5fc0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[9]*/ mload(add(context, 0x48e0)))),
-                           PRIME))
-
-                // res += c_10*(f_0(x) - f_0(g^10 * z)) / (x - g^10 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^10 * z)^(-1)*/ mload(add(denominatorsPtr, 0x140)),
-                                  /*oods_coefficients[10]*/ mload(add(context, 0x5fe0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[10]*/ mload(add(context, 0x4900)))),
-                           PRIME))
-
-                // res += c_11*(f_0(x) - f_0(g^11 * z)) / (x - g^11 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^11 * z)^(-1)*/ mload(add(denominatorsPtr, 0x160)),
-                                  /*oods_coefficients[11]*/ mload(add(context, 0x6000)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[11]*/ mload(add(context, 0x4920)))),
-                           PRIME))
-
-                // res += c_12*(f_0(x) - f_0(g^12 * z)) / (x - g^12 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^12 * z)^(-1)*/ mload(add(denominatorsPtr, 0x180)),
-                                  /*oods_coefficients[12]*/ mload(add(context, 0x6020)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[12]*/ mload(add(context, 0x4940)))),
-                           PRIME))
-
-                // res += c_13*(f_0(x) - f_0(g^13 * z)) / (x - g^13 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^13 * z)^(-1)*/ mload(add(denominatorsPtr, 0x1a0)),
-                                  /*oods_coefficients[13]*/ mload(add(context, 0x6040)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[13]*/ mload(add(context, 0x4960)))),
-                           PRIME))
-
-                // res += c_14*(f_0(x) - f_0(g^14 * z)) / (x - g^14 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^14 * z)^(-1)*/ mload(add(denominatorsPtr, 0x1c0)),
-                                  /*oods_coefficients[14]*/ mload(add(context, 0x6060)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[14]*/ mload(add(context, 0x4980)))),
-                           PRIME))
-
-                // res += c_15*(f_0(x) - f_0(g^15 * z)) / (x - g^15 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^15 * z)^(-1)*/ mload(add(denominatorsPtr, 0x1e0)),
-                                  /*oods_coefficients[15]*/ mload(add(context, 0x6080)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[15]*/ mload(add(context, 0x49a0)))),
-                           PRIME))
-                }
-
-                // Mask items for column #1.
-                {
-                // Read the next element.
-                let columnValue := mulmod(mload(add(traceQueryResponses, 0x20)), kMontgomeryRInv, PRIME)
-
-                // res += c_16*(f_1(x) - f_1(z)) / (x - z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - z)^(-1)*/ mload(denominatorsPtr),
-                                  /*oods_coefficients[16]*/ mload(add(context, 0x60a0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[16]*/ mload(add(context, 0x49c0)))),
-                           PRIME))
-
-                // res += c_17*(f_1(x) - f_1(g * z)) / (x - g * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g * z)^(-1)*/ mload(add(denominatorsPtr, 0x20)),
-                                  /*oods_coefficients[17]*/ mload(add(context, 0x60c0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[17]*/ mload(add(context, 0x49e0)))),
-                           PRIME))
-
-                // res += c_18*(f_1(x) - f_1(g^255 * z)) / (x - g^255 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^255 * z)^(-1)*/ mload(add(denominatorsPtr, 0x6e0)),
-                                  /*oods_coefficients[18]*/ mload(add(context, 0x60e0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[18]*/ mload(add(context, 0x4a00)))),
-                           PRIME))
-
-                // res += c_19*(f_1(x) - f_1(g^256 * z)) / (x - g^256 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^256 * z)^(-1)*/ mload(add(denominatorsPtr, 0x700)),
-                                  /*oods_coefficients[19]*/ mload(add(context, 0x6100)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[19]*/ mload(add(context, 0x4a20)))),
-                           PRIME))
-
-                // res += c_20*(f_1(x) - f_1(g^511 * z)) / (x - g^511 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^511 * z)^(-1)*/ mload(add(denominatorsPtr, 0x7e0)),
-                                  /*oods_coefficients[20]*/ mload(add(context, 0x6120)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[20]*/ mload(add(context, 0x4a40)))),
-                           PRIME))
-                }
-
-                // Mask items for column #2.
-                {
-                // Read the next element.
-                let columnValue := mulmod(mload(add(traceQueryResponses, 0x40)), kMontgomeryRInv, PRIME)
-
-                // res += c_21*(f_2(x) - f_2(z)) / (x - z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - z)^(-1)*/ mload(denominatorsPtr),
-                                  /*oods_coefficients[21]*/ mload(add(context, 0x6140)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[21]*/ mload(add(context, 0x4a60)))),
-                           PRIME))
-
-                // res += c_22*(f_2(x) - f_2(g * z)) / (x - g * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g * z)^(-1)*/ mload(add(denominatorsPtr, 0x20)),
-                                  /*oods_coefficients[22]*/ mload(add(context, 0x6160)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[22]*/ mload(add(context, 0x4a80)))),
-                           PRIME))
-
-                // res += c_23*(f_2(x) - f_2(g^255 * z)) / (x - g^255 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^255 * z)^(-1)*/ mload(add(denominatorsPtr, 0x6e0)),
-                                  /*oods_coefficients[23]*/ mload(add(context, 0x6180)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[23]*/ mload(add(context, 0x4aa0)))),
-                           PRIME))
-
-                // res += c_24*(f_2(x) - f_2(g^256 * z)) / (x - g^256 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^256 * z)^(-1)*/ mload(add(denominatorsPtr, 0x700)),
-                                  /*oods_coefficients[24]*/ mload(add(context, 0x61a0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[24]*/ mload(add(context, 0x4ac0)))),
-                           PRIME))
-                }
-
-                // Mask items for column #3.
-                {
-                // Read the next element.
-                let columnValue := mulmod(mload(add(traceQueryResponses, 0x60)), kMontgomeryRInv, PRIME)
-
-                // res += c_25*(f_3(x) - f_3(z)) / (x - z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - z)^(-1)*/ mload(denominatorsPtr),
-                                  /*oods_coefficients[25]*/ mload(add(context, 0x61c0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[25]*/ mload(add(context, 0x4ae0)))),
-                           PRIME))
-
-                // res += c_26*(f_3(x) - f_3(g^255 * z)) / (x - g^255 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^255 * z)^(-1)*/ mload(add(denominatorsPtr, 0x6e0)),
-                                  /*oods_coefficients[26]*/ mload(add(context, 0x61e0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[26]*/ mload(add(context, 0x4b00)))),
-                           PRIME))
-                }
-
-                // Mask items for column #4.
-                {
-                // Read the next element.
-                let columnValue := mulmod(mload(add(traceQueryResponses, 0x80)), kMontgomeryRInv, PRIME)
-
-                // res += c_27*(f_4(x) - f_4(z)) / (x - z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - z)^(-1)*/ mload(denominatorsPtr),
-                                  /*oods_coefficients[27]*/ mload(add(context, 0x6200)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[27]*/ mload(add(context, 0x4b20)))),
-                           PRIME))
-
-                // res += c_28*(f_4(x) - f_4(g * z)) / (x - g * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g * z)^(-1)*/ mload(add(denominatorsPtr, 0x20)),
-                                  /*oods_coefficients[28]*/ mload(add(context, 0x6220)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[28]*/ mload(add(context, 0x4b40)))),
-                           PRIME))
-
-                // res += c_29*(f_4(x) - f_4(g^192 * z)) / (x - g^192 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^192 * z)^(-1)*/ mload(add(denominatorsPtr, 0x580)),
-                                  /*oods_coefficients[29]*/ mload(add(context, 0x6240)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[29]*/ mload(add(context, 0x4b60)))),
-                           PRIME))
-
-                // res += c_30*(f_4(x) - f_4(g^193 * z)) / (x - g^193 * z).
-                res := addmod(
-                    res,
-                    mulmod(mulmod(/*(x - g^193 * z)^(-1)*/ mload(add(denominatorsPtr, 0x5a0)),
-                                  /*oods_coefficients[30]*/ mload(add(context, 0x6260)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[30]*/ mload(add(context, 0x4b80)))),
-                           PRIME),
-                    PRIME)
-
-                // res += c_31*(f_4(x) - f_4(g^196 * z)) / (x - g^196 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^196 * z)^(-1)*/ mload(add(denominatorsPtr, 0x5c0)),
-                                  /*oods_coefficients[31]*/ mload(add(context, 0x6280)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[31]*/ mload(add(context, 0x4ba0)))),
-                           PRIME))
-
-                // res += c_32*(f_4(x) - f_4(g^197 * z)) / (x - g^197 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^197 * z)^(-1)*/ mload(add(denominatorsPtr, 0x5e0)),
-                                  /*oods_coefficients[32]*/ mload(add(context, 0x62a0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[32]*/ mload(add(context, 0x4bc0)))),
-                           PRIME))
-
-                // res += c_33*(f_4(x) - f_4(g^251 * z)) / (x - g^251 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^251 * z)^(-1)*/ mload(add(denominatorsPtr, 0x6a0)),
-                                  /*oods_coefficients[33]*/ mload(add(context, 0x62c0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[33]*/ mload(add(context, 0x4be0)))),
-                           PRIME))
-
-                // res += c_34*(f_4(x) - f_4(g^252 * z)) / (x - g^252 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^252 * z)^(-1)*/ mload(add(denominatorsPtr, 0x6c0)),
-                                  /*oods_coefficients[34]*/ mload(add(context, 0x62e0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[34]*/ mload(add(context, 0x4c00)))),
-                           PRIME))
-
-                // res += c_35*(f_4(x) - f_4(g^256 * z)) / (x - g^256 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^256 * z)^(-1)*/ mload(add(denominatorsPtr, 0x700)),
-                                  /*oods_coefficients[35]*/ mload(add(context, 0x6300)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[35]*/ mload(add(context, 0x4c20)))),
-                           PRIME))
-                }
-
-                // Mask items for column #5.
-                {
-                // Read the next element.
-                let columnValue := mulmod(mload(add(traceQueryResponses, 0xa0)), kMontgomeryRInv, PRIME)
-
-                // res += c_36*(f_5(x) - f_5(z)) / (x - z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - z)^(-1)*/ mload(denominatorsPtr),
-                                  /*oods_coefficients[36]*/ mload(add(context, 0x6320)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[36]*/ mload(add(context, 0x4c40)))),
-                           PRIME))
-
-                // res += c_37*(f_5(x) - f_5(g * z)) / (x - g * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g * z)^(-1)*/ mload(add(denominatorsPtr, 0x20)),
-                                  /*oods_coefficients[37]*/ mload(add(context, 0x6340)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[37]*/ mload(add(context, 0x4c60)))),
-                           PRIME))
-
-                // res += c_38*(f_5(x) - f_5(g^2 * z)) / (x - g^2 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^2 * z)^(-1)*/ mload(add(denominatorsPtr, 0x40)),
-                                  /*oods_coefficients[38]*/ mload(add(context, 0x6360)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[38]*/ mload(add(context, 0x4c80)))),
-                           PRIME))
-
-                // res += c_39*(f_5(x) - f_5(g^3 * z)) / (x - g^3 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^3 * z)^(-1)*/ mload(add(denominatorsPtr, 0x60)),
-                                  /*oods_coefficients[39]*/ mload(add(context, 0x6380)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[39]*/ mload(add(context, 0x4ca0)))),
-                           PRIME))
-
-                // res += c_40*(f_5(x) - f_5(g^4 * z)) / (x - g^4 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^4 * z)^(-1)*/ mload(add(denominatorsPtr, 0x80)),
-                                  /*oods_coefficients[40]*/ mload(add(context, 0x63a0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[40]*/ mload(add(context, 0x4cc0)))),
-                           PRIME))
-
-                // res += c_41*(f_5(x) - f_5(g^5 * z)) / (x - g^5 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^5 * z)^(-1)*/ mload(add(denominatorsPtr, 0xa0)),
-                                  /*oods_coefficients[41]*/ mload(add(context, 0x63c0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[41]*/ mload(add(context, 0x4ce0)))),
-                           PRIME))
-
-                // res += c_42*(f_5(x) - f_5(g^6 * z)) / (x - g^6 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^6 * z)^(-1)*/ mload(add(denominatorsPtr, 0xc0)),
-                                  /*oods_coefficients[42]*/ mload(add(context, 0x63e0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[42]*/ mload(add(context, 0x4d00)))),
-                           PRIME))
-
-                // res += c_43*(f_5(x) - f_5(g^7 * z)) / (x - g^7 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^7 * z)^(-1)*/ mload(add(denominatorsPtr, 0xe0)),
-                                  /*oods_coefficients[43]*/ mload(add(context, 0x6400)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[43]*/ mload(add(context, 0x4d20)))),
-                           PRIME))
-
-                // res += c_44*(f_5(x) - f_5(g^8 * z)) / (x - g^8 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^8 * z)^(-1)*/ mload(add(denominatorsPtr, 0x100)),
-                                  /*oods_coefficients[44]*/ mload(add(context, 0x6420)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[44]*/ mload(add(context, 0x4d40)))),
-                           PRIME))
-
-                // res += c_45*(f_5(x) - f_5(g^9 * z)) / (x - g^9 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^9 * z)^(-1)*/ mload(add(denominatorsPtr, 0x120)),
-                                  /*oods_coefficients[45]*/ mload(add(context, 0x6440)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[45]*/ mload(add(context, 0x4d60)))),
-                           PRIME))
-
-                // res += c_46*(f_5(x) - f_5(g^12 * z)) / (x - g^12 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^12 * z)^(-1)*/ mload(add(denominatorsPtr, 0x180)),
-                                  /*oods_coefficients[46]*/ mload(add(context, 0x6460)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[46]*/ mload(add(context, 0x4d80)))),
-                           PRIME))
-
-                // res += c_47*(f_5(x) - f_5(g^13 * z)) / (x - g^13 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^13 * z)^(-1)*/ mload(add(denominatorsPtr, 0x1a0)),
-                                  /*oods_coefficients[47]*/ mload(add(context, 0x6480)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[47]*/ mload(add(context, 0x4da0)))),
-                           PRIME))
-
-                // res += c_48*(f_5(x) - f_5(g^16 * z)) / (x - g^16 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^16 * z)^(-1)*/ mload(add(denominatorsPtr, 0x200)),
-                                  /*oods_coefficients[48]*/ mload(add(context, 0x64a0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[48]*/ mload(add(context, 0x4dc0)))),
-                           PRIME))
-
-                // res += c_49*(f_5(x) - f_5(g^38 * z)) / (x - g^38 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^38 * z)^(-1)*/ mload(add(denominatorsPtr, 0x2c0)),
-                                  /*oods_coefficients[49]*/ mload(add(context, 0x64c0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[49]*/ mload(add(context, 0x4de0)))),
-                           PRIME))
-
-                // res += c_50*(f_5(x) - f_5(g^39 * z)) / (x - g^39 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^39 * z)^(-1)*/ mload(add(denominatorsPtr, 0x2e0)),
-                                  /*oods_coefficients[50]*/ mload(add(context, 0x64e0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[50]*/ mload(add(context, 0x4e00)))),
-                           PRIME))
-
-                // res += c_51*(f_5(x) - f_5(g^70 * z)) / (x - g^70 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^70 * z)^(-1)*/ mload(add(denominatorsPtr, 0x3a0)),
-                                  /*oods_coefficients[51]*/ mload(add(context, 0x6500)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[51]*/ mload(add(context, 0x4e20)))),
-                           PRIME))
-
-                // res += c_52*(f_5(x) - f_5(g^71 * z)) / (x - g^71 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^71 * z)^(-1)*/ mload(add(denominatorsPtr, 0x3c0)),
-                                  /*oods_coefficients[52]*/ mload(add(context, 0x6520)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[52]*/ mload(add(context, 0x4e40)))),
-                           PRIME))
-
-                // res += c_53*(f_5(x) - f_5(g^134 * z)) / (x - g^134 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^134 * z)^(-1)*/ mload(add(denominatorsPtr, 0x500)),
-                                  /*oods_coefficients[53]*/ mload(add(context, 0x6540)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[53]*/ mload(add(context, 0x4e60)))),
-                           PRIME))
-
-                // res += c_54*(f_5(x) - f_5(g^135 * z)) / (x - g^135 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^135 * z)^(-1)*/ mload(add(denominatorsPtr, 0x520)),
-                                  /*oods_coefficients[54]*/ mload(add(context, 0x6560)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[54]*/ mload(add(context, 0x4e80)))),
-                           PRIME))
-
-                // res += c_55*(f_5(x) - f_5(g^198 * z)) / (x - g^198 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^198 * z)^(-1)*/ mload(add(denominatorsPtr, 0x600)),
-                                  /*oods_coefficients[55]*/ mload(add(context, 0x6580)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[55]*/ mload(add(context, 0x4ea0)))),
-                           PRIME))
-
-                // res += c_56*(f_5(x) - f_5(g^199 * z)) / (x - g^199 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^199 * z)^(-1)*/ mload(add(denominatorsPtr, 0x620)),
-                                  /*oods_coefficients[56]*/ mload(add(context, 0x65a0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[56]*/ mload(add(context, 0x4ec0)))),
-                           PRIME))
-
-                // res += c_57*(f_5(x) - f_5(g^262 * z)) / (x - g^262 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^262 * z)^(-1)*/ mload(add(denominatorsPtr, 0x720)),
-                                  /*oods_coefficients[57]*/ mload(add(context, 0x65c0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[57]*/ mload(add(context, 0x4ee0)))),
-                           PRIME))
-
-                // res += c_58*(f_5(x) - f_5(g^263 * z)) / (x - g^263 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^263 * z)^(-1)*/ mload(add(denominatorsPtr, 0x740)),
-                                  /*oods_coefficients[58]*/ mload(add(context, 0x65e0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[58]*/ mload(add(context, 0x4f00)))),
-                           PRIME))
-
-                // res += c_59*(f_5(x) - f_5(g^326 * z)) / (x - g^326 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^326 * z)^(-1)*/ mload(add(denominatorsPtr, 0x760)),
-                                  /*oods_coefficients[59]*/ mload(add(context, 0x6600)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[59]*/ mload(add(context, 0x4f20)))),
-                           PRIME))
-
-                // res += c_60*(f_5(x) - f_5(g^390 * z)) / (x - g^390 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^390 * z)^(-1)*/ mload(add(denominatorsPtr, 0x780)),
-                                  /*oods_coefficients[60]*/ mload(add(context, 0x6620)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[60]*/ mload(add(context, 0x4f40)))),
-                           PRIME))
-
-                // res += c_61*(f_5(x) - f_5(g^391 * z)) / (x - g^391 * z).
-                res := addmod(
-                    res,
-                    mulmod(mulmod(/*(x - g^391 * z)^(-1)*/ mload(add(denominatorsPtr, 0x7a0)),
-                                  /*oods_coefficients[61]*/ mload(add(context, 0x6640)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[61]*/ mload(add(context, 0x4f60)))),
-                           PRIME),
-                    PRIME)
-
-                // res += c_62*(f_5(x) - f_5(g^454 * z)) / (x - g^454 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^454 * z)^(-1)*/ mload(add(denominatorsPtr, 0x7c0)),
-                                  /*oods_coefficients[62]*/ mload(add(context, 0x6660)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[62]*/ mload(add(context, 0x4f80)))),
-                           PRIME))
-
-                // res += c_63*(f_5(x) - f_5(g^518 * z)) / (x - g^518 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^518 * z)^(-1)*/ mload(add(denominatorsPtr, 0x800)),
-                                  /*oods_coefficients[63]*/ mload(add(context, 0x6680)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[63]*/ mload(add(context, 0x4fa0)))),
-                           PRIME))
-
-                // res += c_64*(f_5(x) - f_5(g^16774 * z)) / (x - g^16774 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^16774 * z)^(-1)*/ mload(add(denominatorsPtr, 0x900)),
-                                  /*oods_coefficients[64]*/ mload(add(context, 0x66a0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[64]*/ mload(add(context, 0x4fc0)))),
-                           PRIME))
-
-                // res += c_65*(f_5(x) - f_5(g^16775 * z)) / (x - g^16775 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^16775 * z)^(-1)*/ mload(add(denominatorsPtr, 0x920)),
-                                  /*oods_coefficients[65]*/ mload(add(context, 0x66c0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[65]*/ mload(add(context, 0x4fe0)))),
-                           PRIME))
-
-                // res += c_66*(f_5(x) - f_5(g^33158 * z)) / (x - g^33158 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^33158 * z)^(-1)*/ mload(add(denominatorsPtr, 0xa40)),
-                                  /*oods_coefficients[66]*/ mload(add(context, 0x66e0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[66]*/ mload(add(context, 0x5000)))),
-                           PRIME))
-                }
-
-                // Mask items for column #6.
-                {
-                // Read the next element.
-                let columnValue := mulmod(mload(add(traceQueryResponses, 0xc0)), kMontgomeryRInv, PRIME)
-
-                // res += c_67*(f_6(x) - f_6(z)) / (x - z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - z)^(-1)*/ mload(denominatorsPtr),
-                                  /*oods_coefficients[67]*/ mload(add(context, 0x6700)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[67]*/ mload(add(context, 0x5020)))),
-                           PRIME))
-
-                // res += c_68*(f_6(x) - f_6(g * z)) / (x - g * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g * z)^(-1)*/ mload(add(denominatorsPtr, 0x20)),
-                                  /*oods_coefficients[68]*/ mload(add(context, 0x6720)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[68]*/ mload(add(context, 0x5040)))),
-                           PRIME))
-
-                // res += c_69*(f_6(x) - f_6(g^2 * z)) / (x - g^2 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^2 * z)^(-1)*/ mload(add(denominatorsPtr, 0x40)),
-                                  /*oods_coefficients[69]*/ mload(add(context, 0x6740)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[69]*/ mload(add(context, 0x5060)))),
-                           PRIME))
-
-                // res += c_70*(f_6(x) - f_6(g^3 * z)) / (x - g^3 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^3 * z)^(-1)*/ mload(add(denominatorsPtr, 0x60)),
-                                  /*oods_coefficients[70]*/ mload(add(context, 0x6760)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[70]*/ mload(add(context, 0x5080)))),
-                           PRIME))
-                }
-
-                // Mask items for column #7.
-                {
-                // Read the next element.
-                let columnValue := mulmod(mload(add(traceQueryResponses, 0xe0)), kMontgomeryRInv, PRIME)
-
-                // res += c_71*(f_7(x) - f_7(z)) / (x - z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - z)^(-1)*/ mload(denominatorsPtr),
-                                  /*oods_coefficients[71]*/ mload(add(context, 0x6780)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[71]*/ mload(add(context, 0x50a0)))),
-                           PRIME))
-
-                // res += c_72*(f_7(x) - f_7(g * z)) / (x - g * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g * z)^(-1)*/ mload(add(denominatorsPtr, 0x20)),
-                                  /*oods_coefficients[72]*/ mload(add(context, 0x67a0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[72]*/ mload(add(context, 0x50c0)))),
-                           PRIME))
-
-                // res += c_73*(f_7(x) - f_7(g^2 * z)) / (x - g^2 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^2 * z)^(-1)*/ mload(add(denominatorsPtr, 0x40)),
-                                  /*oods_coefficients[73]*/ mload(add(context, 0x67c0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[73]*/ mload(add(context, 0x50e0)))),
-                           PRIME))
-
-                // res += c_74*(f_7(x) - f_7(g^3 * z)) / (x - g^3 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^3 * z)^(-1)*/ mload(add(denominatorsPtr, 0x60)),
-                                  /*oods_coefficients[74]*/ mload(add(context, 0x67e0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[74]*/ mload(add(context, 0x5100)))),
-                           PRIME))
-
-                // res += c_75*(f_7(x) - f_7(g^4 * z)) / (x - g^4 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^4 * z)^(-1)*/ mload(add(denominatorsPtr, 0x80)),
-                                  /*oods_coefficients[75]*/ mload(add(context, 0x6800)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[75]*/ mload(add(context, 0x5120)))),
-                           PRIME))
-
-                // res += c_76*(f_7(x) - f_7(g^5 * z)) / (x - g^5 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^5 * z)^(-1)*/ mload(add(denominatorsPtr, 0xa0)),
-                                  /*oods_coefficients[76]*/ mload(add(context, 0x6820)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[76]*/ mload(add(context, 0x5140)))),
-                           PRIME))
-
-                // res += c_77*(f_7(x) - f_7(g^6 * z)) / (x - g^6 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^6 * z)^(-1)*/ mload(add(denominatorsPtr, 0xc0)),
-                                  /*oods_coefficients[77]*/ mload(add(context, 0x6840)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[77]*/ mload(add(context, 0x5160)))),
-                           PRIME))
-
-                // res += c_78*(f_7(x) - f_7(g^7 * z)) / (x - g^7 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^7 * z)^(-1)*/ mload(add(denominatorsPtr, 0xe0)),
-                                  /*oods_coefficients[78]*/ mload(add(context, 0x6860)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[78]*/ mload(add(context, 0x5180)))),
-                           PRIME))
-
-                // res += c_79*(f_7(x) - f_7(g^8 * z)) / (x - g^8 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^8 * z)^(-1)*/ mload(add(denominatorsPtr, 0x100)),
-                                  /*oods_coefficients[79]*/ mload(add(context, 0x6880)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[79]*/ mload(add(context, 0x51a0)))),
-                           PRIME))
-
-                // res += c_80*(f_7(x) - f_7(g^9 * z)) / (x - g^9 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^9 * z)^(-1)*/ mload(add(denominatorsPtr, 0x120)),
-                                  /*oods_coefficients[80]*/ mload(add(context, 0x68a0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[80]*/ mload(add(context, 0x51c0)))),
-                           PRIME))
-
-                // res += c_81*(f_7(x) - f_7(g^11 * z)) / (x - g^11 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^11 * z)^(-1)*/ mload(add(denominatorsPtr, 0x160)),
-                                  /*oods_coefficients[81]*/ mload(add(context, 0x68c0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[81]*/ mload(add(context, 0x51e0)))),
-                           PRIME))
-
-                // res += c_82*(f_7(x) - f_7(g^12 * z)) / (x - g^12 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^12 * z)^(-1)*/ mload(add(denominatorsPtr, 0x180)),
-                                  /*oods_coefficients[82]*/ mload(add(context, 0x68e0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[82]*/ mload(add(context, 0x5200)))),
-                           PRIME))
-
-                // res += c_83*(f_7(x) - f_7(g^13 * z)) / (x - g^13 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^13 * z)^(-1)*/ mload(add(denominatorsPtr, 0x1a0)),
-                                  /*oods_coefficients[83]*/ mload(add(context, 0x6900)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[83]*/ mload(add(context, 0x5220)))),
-                           PRIME))
-
-                // res += c_84*(f_7(x) - f_7(g^15 * z)) / (x - g^15 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^15 * z)^(-1)*/ mload(add(denominatorsPtr, 0x1e0)),
-                                  /*oods_coefficients[84]*/ mload(add(context, 0x6920)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[84]*/ mload(add(context, 0x5240)))),
-                           PRIME))
-
-                // res += c_85*(f_7(x) - f_7(g^17 * z)) / (x - g^17 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^17 * z)^(-1)*/ mload(add(denominatorsPtr, 0x220)),
-                                  /*oods_coefficients[85]*/ mload(add(context, 0x6940)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[85]*/ mload(add(context, 0x5260)))),
-                           PRIME))
-
-                // res += c_86*(f_7(x) - f_7(g^23 * z)) / (x - g^23 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^23 * z)^(-1)*/ mload(add(denominatorsPtr, 0x240)),
-                                  /*oods_coefficients[86]*/ mload(add(context, 0x6960)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[86]*/ mload(add(context, 0x5280)))),
-                           PRIME))
-
-                // res += c_87*(f_7(x) - f_7(g^25 * z)) / (x - g^25 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^25 * z)^(-1)*/ mload(add(denominatorsPtr, 0x260)),
-                                  /*oods_coefficients[87]*/ mload(add(context, 0x6980)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[87]*/ mload(add(context, 0x52a0)))),
-                           PRIME))
-
-                // res += c_88*(f_7(x) - f_7(g^31 * z)) / (x - g^31 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^31 * z)^(-1)*/ mload(add(denominatorsPtr, 0x280)),
-                                  /*oods_coefficients[88]*/ mload(add(context, 0x69a0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[88]*/ mload(add(context, 0x52c0)))),
-                           PRIME))
-
-                // res += c_89*(f_7(x) - f_7(g^39 * z)) / (x - g^39 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^39 * z)^(-1)*/ mload(add(denominatorsPtr, 0x2e0)),
-                                  /*oods_coefficients[89]*/ mload(add(context, 0x69c0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[89]*/ mload(add(context, 0x52e0)))),
-                           PRIME))
-
-                // res += c_90*(f_7(x) - f_7(g^44 * z)) / (x - g^44 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^44 * z)^(-1)*/ mload(add(denominatorsPtr, 0x300)),
-                                  /*oods_coefficients[90]*/ mload(add(context, 0x69e0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[90]*/ mload(add(context, 0x5300)))),
-                           PRIME))
-
-                // res += c_91*(f_7(x) - f_7(g^47 * z)) / (x - g^47 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^47 * z)^(-1)*/ mload(add(denominatorsPtr, 0x320)),
-                                  /*oods_coefficients[91]*/ mload(add(context, 0x6a00)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[91]*/ mload(add(context, 0x5320)))),
-                           PRIME))
-
-                // res += c_92*(f_7(x) - f_7(g^55 * z)) / (x - g^55 * z).
-                res := addmod(
-                    res,
-                    mulmod(mulmod(/*(x - g^55 * z)^(-1)*/ mload(add(denominatorsPtr, 0x340)),
-                                  /*oods_coefficients[92]*/ mload(add(context, 0x6a20)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[92]*/ mload(add(context, 0x5340)))),
-                           PRIME),
-                    PRIME)
-
-                // res += c_93*(f_7(x) - f_7(g^63 * z)) / (x - g^63 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^63 * z)^(-1)*/ mload(add(denominatorsPtr, 0x360)),
-                                  /*oods_coefficients[93]*/ mload(add(context, 0x6a40)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[93]*/ mload(add(context, 0x5360)))),
-                           PRIME))
-
-                // res += c_94*(f_7(x) - f_7(g^71 * z)) / (x - g^71 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^71 * z)^(-1)*/ mload(add(denominatorsPtr, 0x3c0)),
-                                  /*oods_coefficients[94]*/ mload(add(context, 0x6a60)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[94]*/ mload(add(context, 0x5380)))),
-                           PRIME))
-
-                // res += c_95*(f_7(x) - f_7(g^76 * z)) / (x - g^76 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^76 * z)^(-1)*/ mload(add(denominatorsPtr, 0x3e0)),
-                                  /*oods_coefficients[95]*/ mload(add(context, 0x6a80)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[95]*/ mload(add(context, 0x53a0)))),
-                           PRIME))
-
-                // res += c_96*(f_7(x) - f_7(g^79 * z)) / (x - g^79 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^79 * z)^(-1)*/ mload(add(denominatorsPtr, 0x400)),
-                                  /*oods_coefficients[96]*/ mload(add(context, 0x6aa0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[96]*/ mload(add(context, 0x53c0)))),
-                           PRIME))
-
-                // res += c_97*(f_7(x) - f_7(g^95 * z)) / (x - g^95 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^95 * z)^(-1)*/ mload(add(denominatorsPtr, 0x440)),
-                                  /*oods_coefficients[97]*/ mload(add(context, 0x6ac0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[97]*/ mload(add(context, 0x53e0)))),
-                           PRIME))
-
-                // res += c_98*(f_7(x) - f_7(g^103 * z)) / (x - g^103 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^103 * z)^(-1)*/ mload(add(denominatorsPtr, 0x480)),
-                                  /*oods_coefficients[98]*/ mload(add(context, 0x6ae0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[98]*/ mload(add(context, 0x5400)))),
-                           PRIME))
-
-                // res += c_99*(f_7(x) - f_7(g^108 * z)) / (x - g^108 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^108 * z)^(-1)*/ mload(add(denominatorsPtr, 0x4a0)),
-                                  /*oods_coefficients[99]*/ mload(add(context, 0x6b00)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[99]*/ mload(add(context, 0x5420)))),
-                           PRIME))
-
-                // res += c_100*(f_7(x) - f_7(g^119 * z)) / (x - g^119 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^119 * z)^(-1)*/ mload(add(denominatorsPtr, 0x4c0)),
-                                  /*oods_coefficients[100]*/ mload(add(context, 0x6b20)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[100]*/ mload(add(context, 0x5440)))),
-                           PRIME))
-
-                // res += c_101*(f_7(x) - f_7(g^140 * z)) / (x - g^140 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^140 * z)^(-1)*/ mload(add(denominatorsPtr, 0x540)),
-                                  /*oods_coefficients[101]*/ mload(add(context, 0x6b40)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[101]*/ mload(add(context, 0x5460)))),
-                           PRIME))
-
-                // res += c_102*(f_7(x) - f_7(g^172 * z)) / (x - g^172 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^172 * z)^(-1)*/ mload(add(denominatorsPtr, 0x560)),
-                                  /*oods_coefficients[102]*/ mload(add(context, 0x6b60)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[102]*/ mload(add(context, 0x5480)))),
-                           PRIME))
-
-                // res += c_103*(f_7(x) - f_7(g^204 * z)) / (x - g^204 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^204 * z)^(-1)*/ mload(add(denominatorsPtr, 0x640)),
-                                  /*oods_coefficients[103]*/ mload(add(context, 0x6b80)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[103]*/ mload(add(context, 0x54a0)))),
-                           PRIME))
-
-                // res += c_104*(f_7(x) - f_7(g^236 * z)) / (x - g^236 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^236 * z)^(-1)*/ mload(add(denominatorsPtr, 0x680)),
-                                  /*oods_coefficients[104]*/ mload(add(context, 0x6ba0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[104]*/ mload(add(context, 0x54c0)))),
-                           PRIME))
-
-                // res += c_105*(f_7(x) - f_7(g^16335 * z)) / (x - g^16335 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^16335 * z)^(-1)*/ mload(add(denominatorsPtr, 0x820)),
-                                  /*oods_coefficients[105]*/ mload(add(context, 0x6bc0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[105]*/ mload(add(context, 0x54e0)))),
-                           PRIME))
-
-                // res += c_106*(f_7(x) - f_7(g^16343 * z)) / (x - g^16343 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^16343 * z)^(-1)*/ mload(add(denominatorsPtr, 0x840)),
-                                  /*oods_coefficients[106]*/ mload(add(context, 0x6be0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[106]*/ mload(add(context, 0x5500)))),
-                           PRIME))
-
-                // res += c_107*(f_7(x) - f_7(g^16367 * z)) / (x - g^16367 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^16367 * z)^(-1)*/ mload(add(denominatorsPtr, 0x860)),
-                                  /*oods_coefficients[107]*/ mload(add(context, 0x6c00)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[107]*/ mload(add(context, 0x5520)))),
-                           PRIME))
-
-                // res += c_108*(f_7(x) - f_7(g^16375 * z)) / (x - g^16375 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^16375 * z)^(-1)*/ mload(add(denominatorsPtr, 0x880)),
-                                  /*oods_coefficients[108]*/ mload(add(context, 0x6c20)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[108]*/ mload(add(context, 0x5540)))),
-                           PRIME))
-
-                // res += c_109*(f_7(x) - f_7(g^16383 * z)) / (x - g^16383 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^16383 * z)^(-1)*/ mload(add(denominatorsPtr, 0x8a0)),
-                                  /*oods_coefficients[109]*/ mload(add(context, 0x6c40)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[109]*/ mload(add(context, 0x5560)))),
-                           PRIME))
-
-                // res += c_110*(f_7(x) - f_7(g^16391 * z)) / (x - g^16391 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^16391 * z)^(-1)*/ mload(add(denominatorsPtr, 0x8c0)),
-                                  /*oods_coefficients[110]*/ mload(add(context, 0x6c60)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[110]*/ mload(add(context, 0x5580)))),
-                           PRIME))
-
-                // res += c_111*(f_7(x) - f_7(g^16423 * z)) / (x - g^16423 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^16423 * z)^(-1)*/ mload(add(denominatorsPtr, 0x8e0)),
-                                  /*oods_coefficients[111]*/ mload(add(context, 0x6c80)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[111]*/ mload(add(context, 0x55a0)))),
-                           PRIME))
-
-                // res += c_112*(f_7(x) - f_7(g^32719 * z)) / (x - g^32719 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^32719 * z)^(-1)*/ mload(add(denominatorsPtr, 0x9c0)),
-                                  /*oods_coefficients[112]*/ mload(add(context, 0x6ca0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[112]*/ mload(add(context, 0x55c0)))),
-                           PRIME))
-
-                // res += c_113*(f_7(x) - f_7(g^32727 * z)) / (x - g^32727 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^32727 * z)^(-1)*/ mload(add(denominatorsPtr, 0x9e0)),
-                                  /*oods_coefficients[113]*/ mload(add(context, 0x6cc0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[113]*/ mload(add(context, 0x55e0)))),
-                           PRIME))
-
-                // res += c_114*(f_7(x) - f_7(g^32751 * z)) / (x - g^32751 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^32751 * z)^(-1)*/ mload(add(denominatorsPtr, 0xa00)),
-                                  /*oods_coefficients[114]*/ mload(add(context, 0x6ce0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[114]*/ mload(add(context, 0x5600)))),
-                           PRIME))
-
-                // res += c_115*(f_7(x) - f_7(g^32759 * z)) / (x - g^32759 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^32759 * z)^(-1)*/ mload(add(denominatorsPtr, 0xa20)),
-                                  /*oods_coefficients[115]*/ mload(add(context, 0x6d00)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[115]*/ mload(add(context, 0x5620)))),
-                           PRIME))
-                }
-
-                // Mask items for column #8.
-                {
-                // Read the next element.
-                let columnValue := mulmod(mload(add(traceQueryResponses, 0x100)), kMontgomeryRInv, PRIME)
-
-                // res += c_116*(f_8(x) - f_8(z)) / (x - z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - z)^(-1)*/ mload(denominatorsPtr),
-                                  /*oods_coefficients[116]*/ mload(add(context, 0x6d20)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[116]*/ mload(add(context, 0x5640)))),
-                           PRIME))
-
-                // res += c_117*(f_8(x) - f_8(g^16 * z)) / (x - g^16 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^16 * z)^(-1)*/ mload(add(denominatorsPtr, 0x200)),
-                                  /*oods_coefficients[117]*/ mload(add(context, 0x6d40)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[117]*/ mload(add(context, 0x5660)))),
-                           PRIME))
-
-                // res += c_118*(f_8(x) - f_8(g^32 * z)) / (x - g^32 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^32 * z)^(-1)*/ mload(add(denominatorsPtr, 0x2a0)),
-                                  /*oods_coefficients[118]*/ mload(add(context, 0x6d60)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[118]*/ mload(add(context, 0x5680)))),
-                           PRIME))
-
-                // res += c_119*(f_8(x) - f_8(g^64 * z)) / (x - g^64 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^64 * z)^(-1)*/ mload(add(denominatorsPtr, 0x380)),
-                                  /*oods_coefficients[119]*/ mload(add(context, 0x6d80)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[119]*/ mload(add(context, 0x56a0)))),
-                           PRIME))
-
-                // res += c_120*(f_8(x) - f_8(g^80 * z)) / (x - g^80 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^80 * z)^(-1)*/ mload(add(denominatorsPtr, 0x420)),
-                                  /*oods_coefficients[120]*/ mload(add(context, 0x6da0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[120]*/ mload(add(context, 0x56c0)))),
-                           PRIME))
-
-                // res += c_121*(f_8(x) - f_8(g^96 * z)) / (x - g^96 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^96 * z)^(-1)*/ mload(add(denominatorsPtr, 0x460)),
-                                  /*oods_coefficients[121]*/ mload(add(context, 0x6dc0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[121]*/ mload(add(context, 0x56e0)))),
-                           PRIME))
-
-                // res += c_122*(f_8(x) - f_8(g^128 * z)) / (x - g^128 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^128 * z)^(-1)*/ mload(add(denominatorsPtr, 0x4e0)),
-                                  /*oods_coefficients[122]*/ mload(add(context, 0x6de0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[122]*/ mload(add(context, 0x5700)))),
-                           PRIME))
-
-                // res += c_123*(f_8(x) - f_8(g^192 * z)) / (x - g^192 * z).
-                res := addmod(
-                    res,
-                    mulmod(mulmod(/*(x - g^192 * z)^(-1)*/ mload(add(denominatorsPtr, 0x580)),
-                                  /*oods_coefficients[123]*/ mload(add(context, 0x6e00)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[123]*/ mload(add(context, 0x5720)))),
-                           PRIME),
-                    PRIME)
-
-                // res += c_124*(f_8(x) - f_8(g^224 * z)) / (x - g^224 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^224 * z)^(-1)*/ mload(add(denominatorsPtr, 0x660)),
-                                  /*oods_coefficients[124]*/ mload(add(context, 0x6e20)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[124]*/ mload(add(context, 0x5740)))),
-                           PRIME))
-
-                // res += c_125*(f_8(x) - f_8(g^32640 * z)) / (x - g^32640 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^32640 * z)^(-1)*/ mload(add(denominatorsPtr, 0x940)),
-                                  /*oods_coefficients[125]*/ mload(add(context, 0x6e40)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[125]*/ mload(add(context, 0x5760)))),
-                           PRIME))
-
-                // res += c_126*(f_8(x) - f_8(g^32656 * z)) / (x - g^32656 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^32656 * z)^(-1)*/ mload(add(denominatorsPtr, 0x960)),
-                                  /*oods_coefficients[126]*/ mload(add(context, 0x6e60)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[126]*/ mload(add(context, 0x5780)))),
-                           PRIME))
-
-                // res += c_127*(f_8(x) - f_8(g^32672 * z)) / (x - g^32672 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^32672 * z)^(-1)*/ mload(add(denominatorsPtr, 0x980)),
-                                  /*oods_coefficients[127]*/ mload(add(context, 0x6e80)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[127]*/ mload(add(context, 0x57a0)))),
-                           PRIME))
-
-                // res += c_128*(f_8(x) - f_8(g^32704 * z)) / (x - g^32704 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^32704 * z)^(-1)*/ mload(add(denominatorsPtr, 0x9a0)),
-                                  /*oods_coefficients[128]*/ mload(add(context, 0x6ea0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[128]*/ mload(add(context, 0x57c0)))),
-                           PRIME))
-                }
-
-                // Mask items for column #9.
-                {
-                // Read the next element.
-                let columnValue := mulmod(mload(add(traceQueryResponses, 0x120)), kMontgomeryRInv, PRIME)
-
-                // res += c_129*(f_9(x) - f_9(z)) / (x - z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - z)^(-1)*/ mload(denominatorsPtr),
-                                  /*oods_coefficients[129]*/ mload(add(context, 0x6ec0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[129]*/ mload(add(context, 0x57e0)))),
-                           PRIME))
-
-                // res += c_130*(f_9(x) - f_9(g * z)) / (x - g * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g * z)^(-1)*/ mload(add(denominatorsPtr, 0x20)),
-                                  /*oods_coefficients[130]*/ mload(add(context, 0x6ee0)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[130]*/ mload(add(context, 0x5800)))),
-                           PRIME))
-
-                // res += c_131*(f_9(x) - f_9(g^2 * z)) / (x - g^2 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^2 * z)^(-1)*/ mload(add(denominatorsPtr, 0x40)),
-                                  /*oods_coefficients[131]*/ mload(add(context, 0x6f00)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[131]*/ mload(add(context, 0x5820)))),
-                           PRIME))
-
-                // res += c_132*(f_9(x) - f_9(g^5 * z)) / (x - g^5 * z).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - g^5 * z)^(-1)*/ mload(add(denominatorsPtr, 0xa0)),
-                                  /*oods_coefficients[132]*/ mload(add(context, 0x6f20)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*oods_values[132]*/ mload(add(context, 0x5840)))),
-                           PRIME))
-                }
-
-                // Advance traceQueryResponses by amount read (0x20 * nTraceColumns).
-                traceQueryResponses := add(traceQueryResponses, 0x140)
-
-                // Composition constraints.
-
-                {
-                // Read the next element.
-                let columnValue := mulmod(mload(compositionQueryResponses), kMontgomeryRInv, PRIME)
-                // res += c_133*(h_0(x) - C_0(z^2)) / (x - z^2).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - z^2)^(-1)*/ mload(add(denominatorsPtr, 0xa60)),
-                                  /*oods_coefficients[133]*/ mload(add(context, 0x6f40)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*composition_oods_values[0]*/ mload(add(context, 0x5860)))),
-                           PRIME))
-                }
-
-                {
-                // Read the next element.
-                let columnValue := mulmod(mload(add(compositionQueryResponses, 0x20)), kMontgomeryRInv, PRIME)
-                // res += c_134*(h_1(x) - C_1(z^2)) / (x - z^2).
-                res := add(
-                    res,
-                    mulmod(mulmod(/*(x - z^2)^(-1)*/ mload(add(denominatorsPtr, 0xa60)),
-                                  /*oods_coefficients[134]*/ mload(add(context, 0x6f60)),
-                                  PRIME),
-                           add(columnValue, sub(PRIME, /*composition_oods_values[1]*/ mload(add(context, 0x5880)))),
-                           PRIME))
-                }
-
-                // Advance compositionQueryResponses by amount read (0x20 * constraintDegree).
-                compositionQueryResponses := add(compositionQueryResponses, 0x40)
-
-                // Append the friValue, which is the sum of the out-of-domain-sampling boundary
-                // constraints for the trace and composition polynomials, to the friQueue array.
-                mstore(add(friQueue, 0x20), mod(res, PRIME))
-
-                // Append the friInvPoint of the current query to the friQueue array.
-                mstore(add(friQueue, 0x40), /*friInvPoint*/ mload(add(denominatorsPtr,0xa80)))
-
-                // Advance denominatorsPtr by chunk size (0x20 * (2+N_ROWS_IN_MASK)).
-                denominatorsPtr := add(denominatorsPtr, 0xaa0)
-            }
-            return(/*friQueue*/ add(context, 0xdc0), 0x1200)
-        }
+// SPDX-License-Identifier: MIT
+
+pragma solidity >=0.6.6;
+
+/**
+ * @dev Interface of the ERC20 standard as defined in the EIP.
+ */
+interface IERC20 {
+    /**
+     * @dev Returns the amount of tokens in existence.
+     */
+    function totalSupply() external view returns (uint256);
+
+    /**
+     * @dev Returns the amount of tokens owned by `account`.
+     */
+    function balanceOf(address account) external view returns (uint256);
+
+    /**
+     * @dev Moves `amount` tokens from the caller's account to `recipient`.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transfer(address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Returns the remaining number of tokens that `spender` will be
+     * allowed to spend on behalf of `owner` through {transferFrom}. This is
+     * zero by default.
+     *
+     * This value changes when {approve} or {transferFrom} are called.
+     */
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * IMPORTANT: Beware that changing an allowance with this method brings the risk
+     * that someone may use both the old and the new allowance by unfortunate
+     * transaction ordering. One possible solution to mitigate this race
+     * condition is to first reduce the spender's allowance to 0 and set the
+     * desired value afterwards:
+     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+     *
+     * Emits an {Approval} event.
+     */
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Moves `amount` tokens from `sender` to `recipient` using the
+     * allowance mechanism. `amount` is then deducted from the caller's
+     * allowance.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
+
+    /**
+     * @dev Emitted when `value` tokens are moved from one account (`from`) to
+     * another (`to`).
+     *
+     * Note that `value` may be zero.
+     */
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    /**
+     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
+     * a call to {approve}. `value` is the new allowance.
+     */
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+
+/**
+ * @dev Wrappers over Solidity's arithmetic operations with added overflow
+ * checks.
+ *
+ * Arithmetic operations in Solidity wrap on overflow. This can easily result
+ * in bugs, because programmers usually assume that an overflow raises an
+ * error, which is the standard behavior in high level programming languages.
+ * `SafeMath` restores this intuition by reverting the transaction when an
+ * operation overflows.
+ *
+ * Using this library instead of the unchecked operations eliminates an entire
+ * class of bugs, so it's recommended to use it always.
+ */
+library SafeMath {
+    /**
+     * @dev Returns the addition of two unsigned integers, with an overflow flag.
+     *
+     * _Available since v3.4._
+     */
+    function tryAdd(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+        uint256 c = a + b;
+        if (c < a) return (false, 0);
+        return (true, c);
     }
 
-    /*
-      Computes and performs batch inverse on all the denominators required for the out of domain
-      sampling boundary constraints.
+    /**
+     * @dev Returns the substraction of two unsigned integers, with an overflow flag.
+     *
+     * _Available since v3.4._
+     */
+    function trySub(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+        if (b > a) return (false, 0);
+        return (true, a - b);
+    }
 
-      Since the friEvalPoints are calculated during the computation of the denominators
-      this function also adds those to the batch inverse in prepartion for the fri that follows.
+    /**
+     * @dev Returns the multiplication of two unsigned integers, with an overflow flag.
+     *
+     * _Available since v3.4._
+     */
+    function tryMul(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+        // benefit is lost if 'b' is also tested.
+        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
+        if (a == 0) return (true, 0);
+        uint256 c = a * b;
+        if (c / a != b) return (false, 0);
+        return (true, c);
+    }
 
-      After this function returns, the batch_inverse_out array holds #queries
-      chunks of size (2 + N_ROWS_IN_MASK) with the following structure:
-      0..(N_ROWS_IN_MASK-1):   [(x - g^i * z)^(-1) for i in rowsInMask]
-      N_ROWS_IN_MASK:          (x - z^constraintDegree)^-1
-      N_ROWS_IN_MASK+1:        friEvalPointInv.
-    */
-    function oodsPrepareInverses(
-        uint256[] memory context, uint256[] memory batchInverseArray)
-        internal view {
-        uint256 evalCosetOffset_ = PrimeFieldElement0.GENERATOR_VAL;
-        // The array expmodsAndPoints stores subexpressions that are needed
-        // for the denominators computation.
-        // The array is segmented as follows:
-        //    expmodsAndPoints[0:21] (.expmods) expmods used during calculations of the points below.
-        //    expmodsAndPoints[21:104] (.points) points used during the denominators calculation.
-        uint256[104] memory expmodsAndPoints;
+    /**
+     * @dev Returns the division of two unsigned integers, with a division by zero flag.
+     *
+     * _Available since v3.4._
+     */
+    function tryDiv(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+        if (b == 0) return (false, 0);
+        return (true, a / b);
+    }
+
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers, with a division by zero flag.
+     *
+     * _Available since v3.4._
+     */
+    function tryMod(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+        if (b == 0) return (false, 0);
+        return (true, a % b);
+    }
+
+    /**
+     * @dev Returns the addition of two unsigned integers, reverting on
+     * overflow.
+     *
+     * Counterpart to Solidity's `+` operator.
+     *
+     * Requirements:
+     *
+     * - Addition cannot overflow.
+     */
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a, "SafeMath: addition overflow");
+        return c;
+    }
+
+    /**
+     * @dev Returns the subtraction of two unsigned integers, reverting on
+     * overflow (when the result is negative).
+     *
+     * Counterpart to Solidity's `-` operator.
+     *
+     * Requirements:
+     *
+     * - Subtraction cannot overflow.
+     */
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b <= a, "SafeMath: subtraction overflow");
+        return a - b;
+    }
+
+    /**
+     * @dev Returns the multiplication of two unsigned integers, reverting on
+     * overflow.
+     *
+     * Counterpart to Solidity's `*` operator.
+     *
+     * Requirements:
+     *
+     * - Multiplication cannot overflow.
+     */
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        if (a == 0) return 0;
+        uint256 c = a * b;
+        require(c / a == b, "SafeMath: multiplication overflow");
+        return c;
+    }
+
+    /**
+     * @dev Returns the integer division of two unsigned integers, reverting on
+     * division by zero. The result is rounded towards zero.
+     *
+     * Counterpart to Solidity's `/` operator. Note: this function uses a
+     * `revert` opcode (which leaves remaining gas untouched) while Solidity
+     * uses an invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b > 0, "SafeMath: division by zero");
+        return a / b;
+    }
+
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+     * reverting when dividing by zero.
+     *
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+     * invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b > 0, "SafeMath: modulo by zero");
+        return a % b;
+    }
+
+    /**
+     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
+     * overflow (when the result is negative).
+     *
+     * CAUTION: This function is deprecated because it requires allocating memory for the error
+     * message unnecessarily. For custom revert reasons use {trySub}.
+     *
+     * Counterpart to Solidity's `-` operator.
+     *
+     * Requirements:
+     *
+     * - Subtraction cannot overflow.
+     */
+    function sub(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
+        require(b <= a, errorMessage);
+        return a - b;
+    }
+
+    /**
+     * @dev Returns the integer division of two unsigned integers, reverting with custom message on
+     * division by zero. The result is rounded towards zero.
+     *
+     * CAUTION: This function is deprecated because it requires allocating memory for the error
+     * message unnecessarily. For custom revert reasons use {tryDiv}.
+     *
+     * Counterpart to Solidity's `/` operator. Note: this function uses a
+     * `revert` opcode (which leaves remaining gas untouched) while Solidity
+     * uses an invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function div(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
+        require(b > 0, errorMessage);
+        return a / b;
+    }
+
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+     * reverting with custom message when dividing by zero.
+     *
+     * CAUTION: This function is deprecated because it requires allocating memory for the error
+     * message unnecessarily. For custom revert reasons use {tryMod}.
+     *
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+     * invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function mod(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
+        require(b > 0, errorMessage);
+        return a % b;
+    }
+}
+
+/**
+ * @dev Collection of functions related to the address type
+ */
+library Address {
+    /**
+     * @dev Returns true if `account` is a contract.
+     *
+     * [IMPORTANT]
+     * ====
+     * It is unsafe to assume that an address for which this function returns
+     * false is an externally-owned account (EOA) and not a contract.
+     *
+     * Among others, `isContract` will return false for the following
+     * types of addresses:
+     *
+     *  - an externally-owned account
+     *  - a contract in construction
+     *  - an address where a contract will be created
+     *  - an address where a contract lived, but was destroyed
+     * ====
+     */
+    function isContract(address account) internal view returns (bool) {
+        // This method relies on extcodesize, which returns 0 for contracts in
+        // construction, since the code is only stored at the end of the
+        // constructor execution.
+
+        uint256 size;
+        // solhint-disable-next-line no-inline-assembly
         assembly {
-            function expmod(base, exponent, modulus) -> result {
-              let p := mload(0x40)
-              mstore(p, 0x20)                 // Length of Base.
-              mstore(add(p, 0x20), 0x20)      // Length of Exponent.
-              mstore(add(p, 0x40), 0x20)      // Length of Modulus.
-              mstore(add(p, 0x60), base)      // Base.
-              mstore(add(p, 0x80), exponent)  // Exponent.
-              mstore(add(p, 0xa0), modulus)   // Modulus.
-              // Call modexp precompile.
-              if iszero(staticcall(not(0), 0x05, p, 0xc0, p, 0x20)) {
-                revert(0, 0)
-              }
-              result := mload(p)
-            }
-
-            let traceGenerator := /*trace_generator*/ mload(add(context, 0x2b60))
-            let PRIME := 0x800000000000011000000000000000000000000000000000000000000000001
-
-            // Prepare expmods for computations of trace generator powers.
-
-            // expmodsAndPoints.expmods[0] = traceGenerator^2.
-            mstore(expmodsAndPoints,
-                   mulmod(traceGenerator, // traceGenerator^1
-                          traceGenerator, // traceGenerator^1
-                          PRIME))
-
-            // expmodsAndPoints.expmods[1] = traceGenerator^3.
-            mstore(add(expmodsAndPoints, 0x20),
-                   mulmod(mload(expmodsAndPoints), // traceGenerator^2
-                          traceGenerator, // traceGenerator^1
-                          PRIME))
-
-            // expmodsAndPoints.expmods[2] = traceGenerator^5.
-            mstore(add(expmodsAndPoints, 0x40),
-                   mulmod(mload(add(expmodsAndPoints, 0x20)), // traceGenerator^3
-                          mload(expmodsAndPoints), // traceGenerator^2
-                          PRIME))
-
-            // expmodsAndPoints.expmods[3] = traceGenerator^6.
-            mstore(add(expmodsAndPoints, 0x60),
-                   mulmod(mload(add(expmodsAndPoints, 0x40)), // traceGenerator^5
-                          traceGenerator, // traceGenerator^1
-                          PRIME))
-
-            // expmodsAndPoints.expmods[4] = traceGenerator^7.
-            mstore(add(expmodsAndPoints, 0x80),
-                   mulmod(mload(add(expmodsAndPoints, 0x60)), // traceGenerator^6
-                          traceGenerator, // traceGenerator^1
-                          PRIME))
-
-            // expmodsAndPoints.expmods[5] = traceGenerator^8.
-            mstore(add(expmodsAndPoints, 0xa0),
-                   mulmod(mload(add(expmodsAndPoints, 0x80)), // traceGenerator^7
-                          traceGenerator, // traceGenerator^1
-                          PRIME))
-
-            // expmodsAndPoints.expmods[6] = traceGenerator^9.
-            mstore(add(expmodsAndPoints, 0xc0),
-                   mulmod(mload(add(expmodsAndPoints, 0xa0)), // traceGenerator^8
-                          traceGenerator, // traceGenerator^1
-                          PRIME))
-
-            // expmodsAndPoints.expmods[7] = traceGenerator^11.
-            mstore(add(expmodsAndPoints, 0xe0),
-                   mulmod(mload(add(expmodsAndPoints, 0xc0)), // traceGenerator^9
-                          mload(expmodsAndPoints), // traceGenerator^2
-                          PRIME))
-
-            // expmodsAndPoints.expmods[8] = traceGenerator^12.
-            mstore(add(expmodsAndPoints, 0x100),
-                   mulmod(mload(add(expmodsAndPoints, 0xe0)), // traceGenerator^11
-                          traceGenerator, // traceGenerator^1
-                          PRIME))
-
-            // expmodsAndPoints.expmods[9] = traceGenerator^15.
-            mstore(add(expmodsAndPoints, 0x120),
-                   mulmod(mload(add(expmodsAndPoints, 0x100)), // traceGenerator^12
-                          mload(add(expmodsAndPoints, 0x20)), // traceGenerator^3
-                          PRIME))
-
-            // expmodsAndPoints.expmods[10] = traceGenerator^16.
-            mstore(add(expmodsAndPoints, 0x140),
-                   mulmod(mload(add(expmodsAndPoints, 0x120)), // traceGenerator^15
-                          traceGenerator, // traceGenerator^1
-                          PRIME))
-
-            // expmodsAndPoints.expmods[11] = traceGenerator^20.
-            mstore(add(expmodsAndPoints, 0x160),
-                   mulmod(mload(add(expmodsAndPoints, 0x120)), // traceGenerator^15
-                          mload(add(expmodsAndPoints, 0x40)), // traceGenerator^5
-                          PRIME))
-
-            // expmodsAndPoints.expmods[12] = traceGenerator^24.
-            mstore(add(expmodsAndPoints, 0x180),
-                   mulmod(mload(add(expmodsAndPoints, 0x140)), // traceGenerator^16
-                          mload(add(expmodsAndPoints, 0xa0)), // traceGenerator^8
-                          PRIME))
-
-            // expmodsAndPoints.expmods[13] = traceGenerator^32.
-            mstore(add(expmodsAndPoints, 0x1a0),
-                   mulmod(mload(add(expmodsAndPoints, 0x180)), // traceGenerator^24
-                          mload(add(expmodsAndPoints, 0xa0)), // traceGenerator^8
-                          PRIME))
-
-            // expmodsAndPoints.expmods[14] = traceGenerator^57.
-            mstore(add(expmodsAndPoints, 0x1c0),
-                   mulmod(mload(add(expmodsAndPoints, 0x1a0)), // traceGenerator^32
-                          mulmod(mload(add(expmodsAndPoints, 0x180)), // traceGenerator^24
-                                 traceGenerator, // traceGenerator^1
-                                 PRIME),
-                          PRIME))
-
-            // expmodsAndPoints.expmods[15] = traceGenerator^63.
-            mstore(add(expmodsAndPoints, 0x1e0),
-                   mulmod(mload(add(expmodsAndPoints, 0x1c0)), // traceGenerator^57
-                          mload(add(expmodsAndPoints, 0x60)), // traceGenerator^6
-                          PRIME))
-
-            // expmodsAndPoints.expmods[16] = traceGenerator^64.
-            mstore(add(expmodsAndPoints, 0x200),
-                   mulmod(mload(add(expmodsAndPoints, 0x1e0)), // traceGenerator^63
-                          traceGenerator, // traceGenerator^1
-                          PRIME))
-
-            // expmodsAndPoints.expmods[17] = traceGenerator^351.
-            mstore(add(expmodsAndPoints, 0x220),
-                   mulmod(mload(add(expmodsAndPoints, 0x200)), // traceGenerator^64
-                          mulmod(mload(add(expmodsAndPoints, 0x200)), // traceGenerator^64
-                                 mulmod(mload(add(expmodsAndPoints, 0x200)), // traceGenerator^64
-                                        mulmod(mload(add(expmodsAndPoints, 0x200)), // traceGenerator^64
-                                               mulmod(mload(add(expmodsAndPoints, 0x1e0)), // traceGenerator^63
-                                                      mload(add(expmodsAndPoints, 0x1a0)), // traceGenerator^32
-                                                      PRIME),
-                                               PRIME),
-                                        PRIME),
-                                 PRIME),
-                          PRIME))
-
-            // expmodsAndPoints.expmods[18] = traceGenerator^399.
-            mstore(add(expmodsAndPoints, 0x240),
-                   mulmod(mload(add(expmodsAndPoints, 0x220)), // traceGenerator^351
-                          mulmod(mload(add(expmodsAndPoints, 0x1a0)), // traceGenerator^32
-                                 mload(add(expmodsAndPoints, 0x140)), // traceGenerator^16
-                                 PRIME),
-                          PRIME))
-
-            // expmodsAndPoints.expmods[19] = traceGenerator^15817.
-            mstore(add(expmodsAndPoints, 0x260),
-                   expmod(traceGenerator, 15817, PRIME))
-
-            // expmodsAndPoints.expmods[20] = traceGenerator^15865.
-            mstore(add(expmodsAndPoints, 0x280),
-                   mulmod(mload(add(expmodsAndPoints, 0x260)), // traceGenerator^15817
-                          mulmod(mload(add(expmodsAndPoints, 0x1a0)), // traceGenerator^32
-                                 mload(add(expmodsAndPoints, 0x140)), // traceGenerator^16
-                                 PRIME),
-                          PRIME))
-
-            let oodsPoint := /*oods_point*/ mload(add(context, 0x2b80))
-            {
-              // point = -z.
-              let point := sub(PRIME, oodsPoint)
-              // Compute denominators for rows with nonconst mask expression.
-              // We compute those first because for the const rows we modify the point variable.
-
-              // Compute denominators for rows with const mask expression.
-
-              // expmods_and_points.points[0] = -z.
-              mstore(add(expmodsAndPoints, 0x2a0), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[1] = -(g * z).
-              mstore(add(expmodsAndPoints, 0x2c0), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[2] = -(g^2 * z).
-              mstore(add(expmodsAndPoints, 0x2e0), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[3] = -(g^3 * z).
-              mstore(add(expmodsAndPoints, 0x300), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[4] = -(g^4 * z).
-              mstore(add(expmodsAndPoints, 0x320), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[5] = -(g^5 * z).
-              mstore(add(expmodsAndPoints, 0x340), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[6] = -(g^6 * z).
-              mstore(add(expmodsAndPoints, 0x360), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[7] = -(g^7 * z).
-              mstore(add(expmodsAndPoints, 0x380), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[8] = -(g^8 * z).
-              mstore(add(expmodsAndPoints, 0x3a0), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[9] = -(g^9 * z).
-              mstore(add(expmodsAndPoints, 0x3c0), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[10] = -(g^10 * z).
-              mstore(add(expmodsAndPoints, 0x3e0), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[11] = -(g^11 * z).
-              mstore(add(expmodsAndPoints, 0x400), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[12] = -(g^12 * z).
-              mstore(add(expmodsAndPoints, 0x420), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[13] = -(g^13 * z).
-              mstore(add(expmodsAndPoints, 0x440), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[14] = -(g^14 * z).
-              mstore(add(expmodsAndPoints, 0x460), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[15] = -(g^15 * z).
-              mstore(add(expmodsAndPoints, 0x480), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[16] = -(g^16 * z).
-              mstore(add(expmodsAndPoints, 0x4a0), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[17] = -(g^17 * z).
-              mstore(add(expmodsAndPoints, 0x4c0), point)
-
-              // point *= g^6.
-              point := mulmod(point, /*traceGenerator^6*/ mload(add(expmodsAndPoints, 0x60)), PRIME)
-              // expmods_and_points.points[18] = -(g^23 * z).
-              mstore(add(expmodsAndPoints, 0x4e0), point)
-
-              // point *= g^2.
-              point := mulmod(point, /*traceGenerator^2*/ mload(expmodsAndPoints), PRIME)
-              // expmods_and_points.points[19] = -(g^25 * z).
-              mstore(add(expmodsAndPoints, 0x500), point)
-
-              // point *= g^6.
-              point := mulmod(point, /*traceGenerator^6*/ mload(add(expmodsAndPoints, 0x60)), PRIME)
-              // expmods_and_points.points[20] = -(g^31 * z).
-              mstore(add(expmodsAndPoints, 0x520), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[21] = -(g^32 * z).
-              mstore(add(expmodsAndPoints, 0x540), point)
-
-              // point *= g^6.
-              point := mulmod(point, /*traceGenerator^6*/ mload(add(expmodsAndPoints, 0x60)), PRIME)
-              // expmods_and_points.points[22] = -(g^38 * z).
-              mstore(add(expmodsAndPoints, 0x560), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[23] = -(g^39 * z).
-              mstore(add(expmodsAndPoints, 0x580), point)
-
-              // point *= g^5.
-              point := mulmod(point, /*traceGenerator^5*/ mload(add(expmodsAndPoints, 0x40)), PRIME)
-              // expmods_and_points.points[24] = -(g^44 * z).
-              mstore(add(expmodsAndPoints, 0x5a0), point)
-
-              // point *= g^3.
-              point := mulmod(point, /*traceGenerator^3*/ mload(add(expmodsAndPoints, 0x20)), PRIME)
-              // expmods_and_points.points[25] = -(g^47 * z).
-              mstore(add(expmodsAndPoints, 0x5c0), point)
-
-              // point *= g^8.
-              point := mulmod(point, /*traceGenerator^8*/ mload(add(expmodsAndPoints, 0xa0)), PRIME)
-              // expmods_and_points.points[26] = -(g^55 * z).
-              mstore(add(expmodsAndPoints, 0x5e0), point)
-
-              // point *= g^8.
-              point := mulmod(point, /*traceGenerator^8*/ mload(add(expmodsAndPoints, 0xa0)), PRIME)
-              // expmods_and_points.points[27] = -(g^63 * z).
-              mstore(add(expmodsAndPoints, 0x600), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[28] = -(g^64 * z).
-              mstore(add(expmodsAndPoints, 0x620), point)
-
-              // point *= g^6.
-              point := mulmod(point, /*traceGenerator^6*/ mload(add(expmodsAndPoints, 0x60)), PRIME)
-              // expmods_and_points.points[29] = -(g^70 * z).
-              mstore(add(expmodsAndPoints, 0x640), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[30] = -(g^71 * z).
-              mstore(add(expmodsAndPoints, 0x660), point)
-
-              // point *= g^5.
-              point := mulmod(point, /*traceGenerator^5*/ mload(add(expmodsAndPoints, 0x40)), PRIME)
-              // expmods_and_points.points[31] = -(g^76 * z).
-              mstore(add(expmodsAndPoints, 0x680), point)
-
-              // point *= g^3.
-              point := mulmod(point, /*traceGenerator^3*/ mload(add(expmodsAndPoints, 0x20)), PRIME)
-              // expmods_and_points.points[32] = -(g^79 * z).
-              mstore(add(expmodsAndPoints, 0x6a0), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[33] = -(g^80 * z).
-              mstore(add(expmodsAndPoints, 0x6c0), point)
-
-              // point *= g^15.
-              point := mulmod(point, /*traceGenerator^15*/ mload(add(expmodsAndPoints, 0x120)), PRIME)
-              // expmods_and_points.points[34] = -(g^95 * z).
-              mstore(add(expmodsAndPoints, 0x6e0), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[35] = -(g^96 * z).
-              mstore(add(expmodsAndPoints, 0x700), point)
-
-              // point *= g^7.
-              point := mulmod(point, /*traceGenerator^7*/ mload(add(expmodsAndPoints, 0x80)), PRIME)
-              // expmods_and_points.points[36] = -(g^103 * z).
-              mstore(add(expmodsAndPoints, 0x720), point)
-
-              // point *= g^5.
-              point := mulmod(point, /*traceGenerator^5*/ mload(add(expmodsAndPoints, 0x40)), PRIME)
-              // expmods_and_points.points[37] = -(g^108 * z).
-              mstore(add(expmodsAndPoints, 0x740), point)
-
-              // point *= g^11.
-              point := mulmod(point, /*traceGenerator^11*/ mload(add(expmodsAndPoints, 0xe0)), PRIME)
-              // expmods_and_points.points[38] = -(g^119 * z).
-              mstore(add(expmodsAndPoints, 0x760), point)
-
-              // point *= g^9.
-              point := mulmod(point, /*traceGenerator^9*/ mload(add(expmodsAndPoints, 0xc0)), PRIME)
-              // expmods_and_points.points[39] = -(g^128 * z).
-              mstore(add(expmodsAndPoints, 0x780), point)
-
-              // point *= g^6.
-              point := mulmod(point, /*traceGenerator^6*/ mload(add(expmodsAndPoints, 0x60)), PRIME)
-              // expmods_and_points.points[40] = -(g^134 * z).
-              mstore(add(expmodsAndPoints, 0x7a0), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[41] = -(g^135 * z).
-              mstore(add(expmodsAndPoints, 0x7c0), point)
-
-              // point *= g^5.
-              point := mulmod(point, /*traceGenerator^5*/ mload(add(expmodsAndPoints, 0x40)), PRIME)
-              // expmods_and_points.points[42] = -(g^140 * z).
-              mstore(add(expmodsAndPoints, 0x7e0), point)
-
-              // point *= g^32.
-              point := mulmod(point, /*traceGenerator^32*/ mload(add(expmodsAndPoints, 0x1a0)), PRIME)
-              // expmods_and_points.points[43] = -(g^172 * z).
-              mstore(add(expmodsAndPoints, 0x800), point)
-
-              // point *= g^20.
-              point := mulmod(point, /*traceGenerator^20*/ mload(add(expmodsAndPoints, 0x160)), PRIME)
-              // expmods_and_points.points[44] = -(g^192 * z).
-              mstore(add(expmodsAndPoints, 0x820), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[45] = -(g^193 * z).
-              mstore(add(expmodsAndPoints, 0x840), point)
-
-              // point *= g^3.
-              point := mulmod(point, /*traceGenerator^3*/ mload(add(expmodsAndPoints, 0x20)), PRIME)
-              // expmods_and_points.points[46] = -(g^196 * z).
-              mstore(add(expmodsAndPoints, 0x860), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[47] = -(g^197 * z).
-              mstore(add(expmodsAndPoints, 0x880), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[48] = -(g^198 * z).
-              mstore(add(expmodsAndPoints, 0x8a0), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[49] = -(g^199 * z).
-              mstore(add(expmodsAndPoints, 0x8c0), point)
-
-              // point *= g^5.
-              point := mulmod(point, /*traceGenerator^5*/ mload(add(expmodsAndPoints, 0x40)), PRIME)
-              // expmods_and_points.points[50] = -(g^204 * z).
-              mstore(add(expmodsAndPoints, 0x8e0), point)
-
-              // point *= g^20.
-              point := mulmod(point, /*traceGenerator^20*/ mload(add(expmodsAndPoints, 0x160)), PRIME)
-              // expmods_and_points.points[51] = -(g^224 * z).
-              mstore(add(expmodsAndPoints, 0x900), point)
-
-              // point *= g^12.
-              point := mulmod(point, /*traceGenerator^12*/ mload(add(expmodsAndPoints, 0x100)), PRIME)
-              // expmods_and_points.points[52] = -(g^236 * z).
-              mstore(add(expmodsAndPoints, 0x920), point)
-
-              // point *= g^15.
-              point := mulmod(point, /*traceGenerator^15*/ mload(add(expmodsAndPoints, 0x120)), PRIME)
-              // expmods_and_points.points[53] = -(g^251 * z).
-              mstore(add(expmodsAndPoints, 0x940), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[54] = -(g^252 * z).
-              mstore(add(expmodsAndPoints, 0x960), point)
-
-              // point *= g^3.
-              point := mulmod(point, /*traceGenerator^3*/ mload(add(expmodsAndPoints, 0x20)), PRIME)
-              // expmods_and_points.points[55] = -(g^255 * z).
-              mstore(add(expmodsAndPoints, 0x980), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[56] = -(g^256 * z).
-              mstore(add(expmodsAndPoints, 0x9a0), point)
-
-              // point *= g^6.
-              point := mulmod(point, /*traceGenerator^6*/ mload(add(expmodsAndPoints, 0x60)), PRIME)
-              // expmods_and_points.points[57] = -(g^262 * z).
-              mstore(add(expmodsAndPoints, 0x9c0), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[58] = -(g^263 * z).
-              mstore(add(expmodsAndPoints, 0x9e0), point)
-
-              // point *= g^63.
-              point := mulmod(point, /*traceGenerator^63*/ mload(add(expmodsAndPoints, 0x1e0)), PRIME)
-              // expmods_and_points.points[59] = -(g^326 * z).
-              mstore(add(expmodsAndPoints, 0xa00), point)
-
-              // point *= g^64.
-              point := mulmod(point, /*traceGenerator^64*/ mload(add(expmodsAndPoints, 0x200)), PRIME)
-              // expmods_and_points.points[60] = -(g^390 * z).
-              mstore(add(expmodsAndPoints, 0xa20), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[61] = -(g^391 * z).
-              mstore(add(expmodsAndPoints, 0xa40), point)
-
-              // point *= g^63.
-              point := mulmod(point, /*traceGenerator^63*/ mload(add(expmodsAndPoints, 0x1e0)), PRIME)
-              // expmods_and_points.points[62] = -(g^454 * z).
-              mstore(add(expmodsAndPoints, 0xa60), point)
-
-              // point *= g^57.
-              point := mulmod(point, /*traceGenerator^57*/ mload(add(expmodsAndPoints, 0x1c0)), PRIME)
-              // expmods_and_points.points[63] = -(g^511 * z).
-              mstore(add(expmodsAndPoints, 0xa80), point)
-
-              // point *= g^7.
-              point := mulmod(point, /*traceGenerator^7*/ mload(add(expmodsAndPoints, 0x80)), PRIME)
-              // expmods_and_points.points[64] = -(g^518 * z).
-              mstore(add(expmodsAndPoints, 0xaa0), point)
-
-              // point *= g^15817.
-              point := mulmod(point, /*traceGenerator^15817*/ mload(add(expmodsAndPoints, 0x260)), PRIME)
-              // expmods_and_points.points[65] = -(g^16335 * z).
-              mstore(add(expmodsAndPoints, 0xac0), point)
-
-              // point *= g^8.
-              point := mulmod(point, /*traceGenerator^8*/ mload(add(expmodsAndPoints, 0xa0)), PRIME)
-              // expmods_and_points.points[66] = -(g^16343 * z).
-              mstore(add(expmodsAndPoints, 0xae0), point)
-
-              // point *= g^24.
-              point := mulmod(point, /*traceGenerator^24*/ mload(add(expmodsAndPoints, 0x180)), PRIME)
-              // expmods_and_points.points[67] = -(g^16367 * z).
-              mstore(add(expmodsAndPoints, 0xb00), point)
-
-              // point *= g^8.
-              point := mulmod(point, /*traceGenerator^8*/ mload(add(expmodsAndPoints, 0xa0)), PRIME)
-              // expmods_and_points.points[68] = -(g^16375 * z).
-              mstore(add(expmodsAndPoints, 0xb20), point)
-
-              // point *= g^8.
-              point := mulmod(point, /*traceGenerator^8*/ mload(add(expmodsAndPoints, 0xa0)), PRIME)
-              // expmods_and_points.points[69] = -(g^16383 * z).
-              mstore(add(expmodsAndPoints, 0xb40), point)
-
-              // point *= g^8.
-              point := mulmod(point, /*traceGenerator^8*/ mload(add(expmodsAndPoints, 0xa0)), PRIME)
-              // expmods_and_points.points[70] = -(g^16391 * z).
-              mstore(add(expmodsAndPoints, 0xb60), point)
-
-              // point *= g^32.
-              point := mulmod(point, /*traceGenerator^32*/ mload(add(expmodsAndPoints, 0x1a0)), PRIME)
-              // expmods_and_points.points[71] = -(g^16423 * z).
-              mstore(add(expmodsAndPoints, 0xb80), point)
-
-              // point *= g^351.
-              point := mulmod(point, /*traceGenerator^351*/ mload(add(expmodsAndPoints, 0x220)), PRIME)
-              // expmods_and_points.points[72] = -(g^16774 * z).
-              mstore(add(expmodsAndPoints, 0xba0), point)
-
-              // point *= g.
-              point := mulmod(point, traceGenerator, PRIME)
-              // expmods_and_points.points[73] = -(g^16775 * z).
-              mstore(add(expmodsAndPoints, 0xbc0), point)
-
-              // point *= g^15865.
-              point := mulmod(point, /*traceGenerator^15865*/ mload(add(expmodsAndPoints, 0x280)), PRIME)
-              // expmods_and_points.points[74] = -(g^32640 * z).
-              mstore(add(expmodsAndPoints, 0xbe0), point)
-
-              // point *= g^16.
-              point := mulmod(point, /*traceGenerator^16*/ mload(add(expmodsAndPoints, 0x140)), PRIME)
-              // expmods_and_points.points[75] = -(g^32656 * z).
-              mstore(add(expmodsAndPoints, 0xc00), point)
-
-              // point *= g^16.
-              point := mulmod(point, /*traceGenerator^16*/ mload(add(expmodsAndPoints, 0x140)), PRIME)
-              // expmods_and_points.points[76] = -(g^32672 * z).
-              mstore(add(expmodsAndPoints, 0xc20), point)
-
-              // point *= g^32.
-              point := mulmod(point, /*traceGenerator^32*/ mload(add(expmodsAndPoints, 0x1a0)), PRIME)
-              // expmods_and_points.points[77] = -(g^32704 * z).
-              mstore(add(expmodsAndPoints, 0xc40), point)
-
-              // point *= g^15.
-              point := mulmod(point, /*traceGenerator^15*/ mload(add(expmodsAndPoints, 0x120)), PRIME)
-              // expmods_and_points.points[78] = -(g^32719 * z).
-              mstore(add(expmodsAndPoints, 0xc60), point)
-
-              // point *= g^8.
-              point := mulmod(point, /*traceGenerator^8*/ mload(add(expmodsAndPoints, 0xa0)), PRIME)
-              // expmods_and_points.points[79] = -(g^32727 * z).
-              mstore(add(expmodsAndPoints, 0xc80), point)
-
-              // point *= g^24.
-              point := mulmod(point, /*traceGenerator^24*/ mload(add(expmodsAndPoints, 0x180)), PRIME)
-              // expmods_and_points.points[80] = -(g^32751 * z).
-              mstore(add(expmodsAndPoints, 0xca0), point)
-
-              // point *= g^8.
-              point := mulmod(point, /*traceGenerator^8*/ mload(add(expmodsAndPoints, 0xa0)), PRIME)
-              // expmods_and_points.points[81] = -(g^32759 * z).
-              mstore(add(expmodsAndPoints, 0xcc0), point)
-
-              // point *= g^399.
-              point := mulmod(point, /*traceGenerator^399*/ mload(add(expmodsAndPoints, 0x240)), PRIME)
-              // expmods_and_points.points[82] = -(g^33158 * z).
-              mstore(add(expmodsAndPoints, 0xce0), point)
-            }
-
-
-            let evalPointsPtr := /*oodsEvalPoints*/ add(context, 0x58a0)
-            let evalPointsEndPtr := add(evalPointsPtr,
-                                           mul(/*n_unique_queries*/ mload(add(context, 0x140)), 0x20))
-            let productsPtr := add(batchInverseArray, 0x20)
-            let valuesPtr := add(add(batchInverseArray, 0x20), 0x1fe00)
-            let partialProduct := 1
-            let minusPointPow := sub(PRIME, mulmod(oodsPoint, oodsPoint, PRIME))
-            for {} lt(evalPointsPtr, evalPointsEndPtr)
-                     {evalPointsPtr := add(evalPointsPtr, 0x20)} {
-                let evalPoint := mload(evalPointsPtr)
-
-                // Shift evalPoint to evaluation domain coset.
-                let shiftedEvalPoint := mulmod(evalPoint, evalCosetOffset_, PRIME)
-
-                {
-                // Calculate denominator for row 0: x - z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x2a0)))
-                mstore(productsPtr, partialProduct)
-                mstore(valuesPtr, denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 1: x - g * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x2c0)))
-                mstore(add(productsPtr, 0x20), partialProduct)
-                mstore(add(valuesPtr, 0x20), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 2: x - g^2 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x2e0)))
-                mstore(add(productsPtr, 0x40), partialProduct)
-                mstore(add(valuesPtr, 0x40), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 3: x - g^3 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x300)))
-                mstore(add(productsPtr, 0x60), partialProduct)
-                mstore(add(valuesPtr, 0x60), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 4: x - g^4 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x320)))
-                mstore(add(productsPtr, 0x80), partialProduct)
-                mstore(add(valuesPtr, 0x80), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 5: x - g^5 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x340)))
-                mstore(add(productsPtr, 0xa0), partialProduct)
-                mstore(add(valuesPtr, 0xa0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 6: x - g^6 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x360)))
-                mstore(add(productsPtr, 0xc0), partialProduct)
-                mstore(add(valuesPtr, 0xc0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 7: x - g^7 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x380)))
-                mstore(add(productsPtr, 0xe0), partialProduct)
-                mstore(add(valuesPtr, 0xe0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 8: x - g^8 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x3a0)))
-                mstore(add(productsPtr, 0x100), partialProduct)
-                mstore(add(valuesPtr, 0x100), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 9: x - g^9 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x3c0)))
-                mstore(add(productsPtr, 0x120), partialProduct)
-                mstore(add(valuesPtr, 0x120), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 10: x - g^10 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x3e0)))
-                mstore(add(productsPtr, 0x140), partialProduct)
-                mstore(add(valuesPtr, 0x140), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 11: x - g^11 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x400)))
-                mstore(add(productsPtr, 0x160), partialProduct)
-                mstore(add(valuesPtr, 0x160), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 12: x - g^12 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x420)))
-                mstore(add(productsPtr, 0x180), partialProduct)
-                mstore(add(valuesPtr, 0x180), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 13: x - g^13 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x440)))
-                mstore(add(productsPtr, 0x1a0), partialProduct)
-                mstore(add(valuesPtr, 0x1a0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 14: x - g^14 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x460)))
-                mstore(add(productsPtr, 0x1c0), partialProduct)
-                mstore(add(valuesPtr, 0x1c0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 15: x - g^15 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x480)))
-                mstore(add(productsPtr, 0x1e0), partialProduct)
-                mstore(add(valuesPtr, 0x1e0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 16: x - g^16 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x4a0)))
-                mstore(add(productsPtr, 0x200), partialProduct)
-                mstore(add(valuesPtr, 0x200), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 17: x - g^17 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x4c0)))
-                mstore(add(productsPtr, 0x220), partialProduct)
-                mstore(add(valuesPtr, 0x220), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 23: x - g^23 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x4e0)))
-                mstore(add(productsPtr, 0x240), partialProduct)
-                mstore(add(valuesPtr, 0x240), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 25: x - g^25 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x500)))
-                mstore(add(productsPtr, 0x260), partialProduct)
-                mstore(add(valuesPtr, 0x260), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 31: x - g^31 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x520)))
-                mstore(add(productsPtr, 0x280), partialProduct)
-                mstore(add(valuesPtr, 0x280), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 32: x - g^32 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x540)))
-                mstore(add(productsPtr, 0x2a0), partialProduct)
-                mstore(add(valuesPtr, 0x2a0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 38: x - g^38 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x560)))
-                mstore(add(productsPtr, 0x2c0), partialProduct)
-                mstore(add(valuesPtr, 0x2c0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 39: x - g^39 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x580)))
-                mstore(add(productsPtr, 0x2e0), partialProduct)
-                mstore(add(valuesPtr, 0x2e0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 44: x - g^44 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x5a0)))
-                mstore(add(productsPtr, 0x300), partialProduct)
-                mstore(add(valuesPtr, 0x300), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 47: x - g^47 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x5c0)))
-                mstore(add(productsPtr, 0x320), partialProduct)
-                mstore(add(valuesPtr, 0x320), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 55: x - g^55 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x5e0)))
-                mstore(add(productsPtr, 0x340), partialProduct)
-                mstore(add(valuesPtr, 0x340), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 63: x - g^63 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x600)))
-                mstore(add(productsPtr, 0x360), partialProduct)
-                mstore(add(valuesPtr, 0x360), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 64: x - g^64 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x620)))
-                mstore(add(productsPtr, 0x380), partialProduct)
-                mstore(add(valuesPtr, 0x380), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 70: x - g^70 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x640)))
-                mstore(add(productsPtr, 0x3a0), partialProduct)
-                mstore(add(valuesPtr, 0x3a0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 71: x - g^71 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x660)))
-                mstore(add(productsPtr, 0x3c0), partialProduct)
-                mstore(add(valuesPtr, 0x3c0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 76: x - g^76 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x680)))
-                mstore(add(productsPtr, 0x3e0), partialProduct)
-                mstore(add(valuesPtr, 0x3e0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 79: x - g^79 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x6a0)))
-                mstore(add(productsPtr, 0x400), partialProduct)
-                mstore(add(valuesPtr, 0x400), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 80: x - g^80 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x6c0)))
-                mstore(add(productsPtr, 0x420), partialProduct)
-                mstore(add(valuesPtr, 0x420), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 95: x - g^95 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x6e0)))
-                mstore(add(productsPtr, 0x440), partialProduct)
-                mstore(add(valuesPtr, 0x440), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 96: x - g^96 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x700)))
-                mstore(add(productsPtr, 0x460), partialProduct)
-                mstore(add(valuesPtr, 0x460), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 103: x - g^103 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x720)))
-                mstore(add(productsPtr, 0x480), partialProduct)
-                mstore(add(valuesPtr, 0x480), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 108: x - g^108 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x740)))
-                mstore(add(productsPtr, 0x4a0), partialProduct)
-                mstore(add(valuesPtr, 0x4a0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 119: x - g^119 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x760)))
-                mstore(add(productsPtr, 0x4c0), partialProduct)
-                mstore(add(valuesPtr, 0x4c0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 128: x - g^128 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x780)))
-                mstore(add(productsPtr, 0x4e0), partialProduct)
-                mstore(add(valuesPtr, 0x4e0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 134: x - g^134 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x7a0)))
-                mstore(add(productsPtr, 0x500), partialProduct)
-                mstore(add(valuesPtr, 0x500), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 135: x - g^135 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x7c0)))
-                mstore(add(productsPtr, 0x520), partialProduct)
-                mstore(add(valuesPtr, 0x520), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 140: x - g^140 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x7e0)))
-                mstore(add(productsPtr, 0x540), partialProduct)
-                mstore(add(valuesPtr, 0x540), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 172: x - g^172 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x800)))
-                mstore(add(productsPtr, 0x560), partialProduct)
-                mstore(add(valuesPtr, 0x560), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 192: x - g^192 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x820)))
-                mstore(add(productsPtr, 0x580), partialProduct)
-                mstore(add(valuesPtr, 0x580), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 193: x - g^193 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x840)))
-                mstore(add(productsPtr, 0x5a0), partialProduct)
-                mstore(add(valuesPtr, 0x5a0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 196: x - g^196 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x860)))
-                mstore(add(productsPtr, 0x5c0), partialProduct)
-                mstore(add(valuesPtr, 0x5c0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 197: x - g^197 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x880)))
-                mstore(add(productsPtr, 0x5e0), partialProduct)
-                mstore(add(valuesPtr, 0x5e0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 198: x - g^198 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x8a0)))
-                mstore(add(productsPtr, 0x600), partialProduct)
-                mstore(add(valuesPtr, 0x600), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 199: x - g^199 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x8c0)))
-                mstore(add(productsPtr, 0x620), partialProduct)
-                mstore(add(valuesPtr, 0x620), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 204: x - g^204 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x8e0)))
-                mstore(add(productsPtr, 0x640), partialProduct)
-                mstore(add(valuesPtr, 0x640), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 224: x - g^224 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x900)))
-                mstore(add(productsPtr, 0x660), partialProduct)
-                mstore(add(valuesPtr, 0x660), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 236: x - g^236 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x920)))
-                mstore(add(productsPtr, 0x680), partialProduct)
-                mstore(add(valuesPtr, 0x680), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 251: x - g^251 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x940)))
-                mstore(add(productsPtr, 0x6a0), partialProduct)
-                mstore(add(valuesPtr, 0x6a0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 252: x - g^252 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x960)))
-                mstore(add(productsPtr, 0x6c0), partialProduct)
-                mstore(add(valuesPtr, 0x6c0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 255: x - g^255 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x980)))
-                mstore(add(productsPtr, 0x6e0), partialProduct)
-                mstore(add(valuesPtr, 0x6e0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 256: x - g^256 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x9a0)))
-                mstore(add(productsPtr, 0x700), partialProduct)
-                mstore(add(valuesPtr, 0x700), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 262: x - g^262 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x9c0)))
-                mstore(add(productsPtr, 0x720), partialProduct)
-                mstore(add(valuesPtr, 0x720), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 263: x - g^263 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0x9e0)))
-                mstore(add(productsPtr, 0x740), partialProduct)
-                mstore(add(valuesPtr, 0x740), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 326: x - g^326 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0xa00)))
-                mstore(add(productsPtr, 0x760), partialProduct)
-                mstore(add(valuesPtr, 0x760), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 390: x - g^390 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0xa20)))
-                mstore(add(productsPtr, 0x780), partialProduct)
-                mstore(add(valuesPtr, 0x780), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 391: x - g^391 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0xa40)))
-                mstore(add(productsPtr, 0x7a0), partialProduct)
-                mstore(add(valuesPtr, 0x7a0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 454: x - g^454 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0xa60)))
-                mstore(add(productsPtr, 0x7c0), partialProduct)
-                mstore(add(valuesPtr, 0x7c0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 511: x - g^511 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0xa80)))
-                mstore(add(productsPtr, 0x7e0), partialProduct)
-                mstore(add(valuesPtr, 0x7e0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 518: x - g^518 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0xaa0)))
-                mstore(add(productsPtr, 0x800), partialProduct)
-                mstore(add(valuesPtr, 0x800), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 16335: x - g^16335 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0xac0)))
-                mstore(add(productsPtr, 0x820), partialProduct)
-                mstore(add(valuesPtr, 0x820), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 16343: x - g^16343 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0xae0)))
-                mstore(add(productsPtr, 0x840), partialProduct)
-                mstore(add(valuesPtr, 0x840), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 16367: x - g^16367 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0xb00)))
-                mstore(add(productsPtr, 0x860), partialProduct)
-                mstore(add(valuesPtr, 0x860), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 16375: x - g^16375 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0xb20)))
-                mstore(add(productsPtr, 0x880), partialProduct)
-                mstore(add(valuesPtr, 0x880), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 16383: x - g^16383 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0xb40)))
-                mstore(add(productsPtr, 0x8a0), partialProduct)
-                mstore(add(valuesPtr, 0x8a0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 16391: x - g^16391 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0xb60)))
-                mstore(add(productsPtr, 0x8c0), partialProduct)
-                mstore(add(valuesPtr, 0x8c0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 16423: x - g^16423 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0xb80)))
-                mstore(add(productsPtr, 0x8e0), partialProduct)
-                mstore(add(valuesPtr, 0x8e0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 16774: x - g^16774 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0xba0)))
-                mstore(add(productsPtr, 0x900), partialProduct)
-                mstore(add(valuesPtr, 0x900), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 16775: x - g^16775 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0xbc0)))
-                mstore(add(productsPtr, 0x920), partialProduct)
-                mstore(add(valuesPtr, 0x920), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 32640: x - g^32640 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0xbe0)))
-                mstore(add(productsPtr, 0x940), partialProduct)
-                mstore(add(valuesPtr, 0x940), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 32656: x - g^32656 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0xc00)))
-                mstore(add(productsPtr, 0x960), partialProduct)
-                mstore(add(valuesPtr, 0x960), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 32672: x - g^32672 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0xc20)))
-                mstore(add(productsPtr, 0x980), partialProduct)
-                mstore(add(valuesPtr, 0x980), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 32704: x - g^32704 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0xc40)))
-                mstore(add(productsPtr, 0x9a0), partialProduct)
-                mstore(add(valuesPtr, 0x9a0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 32719: x - g^32719 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0xc60)))
-                mstore(add(productsPtr, 0x9c0), partialProduct)
-                mstore(add(valuesPtr, 0x9c0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 32727: x - g^32727 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0xc80)))
-                mstore(add(productsPtr, 0x9e0), partialProduct)
-                mstore(add(valuesPtr, 0x9e0), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 32751: x - g^32751 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0xca0)))
-                mstore(add(productsPtr, 0xa00), partialProduct)
-                mstore(add(valuesPtr, 0xa00), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 32759: x - g^32759 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0xcc0)))
-                mstore(add(productsPtr, 0xa20), partialProduct)
-                mstore(add(valuesPtr, 0xa20), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate denominator for row 33158: x - g^33158 * z.
-                let denominator := add(shiftedEvalPoint, mload(add(expmodsAndPoints, 0xce0)))
-                mstore(add(productsPtr, 0xa40), partialProduct)
-                mstore(add(valuesPtr, 0xa40), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                {
-                // Calculate the denominator for the composition polynomial columns: x - z^2.
-                let denominator := add(shiftedEvalPoint, minusPointPow)
-                mstore(add(productsPtr, 0xa60), partialProduct)
-                mstore(add(valuesPtr, 0xa60), denominator)
-                partialProduct := mulmod(partialProduct, denominator, PRIME)
-                }
-
-                // Add evalPoint to batch inverse inputs.
-                // inverse(evalPoint) is going to be used by FRI.
-                mstore(add(productsPtr, 0xa80), partialProduct)
-                mstore(add(valuesPtr, 0xa80), evalPoint)
-                partialProduct := mulmod(partialProduct, evalPoint, PRIME)
-
-                // Advance pointers.
-                productsPtr := add(productsPtr, 0xaa0)
-                valuesPtr := add(valuesPtr, 0xaa0)
-            }
-
-            let productsToValuesOffset := 0x1fe00
-            let firstPartialProductPtr := add(batchInverseArray, 0x20)
-            // Compute the inverse of the product.
-            let prodInv := expmod(partialProduct, sub(PRIME, 2), PRIME)
-
-            if eq(prodInv, 0) {
-                // Solidity generates reverts with reason that look as follows:
-                // 1. 4 bytes with the constant 0x08c379a0 (== Keccak256(b'Error(string)')[:4]).
-                // 2. 32 bytes offset bytes (always 0x20 as far as i can tell).
-                // 3. 32 bytes with the length of the revert reason.
-                // 4. Revert reason string.
-
-                mstore(0, 0x08c379a000000000000000000000000000000000000000000000000000000000)
-                mstore(0x4, 0x20)
-                mstore(0x24, 0x1e)
-                mstore(0x44, "Batch inverse product is zero.")
-                revert(0, 0x62)
-            }
-
-            // Compute the inverses.
-            // Loop over denominator_invs in reverse order.
-            // currentPartialProductPtr is initialized to one past the end.
-            let currentPartialProductPtr := productsPtr
-            // Loop in blocks of size 8 as much as possible: we can loop over a full block as long as
-            // currentPartialProductPtr >= firstPartialProductPtr + 8*0x20, or equivalently,
-            // currentPartialProductPtr > firstPartialProductPtr + 7*0x20.
-            // We use the latter comparison since there is no >= evm opcode.
-            let midPartialProductPtr := add(firstPartialProductPtr, 0xe0)
-            for { } gt(currentPartialProductPtr, midPartialProductPtr) { } {
-                currentPartialProductPtr := sub(currentPartialProductPtr, 0x20)
-                // Store 1/d_{i} = (d_0 * ... * d_{i-1}) * 1/(d_0 * ... * d_{i}).
-                mstore(currentPartialProductPtr,
-                       mulmod(mload(currentPartialProductPtr), prodInv, PRIME))
-                // Update prodInv to be 1/(d_0 * ... * d_{i-1}) by multiplying by d_i.
-                prodInv := mulmod(prodInv,
-                                   mload(add(currentPartialProductPtr, productsToValuesOffset)),
-                                   PRIME)
-
-                currentPartialProductPtr := sub(currentPartialProductPtr, 0x20)
-                // Store 1/d_{i} = (d_0 * ... * d_{i-1}) * 1/(d_0 * ... * d_{i}).
-                mstore(currentPartialProductPtr,
-                       mulmod(mload(currentPartialProductPtr), prodInv, PRIME))
-                // Update prodInv to be 1/(d_0 * ... * d_{i-1}) by multiplying by d_i.
-                prodInv := mulmod(prodInv,
-                                   mload(add(currentPartialProductPtr, productsToValuesOffset)),
-                                   PRIME)
-
-                currentPartialProductPtr := sub(currentPartialProductPtr, 0x20)
-                // Store 1/d_{i} = (d_0 * ... * d_{i-1}) * 1/(d_0 * ... * d_{i}).
-                mstore(currentPartialProductPtr,
-                       mulmod(mload(currentPartialProductPtr), prodInv, PRIME))
-                // Update prodInv to be 1/(d_0 * ... * d_{i-1}) by multiplying by d_i.
-                prodInv := mulmod(prodInv,
-                                   mload(add(currentPartialProductPtr, productsToValuesOffset)),
-                                   PRIME)
-
-                currentPartialProductPtr := sub(currentPartialProductPtr, 0x20)
-                // Store 1/d_{i} = (d_0 * ... * d_{i-1}) * 1/(d_0 * ... * d_{i}).
-                mstore(currentPartialProductPtr,
-                       mulmod(mload(currentPartialProductPtr), prodInv, PRIME))
-                // Update prodInv to be 1/(d_0 * ... * d_{i-1}) by multiplying by d_i.
-                prodInv := mulmod(prodInv,
-                                   mload(add(currentPartialProductPtr, productsToValuesOffset)),
-                                   PRIME)
-
-                currentPartialProductPtr := sub(currentPartialProductPtr, 0x20)
-                // Store 1/d_{i} = (d_0 * ... * d_{i-1}) * 1/(d_0 * ... * d_{i}).
-                mstore(currentPartialProductPtr,
-                       mulmod(mload(currentPartialProductPtr), prodInv, PRIME))
-                // Update prodInv to be 1/(d_0 * ... * d_{i-1}) by multiplying by d_i.
-                prodInv := mulmod(prodInv,
-                                   mload(add(currentPartialProductPtr, productsToValuesOffset)),
-                                   PRIME)
-
-                currentPartialProductPtr := sub(currentPartialProductPtr, 0x20)
-                // Store 1/d_{i} = (d_0 * ... * d_{i-1}) * 1/(d_0 * ... * d_{i}).
-                mstore(currentPartialProductPtr,
-                       mulmod(mload(currentPartialProductPtr), prodInv, PRIME))
-                // Update prodInv to be 1/(d_0 * ... * d_{i-1}) by multiplying by d_i.
-                prodInv := mulmod(prodInv,
-                                   mload(add(currentPartialProductPtr, productsToValuesOffset)),
-                                   PRIME)
-
-                currentPartialProductPtr := sub(currentPartialProductPtr, 0x20)
-                // Store 1/d_{i} = (d_0 * ... * d_{i-1}) * 1/(d_0 * ... * d_{i}).
-                mstore(currentPartialProductPtr,
-                       mulmod(mload(currentPartialProductPtr), prodInv, PRIME))
-                // Update prodInv to be 1/(d_0 * ... * d_{i-1}) by multiplying by d_i.
-                prodInv := mulmod(prodInv,
-                                   mload(add(currentPartialProductPtr, productsToValuesOffset)),
-                                   PRIME)
-
-                currentPartialProductPtr := sub(currentPartialProductPtr, 0x20)
-                // Store 1/d_{i} = (d_0 * ... * d_{i-1}) * 1/(d_0 * ... * d_{i}).
-                mstore(currentPartialProductPtr,
-                       mulmod(mload(currentPartialProductPtr), prodInv, PRIME))
-                // Update prodInv to be 1/(d_0 * ... * d_{i-1}) by multiplying by d_i.
-                prodInv := mulmod(prodInv,
-                                   mload(add(currentPartialProductPtr, productsToValuesOffset)),
-                                   PRIME)
-            }
-
-            // Loop over the remainder.
-            for { } gt(currentPartialProductPtr, firstPartialProductPtr) { } {
-                currentPartialProductPtr := sub(currentPartialProductPtr, 0x20)
-                // Store 1/d_{i} = (d_0 * ... * d_{i-1}) * 1/(d_0 * ... * d_{i}).
-                mstore(currentPartialProductPtr,
-                       mulmod(mload(currentPartialProductPtr), prodInv, PRIME))
-                // Update prodInv to be 1/(d_0 * ... * d_{i-1}) by multiplying by d_i.
-                prodInv := mulmod(prodInv,
-                                   mload(add(currentPartialProductPtr, productsToValuesOffset)),
-                                   PRIME)
+            size := extcodesize(account)
+        }
+        return size > 0;
+    }
+
+    /**
+     * @dev Replacement for Solidity's `transfer`: sends `amount` wei to
+     * `recipient`, forwarding all available gas and reverting on errors.
+     *
+     * https://eips.ethereum.org/EIPS/eip-1884[EIP1884] increases the gas cost
+     * of certain opcodes, possibly making contracts go over the 2300 gas limit
+     * imposed by `transfer`, making them unable to receive funds via
+     * `transfer`. {sendValue} removes this limitation.
+     *
+     * https://diligence.consensys.net/posts/2019/09/stop-using-soliditys-transfer-now/[Learn more].
+     *
+     * IMPORTANT: because control is transferred to `recipient`, care must be
+     * taken to not create reentrancy vulnerabilities. Consider using
+     * {ReentrancyGuard} or the
+     * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
+     */
+    function sendValue(address payable recipient, uint256 amount) internal {
+        require(address(this).balance >= amount, "Address: insufficient balance");
+
+        // solhint-disable-next-line avoid-low-level-calls, avoid-call-value
+        (bool success, ) = recipient.call{value: amount}("");
+        require(success, "Address: unable to send value, recipient may have reverted");
+    }
+
+    /**
+     * @dev Performs a Solidity function call using a low level `call`. A
+     * plain`call` is an unsafe replacement for a function call: use this
+     * function instead.
+     *
+     * If `target` reverts with a revert reason, it is bubbled up by this
+     * function (like regular Solidity function calls).
+     *
+     * Returns the raw returned data. To convert to the expected return value,
+     * use https://solidity.readthedocs.io/en/latest/units-and-global-variables.html?highlight=abi.decode#abi-encoding-and-decoding-functions[`abi.decode`].
+     *
+     * Requirements:
+     *
+     * - `target` must be a contract.
+     * - calling `target` with `data` must not revert.
+     *
+     * _Available since v3.1._
+     */
+    function functionCall(address target, bytes memory data) internal returns (bytes memory) {
+        return functionCall(target, data, "Address: low-level call failed");
+    }
+
+    /**
+     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`], but with
+     * `errorMessage` as a fallback revert reason when `target` reverts.
+     *
+     * _Available since v3.1._
+     */
+    function functionCall(
+        address target,
+        bytes memory data,
+        string memory errorMessage
+    ) internal returns (bytes memory) {
+        return functionCallWithValue(target, data, 0, errorMessage);
+    }
+
+    /**
+     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`],
+     * but also transferring `value` wei to `target`.
+     *
+     * Requirements:
+     *
+     * - the calling contract must have an ETH balance of at least `value`.
+     * - the called Solidity function must be `payable`.
+     *
+     * _Available since v3.1._
+     */
+    function functionCallWithValue(
+        address target,
+        bytes memory data,
+        uint256 value
+    ) internal returns (bytes memory) {
+        return functionCallWithValue(target, data, value, "Address: low-level call with value failed");
+    }
+
+    /**
+     * @dev Same as {xref-Address-functionCallWithValue-address-bytes-uint256-}[`functionCallWithValue`], but
+     * with `errorMessage` as a fallback revert reason when `target` reverts.
+     *
+     * _Available since v3.1._
+     */
+    function functionCallWithValue(
+        address target,
+        bytes memory data,
+        uint256 value,
+        string memory errorMessage
+    ) internal returns (bytes memory) {
+        require(address(this).balance >= value, "Address: insufficient balance for call");
+        require(isContract(target), "Address: call to non-contract");
+
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool success, bytes memory returndata) = target.call{value: value}(data);
+        return _verifyCallResult(success, returndata, errorMessage);
+    }
+
+    /**
+     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`],
+     * but performing a static call.
+     *
+     * _Available since v3.3._
+     */
+    function functionStaticCall(address target, bytes memory data) internal view returns (bytes memory) {
+        return functionStaticCall(target, data, "Address: low-level static call failed");
+    }
+
+    /**
+     * @dev Same as {xref-Address-functionCall-address-bytes-string-}[`functionCall`],
+     * but performing a static call.
+     *
+     * _Available since v3.3._
+     */
+    function functionStaticCall(
+        address target,
+        bytes memory data,
+        string memory errorMessage
+    ) internal view returns (bytes memory) {
+        require(isContract(target), "Address: static call to non-contract");
+
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool success, bytes memory returndata) = target.staticcall(data);
+        return _verifyCallResult(success, returndata, errorMessage);
+    }
+
+    /**
+     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`],
+     * but performing a delegate call.
+     *
+     * _Available since v3.4._
+     */
+    function functionDelegateCall(address target, bytes memory data) internal returns (bytes memory) {
+        return functionDelegateCall(target, data, "Address: low-level delegate call failed");
+    }
+
+    /**
+     * @dev Same as {xref-Address-functionCall-address-bytes-string-}[`functionCall`],
+     * but performing a delegate call.
+     *
+     * _Available since v3.4._
+     */
+    function functionDelegateCall(
+        address target,
+        bytes memory data,
+        string memory errorMessage
+    ) internal returns (bytes memory) {
+        require(isContract(target), "Address: delegate call to non-contract");
+
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool success, bytes memory returndata) = target.delegatecall(data);
+        return _verifyCallResult(success, returndata, errorMessage);
+    }
+
+    function _verifyCallResult(
+        bool success,
+        bytes memory returndata,
+        string memory errorMessage
+    ) private pure returns (bytes memory) {
+        if (success) {
+            return returndata;
+        } else {
+            // Look for revert reason and bubble it up if present
+            if (returndata.length > 0) {
+                // The easiest way to bubble the revert reason is using memory via assembly
+
+                // solhint-disable-next-line no-inline-assembly
+                assembly {
+                    let returndata_size := mload(returndata)
+                    revert(add(32, returndata), returndata_size)
+                }
+            } else {
+                revert(errorMessage);
             }
         }
     }
 }
-// ---------- End of auto-generated code. ----------
+
+/**
+ * @title SafeERC20
+ * @dev Wrappers around ERC20 operations that throw on failure (when the token
+ * contract returns false). Tokens that return no value (and instead revert or
+ * throw on failure) are also supported, non-reverting calls are assumed to be
+ * successful.
+ * To use this library you can add a `using SafeERC20 for IERC20;` statement to your contract,
+ * which allows you to call the safe operations as `token.safeTransfer(...)`, etc.
+ */
+library SafeERC20 {
+    using SafeMath for uint256;
+    using Address for address;
+
+    function safeTransfer(
+        IERC20 token,
+        address to,
+        uint256 value
+    ) internal {
+        _callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
+    }
+
+    function safeTransferFrom(
+        IERC20 token,
+        address from,
+        address to,
+        uint256 value
+    ) internal {
+        _callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
+    }
+
+    /**
+     * @dev Deprecated. This function has issues similar to the ones found in
+     * {IERC20-approve}, and its usage is discouraged.
+     *
+     * Whenever possible, use {safeIncreaseAllowance} and
+     * {safeDecreaseAllowance} instead.
+     */
+    function safeApprove(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
+        // safeApprove should only be called when setting an initial allowance,
+        // or when resetting it to zero. To increase and decrease it, use
+        // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
+        // solhint-disable-next-line max-line-length
+        require((value == 0) || (token.allowance(address(this), spender) == 0), "SafeERC20: approve from non-zero to non-zero allowance");
+        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
+    }
+
+    function safeIncreaseAllowance(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
+        uint256 newAllowance = token.allowance(address(this), spender).add(value);
+        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+    }
+
+    function safeDecreaseAllowance(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
+        uint256 newAllowance = token.allowance(address(this), spender).sub(value, "SafeERC20: decreased allowance below zero");
+        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+    }
+
+    /**
+     * @dev Imitates a Solidity high-level call (i.e. a regular function call to a contract), relaxing the requirement
+     * on the return value: the return value is optional (but if data is returned, it must not be false).
+     * @param token The token targeted by the call.
+     * @param data The call data (encoded using abi.encode or one of its variants).
+     */
+    function _callOptionalReturn(IERC20 token, bytes memory data) private {
+        // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
+        // we're implementing it ourselves. We use {Address.functionCall} to perform this call, which verifies that
+        // the target address contains contract code and also asserts for success in the low-level call.
+
+        bytes memory returndata = address(token).functionCall(data, "SafeERC20: low-level call failed");
+        if (returndata.length > 0) {
+            // Return data is optional
+            // solhint-disable-next-line max-line-length
+            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
+        }
+    }
+}
+
+/**
+ * @dev Library for managing
+ * https://en.wikipedia.org/wiki/Set_(abstract_data_type)[sets] of primitive
+ * types.
+ *
+ * Sets have the following properties:
+ *
+ * - Elements are added, removed, and checked for existence in constant time
+ * (O(1)).
+ * - Elements are enumerated in O(n). No guarantees are made on the ordering.
+ *
+ * ```
+ * contract Example {
+ *     // Add the library methods
+ *     using EnumerableSet for EnumerableSet.AddressSet;
+ *
+ *     // Declare a set state variable
+ *     EnumerableSet.AddressSet private mySet;
+ * }
+ * ```
+ *
+ * As of v3.3.0, sets of type `bytes32` (`Bytes32Set`), `address` (`AddressSet`)
+ * and `uint256` (`UintSet`) are supported.
+ */
+library EnumerableSet {
+    // To implement this library for multiple types with as little code
+    // repetition as possible, we write it in terms of a generic Set type with
+    // bytes32 values.
+    // The Set implementation uses private functions, and user-facing
+    // implementations (such as AddressSet) are just wrappers around the
+    // underlying Set.
+    // This means that we can only create new EnumerableSets for types that fit
+    // in bytes32.
+
+    struct Set {
+        // Storage of set values
+        bytes32[] _values;
+        // Position of the value in the `values` array, plus 1 because index 0
+        // means a value is not in the set.
+        mapping(bytes32 => uint256) _indexes;
+    }
+
+    /**
+     * @dev Add a value to a set. O(1).
+     *
+     * Returns true if the value was added to the set, that is if it was not
+     * already present.
+     */
+    function _add(Set storage set, bytes32 value) private returns (bool) {
+        if (!_contains(set, value)) {
+            set._values.push(value);
+            // The value is stored at length-1, but we add 1 to all indexes
+            // and use 0 as a sentinel value
+            set._indexes[value] = set._values.length;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @dev Removes a value from a set. O(1).
+     *
+     * Returns true if the value was removed from the set, that is if it was
+     * present.
+     */
+    function _remove(Set storage set, bytes32 value) private returns (bool) {
+        // We read and store the value's index to prevent multiple reads from the same storage slot
+        uint256 valueIndex = set._indexes[value];
+
+        if (valueIndex != 0) {
+            // Equivalent to contains(set, value)
+            // To delete an element from the _values array in O(1), we swap the element to delete with the last one in
+            // the array, and then remove the last element (sometimes called as 'swap and pop').
+            // This modifies the order of the array, as noted in {at}.
+
+            uint256 toDeleteIndex = valueIndex - 1;
+            uint256 lastIndex = set._values.length - 1;
+
+            // When the value to delete is the last one, the swap operation is unnecessary. However, since this occurs
+            // so rarely, we still do the swap anyway to avoid the gas cost of adding an 'if' statement.
+
+            bytes32 lastvalue = set._values[lastIndex];
+
+            // Move the last value to the index where the value to delete is
+            set._values[toDeleteIndex] = lastvalue;
+            // Update the index for the moved value
+            set._indexes[lastvalue] = toDeleteIndex + 1; // All indexes are 1-based
+
+            // Delete the slot where the moved value was stored
+            set._values.pop();
+
+            // Delete the index for the deleted slot
+            delete set._indexes[value];
+
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @dev Returns true if the value is in the set. O(1).
+     */
+    function _contains(Set storage set, bytes32 value) private view returns (bool) {
+        return set._indexes[value] != 0;
+    }
+
+    /**
+     * @dev Returns the number of values on the set. O(1).
+     */
+    function _length(Set storage set) private view returns (uint256) {
+        return set._values.length;
+    }
+
+    /**
+     * @dev Returns the value stored at position `index` in the set. O(1).
+     *
+     * Note that there are no guarantees on the ordering of values inside the
+     * array, and it may change when more values are added or removed.
+     *
+     * Requirements:
+     *
+     * - `index` must be strictly less than {length}.
+     */
+    function _at(Set storage set, uint256 index) private view returns (bytes32) {
+        require(set._values.length > index, "EnumerableSet: index out of bounds");
+        return set._values[index];
+    }
+
+    // Bytes32Set
+
+    struct Bytes32Set {
+        Set _inner;
+    }
+
+    /**
+     * @dev Add a value to a set. O(1).
+     *
+     * Returns true if the value was added to the set, that is if it was not
+     * already present.
+     */
+    function add(Bytes32Set storage set, bytes32 value) internal returns (bool) {
+        return _add(set._inner, value);
+    }
+
+    /**
+     * @dev Removes a value from a set. O(1).
+     *
+     * Returns true if the value was removed from the set, that is if it was
+     * present.
+     */
+    function remove(Bytes32Set storage set, bytes32 value) internal returns (bool) {
+        return _remove(set._inner, value);
+    }
+
+    /**
+     * @dev Returns true if the value is in the set. O(1).
+     */
+    function contains(Bytes32Set storage set, bytes32 value) internal view returns (bool) {
+        return _contains(set._inner, value);
+    }
+
+    /**
+     * @dev Returns the number of values in the set. O(1).
+     */
+    function length(Bytes32Set storage set) internal view returns (uint256) {
+        return _length(set._inner);
+    }
+
+    /**
+     * @dev Returns the value stored at position `index` in the set. O(1).
+     *
+     * Note that there are no guarantees on the ordering of values inside the
+     * array, and it may change when more values are added or removed.
+     *
+     * Requirements:
+     *
+     * - `index` must be strictly less than {length}.
+     */
+    function at(Bytes32Set storage set, uint256 index) internal view returns (bytes32) {
+        return _at(set._inner, index);
+    }
+
+    // AddressSet
+
+    struct AddressSet {
+        Set _inner;
+    }
+
+    /**
+     * @dev Add a value to a set. O(1).
+     *
+     * Returns true if the value was added to the set, that is if it was not
+     * already present.
+     */
+    function add(AddressSet storage set, address value) internal returns (bool) {
+        return _add(set._inner, bytes32(uint256(uint160(value))));
+    }
+
+    /**
+     * @dev Removes a value from a set. O(1).
+     *
+     * Returns true if the value was removed from the set, that is if it was
+     * present.
+     */
+    function remove(AddressSet storage set, address value) internal returns (bool) {
+        return _remove(set._inner, bytes32(uint256(uint160(value))));
+    }
+
+    /**
+     * @dev Returns true if the value is in the set. O(1).
+     */
+    function contains(AddressSet storage set, address value) internal view returns (bool) {
+        return _contains(set._inner, bytes32(uint256(uint160(value))));
+    }
+
+    /**
+     * @dev Returns the number of values in the set. O(1).
+     */
+    function length(AddressSet storage set) internal view returns (uint256) {
+        return _length(set._inner);
+    }
+
+    /**
+     * @dev Returns the value stored at position `index` in the set. O(1).
+     *
+     * Note that there are no guarantees on the ordering of values inside the
+     * array, and it may change when more values are added or removed.
+     *
+     * Requirements:
+     *
+     * - `index` must be strictly less than {length}.
+     */
+    function at(AddressSet storage set, uint256 index) internal view returns (address) {
+        return address(uint160(uint256(_at(set._inner, index))));
+    }
+
+    // UintSet
+
+    struct UintSet {
+        Set _inner;
+    }
+
+    /**
+     * @dev Add a value to a set. O(1).
+     *
+     * Returns true if the value was added to the set, that is if it was not
+     * already present.
+     */
+    function add(UintSet storage set, uint256 value) internal returns (bool) {
+        return _add(set._inner, bytes32(value));
+    }
+
+    /**
+     * @dev Removes a value from a set. O(1).
+     *
+     * Returns true if the value was removed from the set, that is if it was
+     * present.
+     */
+    function remove(UintSet storage set, uint256 value) internal returns (bool) {
+        return _remove(set._inner, bytes32(value));
+    }
+
+    /**
+     * @dev Returns true if the value is in the set. O(1).
+     */
+    function contains(UintSet storage set, uint256 value) internal view returns (bool) {
+        return _contains(set._inner, bytes32(value));
+    }
+
+    /**
+     * @dev Returns the number of values on the set. O(1).
+     */
+    function length(UintSet storage set) internal view returns (uint256) {
+        return _length(set._inner);
+    }
+
+    /**
+     * @dev Returns the value stored at position `index` in the set. O(1).
+     *
+     * Note that there are no guarantees on the ordering of values inside the
+     * array, and it may change when more values are added or removed.
+     *
+     * Requirements:
+     *
+     * - `index` must be strictly less than {length}.
+     */
+    function at(UintSet storage set, uint256 index) internal view returns (uint256) {
+        return uint256(_at(set._inner, index));
+    }
+}
+
+/**
+ * @title Initializable
+ *
+ * @dev Helper contract to support initializer functions. To use it, replace
+ * the constructor with a function that has the `initializer` modifier.
+ * WARNING: Unlike constructors, initializer functions must be manually
+ * invoked. This applies both to deploying an Initializable contract, as well
+ * as extending an Initializable contract via inheritance.
+ * WARNING: When used with inheritance, manual care must be taken to not invoke
+ * a parent initializer twice, or ensure that all initializers are idempotent,
+ * because this is not dealt with automatically as with constructors.
+ */
+contract Initializable {
+    /**
+     * @dev Indicates that the contract has been initialized.
+     */
+    bool private initialized;
+
+    /**
+     * @dev Indicates that the contract is in the process of being initialized.
+     */
+    bool private initializing;
+
+    /**
+     * @dev Modifier to use in the initializer function of a contract.
+     */
+    modifier initializer() {
+        require(initializing || isConstructor() || !initialized, "Contract instance has already been initialized");
+
+        bool isTopLevelCall = !initializing;
+        if (isTopLevelCall) {
+            initializing = true;
+            initialized = true;
+        }
+
+        _;
+
+        if (isTopLevelCall) {
+            initializing = false;
+        }
+    }
+
+    /// @dev Returns true if and only if the function is running in the constructor
+    function isConstructor() private view returns (bool) {
+        // extcodesize checks the size of the code stored in an address, and
+        // address returns the current address. Since the code is still not
+        // deployed when running a constructor, any checks on its code size will
+        // yield zero, making it an effective way to detect if a contract is
+        // under construction or not.
+        address self = address(this);
+        uint256 cs;
+        assembly {
+            cs := extcodesize(self)
+        }
+        return cs == 0;
+    }
+
+    // Reserved storage space to allow for layout changes in the future.
+    uint256[50] private ______gap;
+}
+
+/*
+ * @dev Provides information about the current execution context, including the
+ * sender of the transaction and its data. While these are generally available
+ * via msg.sender and msg.data, they should not be accessed in such a direct
+ * manner, since when dealing with GSN meta-transactions the account sending and
+ * paying for execution may not be the actual sender (as far as an application
+ * is concerned).
+ *
+ * This contract is only required for intermediate, library-like contracts.
+ */
+contract ContextUpgradeSafe is Initializable {
+    // Empty internal constructor, to prevent people from mistakenly deploying
+    // an instance of this contract, which should be used via inheritance.
+
+    function __Context_init() internal initializer {
+        __Context_init_unchained();
+    }
+
+    function __Context_init_unchained() internal initializer {}
+
+    function _msgSender() internal view virtual returns (address payable) {
+        return msg.sender;
+    }
+
+    function _msgData() internal view virtual returns (bytes memory) {
+        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
+        return msg.data;
+    }
+
+    uint256[50] private __gap;
+}
+
+/**
+ * @dev Contract module which provides a basic access control mechanism, where
+ * there is an account (an owner) that can be granted exclusive access to
+ * specific functions.
+ *
+ * By default, the owner account will be the one that deploys the contract. This
+ * can later be changed with {transferOwnership}.
+ *
+ * This module is used through inheritance. It will make available the modifier
+ * `onlyOwner`, which can be applied to your functions to restrict their use to
+ * the owner.
+ */
+contract OwnableUpgradeSafe is Initializable, ContextUpgradeSafe {
+    address private _owner;
+
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    /**
+     * @dev Initializes the contract setting the deployer as the initial owner.
+     */
+
+    function __Ownable_init() internal initializer {
+        __Context_init_unchained();
+        __Ownable_init_unchained();
+    }
+
+    function __Ownable_init_unchained() internal initializer {
+        address msgSender = _msgSender();
+        _owner = msgSender;
+        emit OwnershipTransferred(address(0), msgSender);
+    }
+
+    /**
+     * @dev Returns the address of the current owner.
+     */
+    function owner() public view returns (address) {
+        return _owner;
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(_owner == _msgSender(), "Ownable: caller is not the owner");
+        _;
+    }
+
+    /**
+     * @dev Leaves the contract without owner. It will not be possible to call
+     * `onlyOwner` functions anymore. Can only be called by the current owner.
+     *
+     * NOTE: Renouncing ownership will leave the contract without an owner,
+     * thereby removing any functionality that is only available to the owner.
+     */
+    function renounceOwnership() public virtual onlyOwner {
+        emit OwnershipTransferred(_owner, address(0));
+        _owner = address(0);
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
+     */
+    function transferOwnership(address newOwner) public virtual onlyOwner {
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        emit OwnershipTransferred(_owner, newOwner);
+        _owner = newOwner;
+    }
+
+    uint256[49] private __gap;
+}
+
+/*
+ * @dev Provides information about the current execution context, including the
+ * sender of the transaction and its data. While these are generally available
+ * via msg.sender and msg.data, they should not be accessed in such a direct
+ * manner, since when dealing with GSN meta-transactions the account sending and
+ * paying for execution may not be the actual sender (as far as an application
+ * is concerned).
+ *
+ * This contract is only required for intermediate, library-like contracts.
+ */
+abstract contract Context {
+    function _msgSender() internal view virtual returns (address payable) {
+        return msg.sender;
+    }
+
+    function _msgData() internal view virtual returns (bytes memory) {
+        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
+        return msg.data;
+    }
+}
+
+/**
+ * @dev Implementation of the {IERC20} interface.
+ *
+ * This implementation is agnostic to the way tokens are created. This means
+ * that a supply mechanism has to be added in a derived contract using {_mint}.
+ * For a generic mechanism see {ERC20PresetMinterPauser}.
+ *
+ * TIP: For a detailed writeup see our guide
+ * https://forum.zeppelin.solutions/t/how-to-implement-erc20-supply-mechanisms/226[How
+ * to implement supply mechanisms].
+ *
+ * We have followed general OpenZeppelin guidelines: functions revert instead
+ * of returning `false` on failure. This behavior is nonetheless conventional
+ * and does not conflict with the expectations of ERC20 applications.
+ *
+ * Additionally, an {Approval} event is emitted on calls to {transferFrom}.
+ * This allows applications to reconstruct the allowance for all accounts just
+ * by listening to said events. Other implementations of the EIP may not emit
+ * these events, as it isn't required by the specification.
+ *
+ * Finally, the non-standard {decreaseAllowance} and {increaseAllowance}
+ * functions have been added to mitigate the well-known issues around setting
+ * allowances. See {IERC20-approve}.
+ */
+contract ERC20 is Context, IERC20 {
+    using SafeMath for uint256;
+
+    mapping(address => uint256) private _balances;
+
+    mapping(address => mapping(address => uint256)) private _allowances;
+
+    uint256 private _totalSupply;
+
+    string private _name;
+    string private _symbol;
+    uint8 private _decimals;
+
+    /**
+     * @dev Sets the values for {name} and {symbol}, initializes {decimals} with
+     * a default value of 18.
+     *
+     * To select a different value for {decimals}, use {_setupDecimals}.
+     *
+     * All three of these values are immutable: they can only be set once during
+     * construction.
+     */
+    constructor(string memory name_, string memory symbol_) public {
+        _name = name_;
+        _symbol = symbol_;
+        _decimals = 18;
+    }
+
+    /**
+     * @dev Returns the name of the token.
+     */
+    function name() public view virtual returns (string memory) {
+        return _name;
+    }
+
+    /**
+     * @dev Returns the symbol of the token, usually a shorter version of the
+     * name.
+     */
+    function symbol() public view virtual returns (string memory) {
+        return _symbol;
+    }
+
+    /**
+     * @dev Returns the number of decimals used to get its user representation.
+     * For example, if `decimals` equals `2`, a balance of `505` tokens should
+     * be displayed to a user as `5,05` (`505 / 10 ** 2`).
+     *
+     * Tokens usually opt for a value of 18, imitating the relationship between
+     * Ether and Wei. This is the value {ERC20} uses, unless {_setupDecimals} is
+     * called.
+     *
+     * NOTE: This information is only used for _display_ purposes: it in
+     * no way affects any of the arithmetic of the contract, including
+     * {IERC20-balanceOf} and {IERC20-transfer}.
+     */
+    function decimals() public view virtual returns (uint8) {
+        return _decimals;
+    }
+
+    /**
+     * @dev See {IERC20-totalSupply}.
+     */
+    function totalSupply() public view virtual override returns (uint256) {
+        return _totalSupply;
+    }
+
+    /**
+     * @dev See {IERC20-balanceOf}.
+     */
+    function balanceOf(address account) public view virtual override returns (uint256) {
+        return _balances[account];
+    }
+
+    /**
+     * @dev See {IERC20-transfer}.
+     *
+     * Requirements:
+     *
+     * - `recipient` cannot be the zero address.
+     * - the caller must have a balance of at least `amount`.
+     */
+    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
+        _transfer(_msgSender(), recipient, amount);
+        return true;
+    }
+
+    /**
+     * @dev See {IERC20-allowance}.
+     */
+    function allowance(address owner, address spender) public view virtual override returns (uint256) {
+        return _allowances[owner][spender];
+    }
+
+    /**
+     * @dev See {IERC20-approve}.
+     *
+     * Requirements:
+     *
+     * - `spender` cannot be the zero address.
+     */
+    function approve(address spender, uint256 amount) public virtual override returns (bool) {
+        _approve(_msgSender(), spender, amount);
+        return true;
+    }
+
+    /**
+     * @dev See {IERC20-transferFrom}.
+     *
+     * Emits an {Approval} event indicating the updated allowance. This is not
+     * required by the EIP. See the note at the beginning of {ERC20}.
+     *
+     * Requirements:
+     *
+     * - `sender` and `recipient` cannot be the zero address.
+     * - `sender` must have a balance of at least `amount`.
+     * - the caller must have allowance for ``sender``'s tokens of at least
+     * `amount`.
+     */
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) public virtual override returns (bool) {
+        _transfer(sender, recipient, amount);
+        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
+        return true;
+    }
+
+    /**
+     * @dev Atomically increases the allowance granted to `spender` by the caller.
+     *
+     * This is an alternative to {approve} that can be used as a mitigation for
+     * problems described in {IERC20-approve}.
+     *
+     * Emits an {Approval} event indicating the updated allowance.
+     *
+     * Requirements:
+     *
+     * - `spender` cannot be the zero address.
+     */
+    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
+        return true;
+    }
+
+    /**
+     * @dev Atomically decreases the allowance granted to `spender` by the caller.
+     *
+     * This is an alternative to {approve} that can be used as a mitigation for
+     * problems described in {IERC20-approve}.
+     *
+     * Emits an {Approval} event indicating the updated allowance.
+     *
+     * Requirements:
+     *
+     * - `spender` cannot be the zero address.
+     * - `spender` must have allowance for the caller of at least
+     * `subtractedValue`.
+     */
+    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
+        return true;
+    }
+
+    /**
+     * @dev Moves tokens `amount` from `sender` to `recipient`.
+     *
+     * This is internal function is equivalent to {transfer}, and can be used to
+     * e.g. implement automatic token fees, slashing mechanisms, etc.
+     *
+     * Emits a {Transfer} event.
+     *
+     * Requirements:
+     *
+     * - `sender` cannot be the zero address.
+     * - `recipient` cannot be the zero address.
+     * - `sender` must have a balance of at least `amount`.
+     */
+    function _transfer(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) internal virtual {
+        require(sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+
+        _beforeTokenTransfer(sender, recipient, amount);
+
+        _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
+        _balances[recipient] = _balances[recipient].add(amount);
+        emit Transfer(sender, recipient, amount);
+    }
+
+    /** @dev Creates `amount` tokens and assigns them to `account`, increasing
+     * the total supply.
+     *
+     * Emits a {Transfer} event with `from` set to the zero address.
+     *
+     * Requirements:
+     *
+     * - `to` cannot be the zero address.
+     */
+    function _mint(address account, uint256 amount) internal virtual {
+        require(account != address(0), "ERC20: mint to the zero address");
+
+        _beforeTokenTransfer(address(0), account, amount);
+
+        _totalSupply = _totalSupply.add(amount);
+        _balances[account] = _balances[account].add(amount);
+        emit Transfer(address(0), account, amount);
+    }
+
+    /**
+     * @dev Destroys `amount` tokens from `account`, reducing the
+     * total supply.
+     *
+     * Emits a {Transfer} event with `to` set to the zero address.
+     *
+     * Requirements:
+     *
+     * - `account` cannot be the zero address.
+     * - `account` must have at least `amount` tokens.
+     */
+    function _burn(address account, uint256 amount) internal virtual {
+        require(account != address(0), "ERC20: burn from the zero address");
+
+        _beforeTokenTransfer(account, address(0), amount);
+
+        _balances[account] = _balances[account].sub(amount, "ERC20: burn amount exceeds balance");
+        _totalSupply = _totalSupply.sub(amount);
+        emit Transfer(account, address(0), amount);
+    }
+
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the `owner` s tokens.
+     *
+     * This internal function is equivalent to `approve`, and can be used to
+     * e.g. set automatic allowances for certain subsystems, etc.
+     *
+     * Emits an {Approval} event.
+     *
+     * Requirements:
+     *
+     * - `owner` cannot be the zero address.
+     * - `spender` cannot be the zero address.
+     */
+    function _approve(
+        address owner,
+        address spender,
+        uint256 amount
+    ) internal virtual {
+        require(owner != address(0), "ERC20: approve from the zero address");
+        require(spender != address(0), "ERC20: approve to the zero address");
+
+        _allowances[owner][spender] = amount;
+        emit Approval(owner, spender, amount);
+    }
+
+    /**
+     * @dev Sets {decimals} to a value other than the default one of 18.
+     *
+     * WARNING: This function should only be called from the constructor. Most
+     * applications that interact with token contracts will not expect
+     * {decimals} to ever change, and may work incorrectly if it does.
+     */
+    function _setupDecimals(uint8 decimals_) internal virtual {
+        _decimals = decimals_;
+    }
+
+    /**
+     * @dev Hook that is called before any transfer of tokens. This includes
+     * minting and burning.
+     *
+     * Calling conditions:
+     *
+     * - when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
+     * will be to transferred to `to`.
+     * - when `from` is zero, `amount` tokens will be minted for `to`.
+     * - when `to` is zero, `amount` of ``from``'s tokens will be burned.
+     * - `from` and `to` are never both zero.
+     *
+     * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
+     */
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual {}
+}
+
+/**
+ * @dev Contract module which provides a basic access control mechanism, where
+ * there is an account (an owner) that can be granted exclusive access to
+ * specific functions.
+ *
+ * By default, the owner account will be the one that deploys the contract. This
+ * can later be changed with {transferOwnership}.
+ *
+ * This module is used through inheritance. It will make available the modifier
+ * `onlyOwner`, which can be applied to your functions to restrict their use to
+ * the owner.
+ */
+abstract contract Ownable is Context {
+    address private _owner;
+
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    /**
+     * @dev Initializes the contract setting the deployer as the initial owner.
+     */
+    constructor() internal {
+        address msgSender = _msgSender();
+        _owner = msgSender;
+        emit OwnershipTransferred(address(0), msgSender);
+    }
+
+    /**
+     * @dev Returns the address of the current owner.
+     */
+    function owner() public view virtual returns (address) {
+        return _owner;
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(owner() == _msgSender(), "Ownable: caller is not the owner");
+        _;
+    }
+
+    /**
+     * @dev Leaves the contract without owner. It will not be possible to call
+     * `onlyOwner` functions anymore. Can only be called by the current owner.
+     *
+     * NOTE: Renouncing ownership will leave the contract without an owner,
+     * thereby removing any functionality that is only available to the owner.
+     */
+    function renounceOwnership() public virtual onlyOwner {
+        emit OwnershipTransferred(_owner, address(0));
+        _owner = address(0);
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
+     */
+    function transferOwnership(address newOwner) public virtual onlyOwner {
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        emit OwnershipTransferred(_owner, newOwner);
+        _owner = newOwner;
+    }
+}
+
+abstract contract IMintableERC20 is IERC20 {
+    function mint(uint256 amount) public virtual;
+
+    function mintTo(address account, uint256 amount) public virtual;
+
+    function burn(uint256 amount) public virtual;
+
+    function setMinter(address account, bool isMinter) public virtual;
+}
+
+contract PopToken is ERC20("POP Token", "POP!"), IMintableERC20, Ownable {
+    mapping(address => bool) public minter;
+    uint256 public maxSupply;
+
+    event MinterUpdate(address indexed account, bool isMinter);
+
+    constructor(uint256 _maxSupply) public {
+        maxSupply = _maxSupply;
+    }
+
+    modifier onlyMinter() {
+        require(minter[_msgSender()], "User is not a minter.");
+        _;
+    }
+
+    function mint(uint256 _amount) public override onlyMinter {
+        require(totalSupply().add(_amount) <= maxSupply, "cannot mint more than maxSupply");
+        _mint(_msgSender(), _amount);
+    }
+
+    function mintTo(address _account, uint256 _amount) public override onlyMinter {
+        require(totalSupply().add(_amount) <= maxSupply, "cannot mint more than maxSupply");
+        _mint(_account, _amount);
+    }
+
+    function setMinter(address _account, bool _isMinter) public override onlyOwner {
+        require(_account != address(0), "address can not be 0");
+        minter[_account] = _isMinter;
+        emit MinterUpdate(_account, _isMinter);
+    }
+
+    function burn(uint256 _amount) public override {
+        _burn(_msgSender(), _amount);
+    }
+}
+
+abstract contract IRewardManager {
+    function add(uint256 _allocPoint, address _newMlp) public virtual;
+
+    function notifyDeposit(address _account, uint256 _amount) public virtual;
+
+    function notifyWithdraw(address _account, uint256 _amount) public virtual;
+
+    function getPoolSupply(address pool) public view virtual returns (uint256);
+
+    function getUserAmount(address pool, address user) public view virtual returns (uint256);
+}
+
+// stolen from Sushiswap MasterChef: https://github.com/sushiswap/sushiswap/blob/master/contracts/MasterChef.sol
+contract PopReward is Initializable, OwnableUpgradeSafe, IRewardManager {
+    using SafeMath for uint256;
+    using SafeERC20 for IERC20;
+
+    // Info of each user.
+    struct UserInfo {
+        uint256 amount; // How many LP tokens the user has provided.
+        uint256 rewardDebt; // Reward debt
+    }
+
+    // Info of each pool.
+    struct PoolInfo {
+        uint256 allocPoint; // How many allocation points assigned to this pool. POPs to distribute per block.
+        uint256 lastRewardBlock; // Last block number that POPs distribution occurs.
+        uint256 accPopPerShare; // Accumulated POPs per share, times 1e12. See below.
+        uint256 lpSupply; // Total amount of lp token staked
+    }
+
+    PopToken public pop;
+    // Block number when bonus POP period ends.
+    uint256 public bonusEndBlock;
+    // POP tokens created per block.
+    uint256 public popPerBlock;
+    // Bonus multiplier for early pop makers.
+    uint256 public constant BONUS_MULTIPLIER = 10;
+    // Info of each pool.
+    PoolInfo[] public poolInfo;
+    // Info of each user that stakes LP tokens.
+    mapping(uint256 => mapping(address => UserInfo)) public userInfo;
+    // Total allocation points. Must be the sum of all allocation points in all pools.
+    uint256 public totalAllocPoint = 0;
+    // The block number when POP mining starts.
+    uint256 public startBlock;
+    // authorized MLPs
+    uint256 private constant UINT256_MAX = ~uint256(0);
+    mapping(address => uint256) public pidByAddress;
+    address public popMarketplace;
+    mapping(address => bool) public authorizedMlp;
+
+    PoolInfo public popVault;
+    mapping(address => UserInfo) public popStaker;
+
+    event PopDeposit(address indexed user, uint256 amount);
+    event PopWithdraw(address indexed user, uint256 amount);
+
+    event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
+    event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
+    event RewardPaid(address indexed user, uint256 indexed pid, uint256 amount);
+
+    function initialize(
+        PopToken _pop,
+        uint256 _popPerBlock,
+        uint256 _startBlock,
+        uint256 _bonusEndBlock,
+        uint256 _popAllocPoint,
+        uint256 _popVaultStarts
+    ) public initializer {
+        OwnableUpgradeSafe.__Ownable_init();
+        pop = _pop;
+        popPerBlock = _popPerBlock;
+        bonusEndBlock = _bonusEndBlock;
+        startBlock = _startBlock;
+        popVault = PoolInfo({allocPoint: _popAllocPoint, lastRewardBlock: _popVaultStarts, accPopPerShare: 0, lpSupply: 0});
+        totalAllocPoint = _popAllocPoint;
+    }
+
+    function poolLength() external view returns (uint256) {
+        return poolInfo.length;
+    }
+
+    function getPoolSupply(address pool) public view override returns (uint256) {
+        return poolInfo[pidByAddress[pool]].lpSupply;
+    }
+
+    function getUserAmount(address pool, address user) public view override returns (uint256) {
+        return userInfo[pidByAddress[pool]][user].amount;
+    }
+
+    function setPopMarketplace(address _newMarketplace) public onlyOwner {
+        require(_newMarketplace != address(0), "Address can not be 0");
+        popMarketplace = _newMarketplace;
+    }
+
+    // Add a new pool. Can only be called by the PopMarketplace.
+    function add(uint256 _allocPoint, address _newMlp) public override {
+        require(msg.sender == popMarketplace, "only the marketplace can add a pool");
+        uint256 lastRewardBlock = block.number > startBlock ? block.number : startBlock;
+        totalAllocPoint = totalAllocPoint.add(_allocPoint);
+        poolInfo.push(PoolInfo({allocPoint: _allocPoint, lastRewardBlock: lastRewardBlock, accPopPerShare: 0, lpSupply: 0}));
+        pidByAddress[_newMlp] = poolInfo.length - 1;
+        authorizedMlp[_newMlp] = true;
+    }
+
+    // Update the given pool's POP allocation point. Can only be called by the owner.
+    function set(
+        uint256 _pid,
+        uint256 _allocPoint,
+        bool _withUpdate
+    ) public onlyOwner {
+        PoolInfo storage pool = poolInfo[_pid];
+        _set(pool, _allocPoint, _withUpdate);
+    }
+
+    function _set(
+        PoolInfo storage pool,
+        uint256 _allocPoint,
+        bool _withUpdate
+    ) private {
+        if (_withUpdate) {
+            massUpdatePools();
+        }
+        totalAllocPoint = totalAllocPoint.sub(pool.allocPoint).add(_allocPoint);
+        pool.allocPoint = _allocPoint;
+    }
+
+    // Return reward multiplier over the given _from to _to block.
+    function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256) {
+        if (_to <= bonusEndBlock) {
+            return _to.sub(_from).mul(BONUS_MULTIPLIER);
+        } else if (_from >= bonusEndBlock) {
+            return _to.sub(_from);
+        } else {
+            return bonusEndBlock.sub(_from).mul(BONUS_MULTIPLIER).add(_to.sub(bonusEndBlock));
+        }
+    }
+
+    // View function to see pending POPs on frontend.
+    function pendingPop(uint256 _pid, address _user) external view returns (uint256) {
+        PoolInfo storage pool = poolInfo[_pid];
+        UserInfo storage user = userInfo[_pid][_user];
+        return _pendingPop(pool, user);
+    }
+
+    function _pendingPop(PoolInfo storage pool, UserInfo storage user) private view returns (uint256) {
+        uint256 accPopPerShare = pool.accPopPerShare;
+        uint256 lpSupply = pool.lpSupply;
+        if (block.number > pool.lastRewardBlock && lpSupply != 0) {
+            uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
+            uint256 popReward = multiplier.mul(popPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
+            accPopPerShare = accPopPerShare.add(popReward.mul(1e12).div(lpSupply));
+        }
+        return user.amount.mul(accPopPerShare).div(1e12).sub(user.rewardDebt);
+    }
+
+    function vaultPendingPop(address _account) external view returns (uint256) {
+        UserInfo storage user = popStaker[_account];
+        return _pendingPop(popVault, user);
+    }
+
+    // Update reward variables for all pools. Be careful of gas spending!
+    function massUpdatePools() public {
+        uint256 length = poolInfo.length;
+        for (uint256 pid = 0; pid < length; ++pid) {
+            updatePool(pid);
+        }
+        updatePopVault();
+    }
+
+    // Update reward variables of the given pool to be up-to-date.
+    function updatePool(uint256 _pid) public {
+        PoolInfo storage pool = poolInfo[_pid];
+        return _updatePool(pool);
+    }
+
+    function _updatePool(PoolInfo storage pool) private {
+        if (block.number <= pool.lastRewardBlock) {
+            return;
+        }
+        uint256 lpSupply = pool.lpSupply;
+        if (lpSupply == 0) {
+            pool.lastRewardBlock = block.number;
+            return;
+        }
+        uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
+        uint256 popReward = multiplier.mul(popPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
+        pop.mintTo(address(this), popReward);
+        pool.accPopPerShare = pool.accPopPerShare.add(popReward.mul(1e12).div(lpSupply));
+        pool.lastRewardBlock = block.number;
+    }
+
+    // Notify the amount of LP tokens staked in the PopVault.
+    function notifyDeposit(address _account, uint256 _amount) public override {
+        require(authorizedMlp[msg.sender], "unauthorized sender");
+        uint256 _pid = pidByAddress[msg.sender];
+        PoolInfo storage pool = poolInfo[_pid];
+        UserInfo storage user = userInfo[_pid][_account];
+        updatePool(_pid);
+        _notifyDeposit(_account, pool, user, _amount);
+        emit Deposit(_account, _pid, _amount);
+    }
+
+    function _notifyDeposit(
+        address _account,
+        PoolInfo storage pool,
+        UserInfo storage user,
+        uint256 _amount
+    ) private {
+        if (user.amount > 0) {
+            uint256 pending = user.amount.mul(pool.accPopPerShare).div(1e12).sub(user.rewardDebt);
+            safePopTransfer(_account, pending);
+        }
+        pool.lpSupply = pool.lpSupply.add(_amount);
+        user.amount = user.amount.add(_amount);
+        user.rewardDebt = user.amount.mul(pool.accPopPerShare).div(1e12);
+    }
+
+    // Notify the amount of LP token withdrawn from the PopVault.
+    function notifyWithdraw(address _account, uint256 _amount) public override {
+        require(authorizedMlp[msg.sender], "unauthorized sender");
+        uint256 _pid = pidByAddress[msg.sender];
+        PoolInfo storage pool = poolInfo[_pid];
+        UserInfo storage user = userInfo[_pid][_account];
+        updatePool(_pid);
+        _notifyWithdraw(_account, pool, user, _amount, _pid);
+        emit Withdraw(_account, _pid, _amount);
+    }
+
+    function _notifyWithdraw(
+        address _account,
+        PoolInfo storage pool,
+        UserInfo storage user,
+        uint256 _amount,
+        uint256 _pid
+    ) private {
+        require(user.amount >= _amount, "withdraw: not good");
+        uint256 pending = user.amount.mul(pool.accPopPerShare).div(1e12).sub(user.rewardDebt);
+        if (pending > 0) {
+            safePopTransfer(_account, pending);
+        }
+        user.amount = user.amount.sub(_amount);
+        user.rewardDebt = user.amount.mul(pool.accPopPerShare).div(1e12);
+        pool.lpSupply = pool.lpSupply.sub(_amount);
+        emit RewardPaid(_account, _pid, pending);
+    }
+
+    // Safe pop transfer function, just in case if rounding error causes pool to not have enough POPs.
+    function safePopTransfer(address _to, uint256 _amount) internal {
+        uint256 popBal = pop.balanceOf(address(this)).sub(popVault.lpSupply);
+        if (_amount > popBal) {
+            pop.transfer(_to, popBal);
+        } else {
+            pop.transfer(_to, _amount);
+        }
+    }
+
+    function stakePop(uint256 _amount) public {
+        UserInfo storage user = popStaker[msg.sender];
+        updatePopVault();
+        _notifyDeposit(msg.sender, popVault, user, _amount);
+        require(pop.transferFrom(msg.sender, address(this), _amount), "transfer failed");
+        emit PopDeposit(msg.sender, _amount);
+    }
+
+    function withdrawPop(uint256 _amount) public {
+        UserInfo storage user = popStaker[msg.sender];
+        updatePopVault();
+        _notifyWithdraw(msg.sender, popVault, user, _amount, UINT256_MAX);
+        require(pop.transfer(msg.sender, _amount), "transfer failed");
+        emit PopWithdraw(msg.sender, _amount);
+    }
+
+    function updatePopVault() public {
+        _updatePool(popVault);
+    }
+
+    function setPopVault(uint256 _allocPoint) public onlyOwner {
+        _set(popVault, _allocPoint, false);
+    }
+
+    function setPopVaultStartBlock(uint256 _startBlock) external onlyOwner {
+        popVault.lastRewardBlock = _startBlock;
+    }
+
+    function claimRewards(uint256 _poolId) external {
+        updatePool(_poolId);
+        _harvest(_poolId);
+    }
+
+    function claimPopRewards() external {
+        updatePopVault();
+        _harvestPopRewards(popVault);
+    }
+
+    function _harvestPopRewards(PoolInfo storage pool) internal {
+        UserInfo storage user = popStaker[msg.sender];
+        if (user.amount == 0) return;
+        uint256 pending = user.amount.mul(pool.accPopPerShare).div(1e12).sub(user.rewardDebt);
+        if (pending > 0) {
+            user.rewardDebt = user.amount.mul(pool.accPopPerShare).div(1e12);
+            // Pay out the pending rewards
+            safePopTransfer(msg.sender, pending);
+            emit RewardPaid(msg.sender, UINT256_MAX, pending);
+            return;
+        }
+        user.rewardDebt = user.amount.mul(pool.accPopPerShare).div(1e12);
+    }
+
+    function _harvest(uint256 _poolId) internal {
+        PoolInfo storage pool = poolInfo[_poolId];
+        UserInfo storage user = userInfo[_poolId][msg.sender];
+        if (user.amount == 0) return;
+        uint256 pending = user.amount.mul(pool.accPopPerShare).div(1e12).sub(user.rewardDebt);
+        if (pending > 0) {
+            user.rewardDebt = user.amount.mul(pool.accPopPerShare).div(1e12);
+            // Pay out the pending rewards
+            safePopTransfer(msg.sender, pending);
+            emit RewardPaid(msg.sender, _poolId, pending);
+            return;
+        }
+        user.rewardDebt = user.amount.mul(pool.accPopPerShare).div(1e12);
+    }
+}

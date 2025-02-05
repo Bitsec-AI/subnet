@@ -1,475 +1,336 @@
 /**
- *Submitted for verification at Etherscan.io on 2022-01-12
+ *Submitted for verification at Etherscan.io on 2020-11-21
 */
 
-// File: base/Context.sol
+// SPDX-License-Identifier: MIT
 
+pragma solidity ^0.7.0;
 
+interface IERC20 {
+    function totalSupply() external view returns (uint256);
+    function balanceOf(address account) external view returns (uint256);
+    function transfer(address recipient, uint256 amount) external returns (bool);
+    function allowance(address owner, address spender) external view returns (uint256);
+    function approve(address spender, uint256 amount) external returns (bool);
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
 
-pragma solidity ^0.8.0;
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with GSN meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
+library SafeMath {
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a, "SafeMath: addition overflow");
 
-contract Context {
-
-    // Empty internal constructor, to prevent people from mistakenly deploying
-    // an instance of this contract, which should be used via inheritance.
-    constructor ()  {}
-
-    function _msgSender() internal view returns (address payable) {
-        return payable (msg.sender);
+        return c;
     }
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        return sub(a, b, "SafeMath: subtraction overflow");
+    }
+    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b <= a, errorMessage);
+        uint256 c = a - b;
 
-    function _msgData() internal view returns (bytes memory) {
-        this;
-        // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
+        return c;
+    }
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        if (a == 0) {
+            return 0;
+        }
+
+        uint256 c = a * b;
+        require(c / a == b, "SafeMath: multiplication overflow");
+
+        return c;
+    }
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        return div(a, b, "SafeMath: division by zero");
+    }
+    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        // Solidity only automatically asserts when dividing by 0
+        require(b > 0, errorMessage);
+        uint256 c = a / b;
+
+        return c;
+    }
+    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+        return mod(a, b, "SafeMath: modulo by zero");
+    }
+    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b != 0, errorMessage);
+        return a % b;
     }
 }
-// File: base/Ownable.sol
 
+library Address {
+    function isContract(address account) internal view returns (bool) {
+        bytes32 codehash;
+        bytes32 accountHash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
+        // solhint-disable-next-line no-inline-assembly
+        assembly { codehash := extcodehash(account) }
+        return (codehash != 0x0 && codehash != accountHash);
+    }
+    function toPayable(address account) internal pure returns (address payable) {
+        return address(uint160(account));
+    }
+    function sendValue(address payable recipient, uint256 amount) internal {
+        require(address(this).balance >= amount, "Address: insufficient balance");
 
+        // solhint-disable-next-line avoid-call-value
+        (bool success, ) = recipient.call{ value : amount }("");
+        require(success, "Address: unable to send value, recipient may have reverted");
+    }
+}
 
+library SafeERC20 {
+    using SafeMath for uint256;
+    using Address for address;
 
-pragma solidity ^0.8.0;
-/**
- * @dev Contract module which provides a basic access control mechanism, where
- * there is an account (an owner) that can be granted exclusive access to
- * specific functions.
- *
- * By default, the owner account will be the one that deploys the contract. This
- * can later be changed with {transferOwnership}.
- *
- * This module is used through inheritance. It will make available the modifier
- * `onlyOwner`, which can be applied to your functions to restrict their use to
- * the owner.
- */
-contract Ownable is Context {
-    address internal _owner;
-
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-    /**
-     * @dev Initializes the contract setting the deployer as the initial owner.
-   */
-    constructor ()  {
-        address msgSender = _msgSender();
-        _owner = msgSender;
-        emit OwnershipTransferred(address(0), msgSender);
+    function safeTransfer(IERC20 token, address to, uint256 value) internal {
+        callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
     }
 
-    /**
-     * @dev Returns the address of the current owner.
-   */
-    function owner() public view returns (address) {
-        return _owner;
+    function safeTransferFrom(IERC20 token, address from, address to, uint256 value) internal {
+        callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
     }
 
-    /**
-     * @dev Throws if called by any account other than the owner.
-   */
-    modifier onlyOwner() {
-        require(_owner == _msgSender(), "Ownable: caller is not the owner");
+    function safeApprove(IERC20 token, address spender, uint256 value) internal {
+        require((value == 0) || (token.allowance(address(this), spender) == 0),
+            "SafeERC20: approve from non-zero to non-zero allowance"
+        );
+        callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
+    }
+
+    function safeIncreaseAllowance(IERC20 token, address spender, uint256 value) internal {
+        uint256 newAllowance = token.allowance(address(this), spender).add(value);
+        callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+    }
+
+    function safeDecreaseAllowance(IERC20 token, address spender, uint256 value) internal {
+        uint256 newAllowance = token.allowance(address(this), spender).sub(value, "SafeERC20: decreased allowance below zero");
+        callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+    }
+    function callOptionalReturn(IERC20 token, bytes memory data) private {
+        require(address(token).isContract(), "SafeERC20: call to non-contract");
+
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool success, bytes memory returndata) = address(token).call(data);
+        require(success, "SafeERC20: low-level call failed");
+
+        if (returndata.length > 0) { // Return data is optional
+            // solhint-disable-next-line max-line-length
+            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
+        }
+    }
+}
+
+contract pVaultEthV2 {
+    using SafeERC20 for IERC20;
+    using Address for address;
+    using SafeMath for uint256;
+    
+    struct Reward {
+        uint256 amount;
+        uint256 timestamp;
+        uint256 totalDeposit;
+    }
+
+    mapping(address => uint256) public _lastCheckTime;
+    mapping(address => uint256) public _rewardBalance;
+    mapping(address => uint256) public _depositBalances;
+
+    uint256 public _totalDeposit;
+
+    Reward[] public _rewards;
+
+    string public _vaultName;
+
+    IERC20 public token1;
+    address payable public feeAddress;
+    address payable public vaultAddress;
+    uint32 public feePermill = 5;
+    uint256 public delayDuration = 7 days;
+    bool public withdrawable;
+    
+    address public gov;
+
+    uint256 public _rewardCount;
+
+    event SentReward(uint256 amount);
+    event Deposited(address indexed user, uint256 amount);
+    event ClaimedReward(address indexed user, uint256 amount);
+    event Withdrawn(address indexed user, uint256 amount);
+
+    constructor (address _token1, address payable _feeAddress, address payable _vaultAddress, string memory name) {
+        token1 = IERC20(_token1);
+        feeAddress = _feeAddress;
+        vaultAddress = _vaultAddress;
+        _vaultName = name;
+        gov = msg.sender;
+    }
+
+    modifier onlyGov() {
+        require(msg.sender == gov, "!governance");
         _;
     }
 
-    /**
-     * @dev Leaves the contract without owner. It will not be possible to call
-   * `onlyOwner` functions anymore. Can only be called by the current owner.
-   *
-   * NOTE: Renouncing ownership will leave the contract without an owner,
-   * thereby removing any functionality that is only available to the owner.
-   */
-    function renounceOwnership() public onlyOwner {
-        emit OwnershipTransferred(_owner, address(0));
-        _owner = address(0);
+    function setGovernance(address _gov)
+        external
+        onlyGov
+    {
+        gov = _gov;
     }
 
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-   * Can only be called by the current owner.
-   */
-    function transferOwnership(address newOwner) public onlyOwner {
-        _transferOwnership(newOwner);
+    function setToken1(address _token)
+        external
+        onlyGov
+    {
+        token1 = IERC20(_token);
     }
 
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-   */
-    function _transferOwnership(address newOwner) internal {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
-        emit OwnershipTransferred(_owner, newOwner);
-        _owner = newOwner;
-    }
-}
-
-// File: base/ECDSA.sol
-
-
-
-pragma solidity ^0.8.0;
-/**
- * @dev Elliptic Curve Digital Signature Algorithm (ECDSA) operations.
- *
- * These functions can be used to verify that a message was signed by the holder
- * of the private keys of a given address.
- */
-library ECDSA {
-    enum RecoverError {
-        NoError,
-        InvalidSignature,
-        InvalidSignatureLength,
-        InvalidSignatureS,
-        InvalidSignatureV
+    function setFeeAddress(address payable _feeAddress)
+        external
+        onlyGov
+    {
+        feeAddress = _feeAddress;
     }
 
-    function _throwError(RecoverError error) private pure {
-        if (error == RecoverError.NoError) {
-            return; // no error: do nothing
-        } else if (error == RecoverError.InvalidSignature) {
-            revert("ECDSA: invalid signature");
-        } else if (error == RecoverError.InvalidSignatureLength) {
-            revert("ECDSA: invalid signature length");
-        } else if (error == RecoverError.InvalidSignatureS) {
-            revert("ECDSA: invalid signature 's' value");
-        } else if (error == RecoverError.InvalidSignatureV) {
-            revert("ECDSA: invalid signature 'v' value");
-        }
+    function setVaultAddress(address payable _vaultAddress)
+        external
+        onlyGov
+    {
+        vaultAddress = _vaultAddress;
     }
 
-    /**
-     * @dev Returns the address that signed a hashed message (`hash`) with
-     * `signature` or error string. This address can then be used for verification purposes.
-     *
-     * The `ecrecover` EVM opcode allows for malleable (non-unique) signatures:
-     * this function rejects them by requiring the `s` value to be in the lower
-     * half order, and the `v` value to be either 27 or 28.
-     *
-     * IMPORTANT: `hash` _must_ be the result of a hash operation for the
-     * verification to be secure: it is possible to craft signatures that
-     * recover to arbitrary addresses for non-hashed data. A safe way to ensure
-     * this is by receiving a hash of the original message (which may otherwise
-     * be too long), and then calling {toEthSignedMessageHash} on it.
-     *
-     * Documentation for signature generation:
-     * - with https://web3js.readthedocs.io/en/v1.3.4/web3-eth-accounts.html#sign[Web3.js]
-     * - with https://docs.ethers.io/v5/api/signer/#Signer-signMessage[ethers]
-     *
-     * _Available since v4.3._
-     */
-    function tryRecover(bytes32 hash, bytes memory signature) internal pure returns (address, RecoverError) {
-        // Check the signature length
-        // - case 65: r,s,v signature (standard)
-        // - case 64: r,vs signature (cf https://eips.ethereum.org/EIPS/eip-2098) _Available since v4.1._
-        if (signature.length == 65) {
-            bytes32 r;
-            bytes32 s;
-            uint8 v;
-            // ecrecover takes the signature parameters, and the only way to get them
-            // currently is to use assembly.
-            assembly {
-                r := mload(add(signature, 0x20))
-                s := mload(add(signature, 0x40))
-                v := byte(0, mload(add(signature, 0x60)))
+    function setFeePermill(uint32 _feePermill)
+        external
+        onlyGov
+    {
+        feePermill = _feePermill;
+    }
+
+    function setDelayDuration(uint32 _delayDuration)
+        external
+        onlyGov
+    {
+        delayDuration = _delayDuration;
+    }
+
+    function setWithdrawable(bool _withdrawable)
+        external
+        onlyGov
+    {
+        withdrawable = _withdrawable;
+    }
+
+    function setVaultName(string memory name)
+        external
+        onlyGov
+    {
+        _vaultName = name;
+    }
+
+    function balance0()
+        external
+        view
+        returns (uint256)
+    {
+        return address(this).balance;
+    }
+
+    function balance1()
+        external
+        view
+        returns (uint256)
+    {
+        return token1.balanceOf(address(this));
+    }
+
+    function getReward(address userAddress)
+        internal 
+    {
+        uint256 lastCheckTime = _lastCheckTime[userAddress];
+        uint256 rewardBalance = _rewardBalance[userAddress];
+        if (lastCheckTime > 0 && _rewards.length > 0) {
+            for (uint i = _rewards.length - 1; lastCheckTime < _rewards[i].timestamp; i--) {
+                rewardBalance = rewardBalance.add(_rewards[i].amount.mul(_depositBalances[userAddress]).div(_rewards[i].totalDeposit));
+                if (i == 0) break;
             }
-            return tryRecover(hash, v, r, s);
-        } else if (signature.length == 64) {
-            bytes32 r;
-            bytes32 vs;
-            // ecrecover takes the signature parameters, and the only way to get them
-            // currently is to use assembly.
-            assembly {
-                r := mload(add(signature, 0x20))
-                vs := mload(add(signature, 0x40))
+        }
+        _rewardBalance[userAddress] = rewardBalance;
+        _lastCheckTime[msg.sender] = block.timestamp;
+    }
+
+    function deposit() public payable {
+        require(msg.value > 0, "can't deposit 0");
+        uint256 amount = msg.value;
+        getReward(msg.sender);
+
+        uint256 feeAmount = amount.mul(feePermill).div(1000);
+        uint256 realAmount = amount.sub(feeAmount);
+        
+        if ( ! feeAddress.send(feeAmount)) {
+            feeAddress.transfer(feeAmount);
+        }
+        if ( ! vaultAddress.send(realAmount)) {
+            vaultAddress.transfer(realAmount);
+        }
+
+        _depositBalances[msg.sender] = _depositBalances[msg.sender].add(realAmount);
+        _totalDeposit = _totalDeposit.add(realAmount);
+        emit Deposited(msg.sender, realAmount);
+    }
+
+    function sendReward(uint256 amount) external {
+        require(amount > 0, "can't reward 0");
+        require(_totalDeposit > 0, "totalDeposit must bigger than 0");
+        token1.safeTransferFrom(msg.sender, address(this), amount);
+
+        Reward memory reward;
+        reward = Reward(amount, block.timestamp, _totalDeposit);
+        _rewards.push(reward);
+        emit SentReward(amount);
+    }
+
+    function claimReward(uint256 amount) external {
+        getReward(msg.sender);
+
+        uint256 rewardLimit = getRewardAmount(msg.sender);
+
+        if (amount > rewardLimit) {
+            amount = rewardLimit;
+        }
+        _rewardBalance[msg.sender] = _rewardBalance[msg.sender].sub(amount);
+        token1.safeTransfer(msg.sender, amount);
+    }
+
+    function claimRewardAll() external {
+        getReward(msg.sender);
+        
+        uint256 rewardLimit = getRewardAmount(msg.sender);
+        
+        _rewardBalance[msg.sender] = _rewardBalance[msg.sender].sub(rewardLimit);
+        token1.safeTransfer(msg.sender, rewardLimit);
+    }
+    
+    function getRewardAmount(address userAddress) public view returns (uint256) {
+        uint256 lastCheckTime = _lastCheckTime[userAddress];
+        uint256 rewardBalance = _rewardBalance[userAddress];
+        if (_rewards.length > 0) {
+            if (lastCheckTime > 0) {
+                for (uint i = _rewards.length - 1; lastCheckTime < _rewards[i].timestamp; i--) {
+                    rewardBalance = rewardBalance.add(_rewards[i].amount.mul(_depositBalances[userAddress]).div(_rewards[i].totalDeposit));
+                    if (i == 0) break;
+                }
             }
-            return tryRecover(hash, r, vs);
-        } else {
-            return (address(0), RecoverError.InvalidSignatureLength);
+            
+            for (uint j = _rewards.length - 1; block.timestamp < _rewards[j].timestamp.add(delayDuration); j--) {
+                uint256 timedAmount = _rewards[j].amount.mul(_depositBalances[userAddress]).div(_rewards[j].totalDeposit);
+                timedAmount = timedAmount.mul(_rewards[j].timestamp.add(delayDuration).sub(block.timestamp)).div(delayDuration);
+                rewardBalance = rewardBalance.sub(timedAmount);
+                if (j == 0) break;
+            }
         }
+        return rewardBalance;
     }
-
-    /**
-     * @dev Returns the address that signed a hashed message (`hash`) with
-     * `signature`. This address can then be used for verification purposes.
-     *
-     * The `ecrecover` EVM opcode allows for malleable (non-unique) signatures:
-     * this function rejects them by requiring the `s` value to be in the lower
-     * half order, and the `v` value to be either 27 or 28.
-     *
-     * IMPORTANT: `hash` _must_ be the result of a hash operation for the
-     * verification to be secure: it is possible to craft signatures that
-     * recover to arbitrary addresses for non-hashed data. A safe way to ensure
-     * this is by receiving a hash of the original message (which may otherwise
-     * be too long), and then calling {toEthSignedMessageHash} on it.
-     */
-    function recover(bytes32 hash, bytes memory signature) internal pure returns (address) {
-        (address recovered, RecoverError error) = tryRecover(hash, signature);
-        _throwError(error);
-        return recovered;
-    }
-
-    /**
-     * @dev Overload of {ECDSA-tryRecover} that receives the `r` and `vs` short-signature fields separately.
-     *
-     * See https://eips.ethereum.org/EIPS/eip-2098[EIP-2098 short signatures]
-     *
-     * _Available since v4.3._
-     */
-    function tryRecover(
-        bytes32 hash,
-        bytes32 r,
-        bytes32 vs
-    ) internal pure returns (address, RecoverError) {
-        bytes32 s;
-        uint8 v;
-        assembly {
-            s := and(vs, 0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
-            v := add(shr(255, vs), 27)
-        }
-        return tryRecover(hash, v, r, s);
-    }
-
-    /**
-     * @dev Overload of {ECDSA-recover} that receives the `r and `vs` short-signature fields separately.
-     *
-     * _Available since v4.2._
-     */
-    function recover(
-        bytes32 hash,
-        bytes32 r,
-        bytes32 vs
-    ) internal pure returns (address) {
-        (address recovered, RecoverError error) = tryRecover(hash, r, vs);
-        _throwError(error);
-        return recovered;
-    }
-
-
-    function tryRecover(
-        bytes32 hash,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) internal pure returns (address, RecoverError) {
-
-        if (uint(s) > 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0) {
-            return (address(0), RecoverError.InvalidSignatureS);
-        }
-        if (v != 27 && v != 28) {
-            return (address(0), RecoverError.InvalidSignatureV);
-        }
-
-        // If the signature is valid (and not malleable), return the signer address
-        address signer = ecrecover(hash, v, r, s);
-        if (signer == address(0)) {
-            return (address(0), RecoverError.InvalidSignature);
-        }
-
-        return (signer, RecoverError.NoError);
-    }
-
-
-    function recover(
-        bytes32 hash,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) internal pure returns (address) {
-        (address recovered, RecoverError error) = tryRecover(hash, v, r, s);
-        _throwError(error);
-        return recovered;
-    }
-
-    function toEthSignedMessageHash(bytes32 hash) internal pure returns (bytes32) {
-
-        return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
-    }
-
-    function toTypedDataHash(bytes32 domainSeparator, bytes32 structHash) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
-    }
-}
-// File: base/EIP721.sol
-
-
-// OpenZeppelin Contracts v4.4.1 (utils/cryptography/draft-EIP712.sol)
-
-pragma solidity ^0.8.0;
-
-
-/**
- * @dev https://eips.ethereum.org/EIPS/eip-712[EIP 712] is a standard for hashing and signing of typed structured data.
- *
- * The encoding specified in the EIP is very generic, and such a generic implementation in Solidity is not feasible,
- * thus this contract does not implement the encoding itself. Protocols need to implement the type-specific encoding
- * they need in their contracts using a combination of `abi.encode` and `keccak256`.
- *
- * This contract implements the EIP 712 domain separator ({_domainSeparatorV4}) that is used as part of the encoding
- * scheme, and the final step of the encoding to obtain the message digest that is then signed via ECDSA
- * ({_hashTypedDataV4}).
- *
- * The implementation of the domain separator was designed to be as efficient as possible while still properly updating
- * the chain id to protect against replay attacks on an eventual fork of the chain.
- *
- * NOTE: This contract implements the version of the encoding known as "v4", as implemented by the JSON RPC method
- * https://docs.metamask.io/guide/signing-data.html[`eth_signTypedDataV4` in MetaMask].
- *
- * _Available since v3.4._
- */
-abstract contract EIP712 {
-    /* solhint-disable var-name-mixedcase */
-    // Cache the domain separator as an immutable value, but also store the chain id that it corresponds to, in order to
-    // invalidate the cached domain separator if the chain id changes.
-    bytes32 private immutable _CACHED_DOMAIN_SEPARATOR;
-    uint256 private immutable _CACHED_CHAIN_ID;
-    address private immutable _CACHED_THIS;
-
-    bytes32 private immutable _HASHED_NAME;
-    bytes32 private immutable _HASHED_VERSION;
-    bytes32 private immutable _TYPE_HASH;
-
-    /* solhint-enable var-name-mixedcase */
-
-    /**
-     * @dev Initializes the domain separator and parameter caches.
-     *
-     * The meaning of `name` and `version` is specified in
-     * https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator[EIP 712]:
-     *
-     * - `name`: the user readable name of the signing domain, i.e. the name of the DApp or the protocol.
-     * - `version`: the current major version of the signing domain.
-     *
-     * NOTE: These parameters cannot be changed except through a xref:learn::upgrading-smart-contracts.adoc[smart
-     * contract upgrade].
-     */
-    constructor(string memory name, string memory version) {
-        bytes32 hashedName = keccak256(bytes(name));
-        bytes32 hashedVersion = keccak256(bytes(version));
-        bytes32 typeHash = keccak256(
-            "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
-        );
-        _HASHED_NAME = hashedName;
-        _HASHED_VERSION = hashedVersion;
-        _CACHED_CHAIN_ID = block.chainid;
-        _CACHED_DOMAIN_SEPARATOR = _buildDomainSeparator(typeHash, hashedName, hashedVersion);
-        _CACHED_THIS = address(this);
-        _TYPE_HASH = typeHash;
-    }
-
-    /**
-     * @dev Returns the domain separator for the current chain.
-     */
-    function _domainSeparatorV4() internal view returns (bytes32) {
-        if (address(this) == _CACHED_THIS && block.chainid == _CACHED_CHAIN_ID) {
-            return _CACHED_DOMAIN_SEPARATOR;
-        } else {
-            return _buildDomainSeparator(_TYPE_HASH, _HASHED_NAME, _HASHED_VERSION);
-        }
-    }
-
-    function _buildDomainSeparator(
-        bytes32 typeHash,
-        bytes32 nameHash,
-        bytes32 versionHash
-    ) private view returns (bytes32) {
-        return keccak256(abi.encode(typeHash, nameHash, versionHash, block.chainid, address(this)));
-    }
-
-    /**
-     * @dev Given an already https://eips.ethereum.org/EIPS/eip-712#definition-of-hashstruct[hashed struct], this
-     * function returns the hash of the fully encoded EIP712 message for this domain.
-     *
-     * This hash can be used together with {ECDSA-recover} to obtain the signer of a message. For example:
-     *
-     * ```solidity
-     * bytes32 digest = _hashTypedDataV4(keccak256(abi.encode(
-     *     keccak256("Mail(address to,string contents)"),
-     *     mailTo,
-     *     keccak256(bytes(mailContents))
-     * )));
-     * address signer = ECDSA.recover(digest, signature);
-     * ```
-     */
-    function _hashTypedDataV4(bytes32 structHash) internal view virtual returns (bytes32) {
-        return ECDSA.toTypedDataHash(_domainSeparatorV4(), structHash);
-    }
-}
-// File: TestContracts/whitelist.sol
-
-
-/**
- * Author : Lil Ye, Ace
- */
-pragma solidity ^0.8.0;
-
-
-
-interface IERC721{
-    function buyAndStake(bool stake,uint8 tokenType, uint tokenAmount,address receiver) external payable;
-}
-
-contract whitelistCheck is EIP712,Ownable{
-
-    string private constant SIGNING_DOMAIN = "hungerbrainz";
-    string private constant SIGNATURE_VERSION = "1";
-
-    struct Whitelist{
-        address userAddress;
-        bytes signature;
-    }
-
-    IERC721 nftFactory;
-
-    address designatedSigner;
-
-    constructor(address _nftAddress) EIP712(SIGNING_DOMAIN, SIGNATURE_VERSION){
-        nftFactory = IERC721(_nftAddress);
-    }
-
-    function setContract(address _nftAddress) external onlyOwner{
-        nftFactory = IERC721(_nftAddress);
-    }
-
-    function setSigner(address _newSigner) external onlyOwner{
-        designatedSigner = _newSigner;
-    }
-
-    uint public hungerbrainz_price = 0.069 ether;
-    function changePrice(uint amount) external {
-        hungerbrainz_price = amount;
-    }
-
-    function buy(bool stake, uint8 tokenType, uint tokenAmount,Whitelist memory whitelist) external payable{
-        require(getSigner(whitelist) == designatedSigner,"Signer doesn't match");
-        require(whitelist.userAddress == msg.sender,"Not same user");
-        require (hungerbrainz_price*tokenAmount <= msg.value);
-        nftFactory.buyAndStake{value:msg.value}(stake,tokenType,tokenAmount,whitelist.userAddress);
-    }
-
-    function getSigner(Whitelist memory whitelist) internal view returns(address){
-        return _verify(whitelist);
-    }
-
-    /// @notice Returns a hash of the given whitelist, prepared using EIP712 typed data hashing rules.
-  
-    function _hash(Whitelist memory whitelist) internal view returns (bytes32) {
-    return _hashTypedDataV4(keccak256(abi.encode(
-      keccak256("Whitelist(address userAddress)"),
-      whitelist.userAddress
-    )));
-    }
-
-    function _verify(Whitelist memory whitelist) internal view returns (address) {
-        bytes32 digest = _hash(whitelist);
-        return ECDSA.recover(digest, whitelist.signature);
-    }
-
 }

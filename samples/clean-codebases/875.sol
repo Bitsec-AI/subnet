@@ -1,462 +1,422 @@
+/**
+ *Submitted for verification at Etherscan.io on 2021-04-25
+*/
+
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.6.2;
+pragma solidity 0.8.3;
 
 /**
- * @dev Collection of functions related to the address type
+ * @dev Interface of the ERC20 standard as defined in the EIP.
  */
-library Address {
+interface IERC20 {
     /**
-     * @dev Returns true if `account` is a contract.
+     * @dev Returns the amount of tokens in existence.
+     */
+    function totalSupply() external view returns (uint256);
+
+    /**
+     * @dev Returns the amount of tokens owned by `account`.
+     */
+    function balanceOf(address account) external view returns (uint256);
+
+    /**
+     * @dev Moves `amount` tokens from the caller's account to `recipient`.
      *
-     * [IMPORTANT]
-     * ====
-     * It is unsafe to assume that an address for which this function returns
-     * false is an externally-owned account (EOA) and not a contract.
+     * Returns a boolean value indicating whether the operation succeeded.
      *
-     * Among others, `isContract` will return false for the following
-     * types of addresses:
+     * Emits a {Transfer} event.
+     */
+    function transfer(address recipient, uint256 amount)
+        external
+        returns (bool);
+
+    /**
+     * @dev Returns the remaining number of tokens that `spender` will be
+     * allowed to spend on behalf of `owner` through {transferFrom}. This is
+     * zero by default.
      *
-     *  - an externally-owned account
-     *  - a contract in construction
-     *  - an address where a contract will be created
-     *  - an address where a contract lived, but was destroyed
-     * ====
+     * This value changes when {approve} or {transferFrom} are called.
      */
-    function isContract(address account) internal view returns (bool) {
-        // This method relies on extcodesize, which returns 0 for contracts in
-        // construction, since the code is only stored at the end of the
-        // constructor execution.
-
-        uint256 size;
-        // solhint-disable-next-line no-inline-assembly
-        assembly { size := extcodesize(account) }
-        return size > 0;
-    }
-
-}
-/**
- * @title Proxy
- * @dev Implements delegation of calls to other contracts, with proper
- * forwarding of return values and bubbling of failures.
- * It defines a fallback function that delegates all calls to the address
- * returned by the abstract _implementation() internal function.
- */
-abstract contract Proxy {
-  /**
-   * @dev Fallback function.
-   * Implemented entirely in `_fallback`.
-   */
-  fallback () payable external {
-    _fallback();
-  }
-
-  /**
-   * @dev Receive function.
-   * Implemented entirely in `_fallback`.
-   */
-  receive () payable external {
-    _fallback();
-  }
-
-  /**
-   * @return The Address of the implementation.
-   */
-  function _implementation() internal virtual view returns (address);
-
-  /**
-   * @dev Delegates execution to an implementation contract.
-   * This is a low level function that doesn't return to its internal call site.
-   * It will return to the external caller whatever the implementation returns.
-   * @param implementation Address to delegate.
-   */
-  function _delegate(address implementation) internal {
-    assembly {
-      // Copy msg.data. We take full control of memory in this inline assembly
-      // block because it will not return to Solidity code. We overwrite the
-      // Solidity scratch pad at memory position 0.
-      calldatacopy(0, 0, calldatasize())
-
-      // Call the implementation.
-      // out and outsize are 0 because we don't know the size yet.
-      let result := delegatecall(gas(), implementation, 0, calldatasize(), 0, 0)
-
-      // Copy the returned data.
-      returndatacopy(0, 0, returndatasize())
-
-      switch result
-      // delegatecall returns 0 on error.
-      case 0 { revert(0, returndatasize()) }
-      default { return(0, returndatasize()) }
-    }
-  }
-
-  /**
-   * @dev Function that is run as the first thing in the fallback function.
-   * Can be redefined in derived contracts to add functionality.
-   * Redefinitions must call super._willFallback().
-   */
-  function _willFallback() internal virtual {
-  }
-
-  /**
-   * @dev fallback implementation.
-   * Extracted to enable manual triggering.
-   */
-  function _fallback() internal {
-    _willFallback();
-    _delegate(_implementation());
-  }
-}
-
-/**
- * @title UpgradeabilityProxy
- * @dev This contract implements a proxy that allows to change the
- * implementation address to which it will delegate.
- * Such a change is called an implementation upgrade.
- */
-contract UpgradeabilityProxy is Proxy {
-  /**
-   * @dev Contract constructor.
-   * @param _logic Address of the initial implementation.
-   * @param _data Data to send as msg.data to the implementation to initialize the proxied contract.
-   * It should include the signature and the parameters of the function to be called, as described in
-   * https://solidity.readthedocs.io/en/v0.4.24/abi-spec.html#function-selector-and-argument-encoding.
-   * This parameter is optional, if no data is given the initialization call to proxied contract will be skipped.
-   */
-  constructor(address _logic, bytes memory _data) public payable {
-    assert(IMPLEMENTATION_SLOT == bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1));
-    _setImplementation(_logic);
-    if(_data.length > 0) {
-      (bool success,) = _logic.delegatecall(_data);
-      require(success);
-    }
-  }  
-
-  /**
-   * @dev Emitted when the implementation is upgraded.
-   * @param implementation Address of the new implementation.
-   */
-  event Upgraded(address indexed implementation);
-
-  /**
-   * @dev Storage slot with the address of the current implementation.
-   * This is the keccak-256 hash of "eip1967.proxy.implementation" subtracted by 1, and is
-   * validated in the constructor.
-   */
-  bytes32 internal constant IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
-
-  /**
-   * @dev Returns the current implementation.
-   * @return impl Address of the current implementation
-   */
-  function _implementation() internal override view returns (address impl) {
-    bytes32 slot = IMPLEMENTATION_SLOT;
-    assembly {
-      impl := sload(slot)
-    }
-  }
-
-  /**
-   * @dev Upgrades the proxy to a new implementation.
-   * @param newImplementation Address of the new implementation.
-   */
-  function _upgradeTo(address newImplementation) internal {
-    _setImplementation(newImplementation);
-    emit Upgraded(newImplementation);
-  }
-
-  /**
-   * @dev Sets the implementation address of the proxy.
-   * @param newImplementation Address of the new implementation.
-   */
-  function _setImplementation(address newImplementation) internal {
-    require(Address.isContract(newImplementation), "Cannot set a proxy implementation to a non-contract address");
-
-    bytes32 slot = IMPLEMENTATION_SLOT;
-
-    assembly {
-      sstore(slot, newImplementation)
-    }
-  }
-}
-
-/**
- * @title AdminUpgradeabilityProxy
- * @dev This contract combines an upgradeability proxy with an authorization
- * mechanism for administrative tasks.
- * All external functions in this contract must be guarded by the
- * `ifAdmin` modifier. See ethereum/solidity#3864 for a Solidity
- * feature proposal that would enable this to be done automatically.
- */
-contract AdminUpgradeabilityProxy is UpgradeabilityProxy {
-  /**
-   * Contract constructor.
-   * @param _logic address of the initial implementation.
-   * @param _admin Address of the proxy administrator.
-   * @param _data Data to send as msg.data to the implementation to initialize the proxied contract.
-   * It should include the signature and the parameters of the function to be called, as described in
-   * https://solidity.readthedocs.io/en/v0.4.24/abi-spec.html#function-selector-and-argument-encoding.
-   * This parameter is optional, if no data is given the initialization call to proxied contract will be skipped.
-   */
-  constructor(address _logic, address _admin, bytes memory _data) UpgradeabilityProxy(_logic, _data) public payable {
-    assert(ADMIN_SLOT == bytes32(uint256(keccak256('eip1967.proxy.admin')) - 1));
-    _setAdmin(_admin);
-  }
-
-  /**
-   * @dev Emitted when the administration has been transferred.
-   * @param previousAdmin Address of the previous admin.
-   * @param newAdmin Address of the new admin.
-   */
-  event AdminChanged(address previousAdmin, address newAdmin);
-
-  /**
-   * @dev Storage slot with the admin of the contract.
-   * This is the keccak-256 hash of "eip1967.proxy.admin" subtracted by 1, and is
-   * validated in the constructor.
-   */
-
-  bytes32 internal constant ADMIN_SLOT = 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
-
-  /**
-   * @dev Modifier to check whether the `msg.sender` is the admin.
-   * If it is, it will run the function. Otherwise, it will delegate the call
-   * to the implementation.
-   */
-  modifier ifAdmin() {
-    if (msg.sender == _admin()) {
-      _;
-    } else {
-      _fallback();
-    }
-  }
-
-  /**
-   * @return The address of the proxy admin.
-   */
-  function admin() external ifAdmin returns (address) {
-    return _admin();
-  }
-
-  /**
-   * @return The address of the implementation.
-   */
-  function implementation() external ifAdmin returns (address) {
-    return _implementation();
-  }
-
-  /**
-   * @dev Changes the admin of the proxy.
-   * Only the current admin can call this function.
-   * @param newAdmin Address to transfer proxy administration to.
-   */
-  function changeAdmin(address newAdmin) external ifAdmin {
-    require(newAdmin != address(0), "Cannot change the admin of a proxy to the zero address");
-    emit AdminChanged(_admin(), newAdmin);
-    _setAdmin(newAdmin);
-  }
-
-  /**
-   * @dev Upgrade the backing implementation of the proxy.
-   * Only the admin can call this function.
-   * @param newImplementation Address of the new implementation.
-   */
-  function upgradeTo(address newImplementation) external ifAdmin {
-    _upgradeTo(newImplementation);
-  }
-
-  /**
-   * @dev Upgrade the backing implementation of the proxy and call a function
-   * on the new implementation.
-   * This is useful to initialize the proxied contract.
-   * @param newImplementation Address of the new implementation.
-   * @param data Data to send as msg.data in the low level call.
-   * It should include the signature and the parameters of the function to be called, as described in
-   * https://solidity.readthedocs.io/en/v0.4.24/abi-spec.html#function-selector-and-argument-encoding.
-   */
-  function upgradeToAndCall(address newImplementation, bytes calldata data) payable external ifAdmin {
-    _upgradeTo(newImplementation);
-    (bool success,) = newImplementation.delegatecall(data);
-    require(success);
-  }
-
-  /**
-   * @return adm The admin slot.
-   */
-  function _admin() internal view returns (address adm) {
-    bytes32 slot = ADMIN_SLOT;
-    assembly {
-      adm := sload(slot)
-    }
-  }
-
-  /**
-   * @dev Sets the address of the proxy admin.
-   * @param newAdmin Address of the new proxy admin.
-   */
-  function _setAdmin(address newAdmin) internal {
-    bytes32 slot = ADMIN_SLOT;
-
-    assembly {
-      sstore(slot, newAdmin)
-    }
-  }
-
-  /**
-   * @dev Only fall back when the sender is not the admin.
-   */
-  function _willFallback() internal override virtual {
-    require(msg.sender != _admin(), "Cannot call fallback function from the proxy admin");
-    super._willFallback();
-  }
-}
-
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with GSN meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
-abstract contract Context {
-    function _msgSender() internal view virtual returns (address payable) {
-        return msg.sender;
-    }
-
-    function _msgData() internal view virtual returns (bytes memory) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
-    }
-}
-
-/**
- * @dev Contract module which provides a basic access control mechanism, where
- * there is an account (an owner) that can be granted exclusive access to
- * specific functions.
- *
- * By default, the owner account will be the one that deploys the contract. This
- * can later be changed with {transferOwnership}.
- *
- * This module is used through inheritance. It will make available the modifier
- * `onlyOwner`, which can be applied to your functions to restrict their use to
- * the owner.
- */
-contract Ownable is Context {
-    address private _owner;
-
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    function allowance(address owner, address spender)
+        external
+        view
+        returns (uint256);
 
     /**
-     * @dev Initializes the contract setting the deployer as the initial owner.
+     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * IMPORTANT: Beware that changing an allowance with this method brings the risk
+     * that someone may use both the old and the new allowance by unfortunate
+     * transaction ordering. One possible solution to mitigate this race
+     * condition is to first reduce the spender's allowance to 0 and set the
+     * desired value afterwards:
+     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+     *
+     * Emits an {Approval} event.
      */
-    constructor () internal {
-        address msgSender = _msgSender();
-        _owner = msgSender;
-        emit OwnershipTransferred(address(0), msgSender);
-    }
+    function approve(address spender, uint256 amount) external returns (bool);
 
     /**
-     * @dev Returns the address of the current owner.
+     * @dev Moves `amount` tokens from `sender` to `recipient` using the
+     * allowance mechanism. `amount` is then deducted from the caller's
+     * allowance.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
      */
-    function owner() public view returns (address) {
-        return _owner;
-    }
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
 
     /**
-     * @dev Throws if called by any account other than the owner.
+     * @dev Emitted when `value` tokens are moved from one account (`from`) to
+     * another (`to`).
+     *
+     * Note that `value` may be zero.
      */
-    modifier onlyOwner() {
-        require(_owner == _msgSender(), "Ownable: caller is not the owner");
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    /**
+     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
+     * a call to {approve}. `value` is the new allowance.
+     */
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
+}
+
+/// @title Contains 512-bit math functions
+/// @notice Facilitates multiplication and division that can have overflow of an intermediate value without any loss of precision
+/// @dev Handles "phantom overflow" i.e., allows multiplication and division where an intermediate value overflows 256 bits
+library FullMath {
+    /// @notice Calculates floor(a×b÷denominator) with full precision. Throws if result overflows a uint256 or denominator == 0
+    /// @param a The multiplicand
+    /// @param b The multiplier
+    /// @param denominator The divisor
+    /// @return result The 256-bit result
+    /// @dev Credit to Remco Bloemen under MIT license https://xn--2-umb.com/21/muldiv
+    function mulDiv(
+        uint256 a,
+        uint256 b,
+        uint256 denominator
+    ) internal pure returns (uint256 result) {
+        // 512-bit multiply [prod1 prod0] = a * b
+        // Compute the product mod 2**256 and mod 2**256 - 1
+        // then use the Chinese Remainder Theorem to reconstruct
+        // the 512 bit result. The result is stored in two 256
+        // variables such that product = prod1 * 2**256 + prod0
+        uint256 prod0; // Least significant 256 bits of the product
+        uint256 prod1; // Most significant 256 bits of the product
+        assembly {
+            let mm := mulmod(a, b, not(0))
+            prod0 := mul(a, b)
+            prod1 := sub(sub(mm, prod0), lt(mm, prod0))
+        }
+
+        // Handle non-overflow cases, 256 by 256 division
+        if (prod1 == 0) {
+            require(denominator > 0);
+            assembly {
+                result := div(prod0, denominator)
+            }
+            return result;
+        }
+
+        // Make sure the result is less than 2**256.
+        // Also prevents denominator == 0
+        require(denominator > prod1);
+
+        ///////////////////////////////////////////////
+        // 512 by 256 division.
+        ///////////////////////////////////////////////
+
+        // Make division exact by subtracting the remainder from [prod1 prod0]
+        // Compute remainder using mulmod
+        uint256 remainder;
+        assembly {
+            remainder := mulmod(a, b, denominator)
+        }
+        // Subtract 256 bit number from 512 bit number
+        assembly {
+            prod1 := sub(prod1, gt(remainder, prod0))
+            prod0 := sub(prod0, remainder)
+        }
+
+        // Factor powers of two out of denominator
+        // Compute largest power of two divisor of denominator.
+        // Always >= 1.
+        uint256 twos = denominator & (~denominator + 1);
+        // Divide denominator by power of two
+        assembly {
+            denominator := div(denominator, twos)
+        }
+
+        // Divide [prod1 prod0] by the factors of two
+        assembly {
+            prod0 := div(prod0, twos)
+        }
+        // Shift in bits from prod1 into prod0. For this we need
+        // to flip `twos` such that it is 2**256 / twos.
+        // If twos is zero, then it becomes one
+        assembly {
+            twos := add(div(sub(0, twos), twos), 1)
+        }
+        prod0 |= prod1 * twos;
+
+        // Invert denominator mod 2**256
+        // Now that denominator is an odd number, it has an inverse
+        // modulo 2**256 such that denominator * inv = 1 mod 2**256.
+        // Compute the inverse by starting with a seed that is correct
+        // correct for four bits. That is, denominator * inv = 1 mod 2**4
+        uint256 inv = (3 * denominator) ^ 2;
+        // Now use Newton-Raphson iteration to improve the precision.
+        // Thanks to Hensel's lifting lemma, this also works in modular
+        // arithmetic, doubling the correct bits in each step.
+        inv *= 2 - denominator * inv; // inverse mod 2**8
+        inv *= 2 - denominator * inv; // inverse mod 2**16
+        inv *= 2 - denominator * inv; // inverse mod 2**32
+        inv *= 2 - denominator * inv; // inverse mod 2**64
+        inv *= 2 - denominator * inv; // inverse mod 2**128
+        inv *= 2 - denominator * inv; // inverse mod 2**256
+
+        // Because the division is now exact we can divide by multiplying
+        // with the modular inverse of denominator. This will give us the
+        // correct result modulo 2**256. Since the precoditions guarantee
+        // that the outcome is less than 2**256, this is the final result.
+        // We don't need to compute the high bits of the result and prod1
+        // is no longer required.
+        result = prod0 * inv;
+        return result;
+    }
+
+    /// @notice Calculates ceil(a×b÷denominator) with full precision. Throws if result overflows a uint256 or denominator == 0
+    /// @param a The multiplicand
+    /// @param b The multiplier
+    /// @param denominator The divisor
+    /// @return result The 256-bit result
+    function mulDivRoundingUp(
+        uint256 a,
+        uint256 b,
+        uint256 denominator
+    ) internal pure returns (uint256 result) {
+        result = mulDiv(a, b, denominator);
+        if (mulmod(a, b, denominator) > 0) {
+            require(result < type(uint256).max);
+            result++;
+        }
+    }
+}
+
+interface IMinterReceiver {
+    function sharesMinted(
+        uint40 stakeId,
+        address supplier,
+        uint72 stakedHearts,
+        uint72 stakeShares
+    ) external;
+
+    function earningsMinted(uint40 stakeId, uint72 heartsEarned) external;
+}
+
+contract ShareMarket is IMinterReceiver {
+    IERC20 public hexContract;
+    address public minterContract;
+
+    struct ShareOrder {
+        uint40 stakeId;
+        uint72 sharesPurchased;
+        address shareReceiver;
+    }
+    struct ShareListing {
+        uint72 heartsStaked;
+        uint72 sharesTotal;
+        uint72 sharesAvailable;
+        uint72 heartsEarned;
+        uint72 supplierHeartsOwed;
+        address supplier;
+        mapping(address => uint72) shareOwners;
+    }
+    mapping(uint40 => ShareListing) public shareListings;
+
+    event AddListing(
+        uint40 indexed stakeId,
+        address indexed supplier,
+        uint72 shares
+    );
+    event SharesUpdate(
+        uint40 indexed stakeId,
+        address indexed updater,
+        uint72 sharesAvailable
+    );
+    event AddEarnings(uint40 indexed stakeId, uint72 heartsEarned);
+    event BuyShares(
+        uint40 indexed stakeId,
+        address indexed owner,
+        uint72 sharesPurchased
+    );
+    event ClaimEarnings(
+        uint40 indexed stakeId,
+        address indexed claimer,
+        uint256 heartsClaimed
+    );
+    event SupplierWithdraw(
+        uint40 indexed stakeId,
+        address indexed supplier,
+        uint72 heartsWithdrawn
+    );
+
+    uint256 private unlocked = 1;
+    modifier lock() {
+        require(unlocked == 1, "LOCKED");
+        unlocked = 0;
         _;
+        unlocked = 1;
     }
 
-    /**
-     * @dev Leaves the contract without owner. It will not be possible to call
-     * `onlyOwner` functions anymore. Can only be called by the current owner.
-     *
-     * NOTE: Renouncing ownership will leave the contract without an owner,
-     * thereby removing any functionality that is only available to the owner.
-     */
-    function renounceOwnership() public virtual onlyOwner {
-        emit OwnershipTransferred(_owner, address(0));
-        _owner = address(0);
+    constructor(IERC20 _hex, address _minter) {
+        hexContract = _hex;
+        minterContract = _minter;
     }
 
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Can only be called by the current owner.
-     */
-    function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
-        emit OwnershipTransferred(_owner, newOwner);
-        _owner = newOwner;
+    function sharesOwned(uint40 stakeId, address owner)
+        public
+        view
+        returns (uint72 shares)
+    {
+        return shareListings[stakeId].shareOwners[owner];
     }
-}
 
-/**
- * @title ProxyAdmin
- * @dev This contract is the admin of a proxy, and is in charge
- * of upgrading it as well as transferring it to another admin.
- */
-contract ProxyAdmin is Ownable {
-  
-  /**
-   * @dev Returns the current implementation of a proxy.
-   * This is needed because only the proxy admin can query it.
-   * @return The address of the current implementation of the proxy.
-   */
-  function getProxyImplementation(AdminUpgradeabilityProxy proxy) public view returns (address) {
-    // We need to manually run the static call since the getter cannot be flagged as view
-    // bytes4(keccak256("implementation()")) == 0x5c60da1b
-    (bool success, bytes memory returndata) = address(proxy).staticcall(hex"5c60da1b");
-    require(success);
-    return abi.decode(returndata, (address));
-  }
+    function sharesMinted(
+        uint40 stakeId,
+        address supplier,
+        uint72 stakedHearts,
+        uint72 stakeShares
+    ) external override {
+        require(msg.sender == minterContract, "CALLER_NOT_MINTER");
 
-  /**
-   * @dev Returns the admin of a proxy. Only the admin can query it.
-   * @return The address of the current admin of the proxy.
-   */
-  function getProxyAdmin(AdminUpgradeabilityProxy proxy) public view returns (address) {
-    // We need to manually run the static call since the getter cannot be flagged as view
-    // bytes4(keccak256("admin()")) == 0xf851a440
-    (bool success, bytes memory returndata) = address(proxy).staticcall(hex"f851a440");
-    require(success);
-    return abi.decode(returndata, (address));
-  }
+        ShareListing storage listing = shareListings[stakeId];
+        listing.heartsStaked = stakedHearts;
+        listing.sharesTotal = stakeShares;
+        listing.sharesAvailable = stakeShares;
+        listing.supplier = supplier;
 
-  /**
-   * @dev Changes the admin of a proxy.
-   * @param proxy Proxy to change admin.
-   * @param newAdmin Address to transfer proxy administration to.
-   */
-  function changeProxyAdmin(AdminUpgradeabilityProxy proxy, address newAdmin) public onlyOwner {
-    proxy.changeAdmin(newAdmin);
-  }
+        emit AddListing(stakeId, supplier, stakeShares);
+    }
 
-  /**
-   * @dev Upgrades a proxy to the newest implementation of a contract.
-   * @param proxy Proxy to be upgraded.
-   * @param implementation the address of the Implementation.
-   */
-  function upgrade(AdminUpgradeabilityProxy proxy, address implementation) public onlyOwner {
-    proxy.upgradeTo(implementation);
-  }
+    function earningsMinted(uint40 stakeId, uint72 heartsEarned)
+        external
+        override
+    {
+        require(msg.sender == minterContract, "CALLER_NOT_MINTER");
 
-  /**
-   * @dev Upgrades a proxy to the newest implementation of a contract and forwards a function call to it.
-   * This is useful to initialize the proxied contract.
-   * @param proxy Proxy to be upgraded.
-   * @param implementation Address of the Implementation.
-   * @param data Data to send as msg.data in the low level call.
-   * It should include the signature and the parameters of the function to be called, as described in
-   * https://solidity.readthedocs.io/en/v0.4.24/abi-spec.html#function-selector-and-argument-encoding.
-   */
-  function upgradeAndCall(AdminUpgradeabilityProxy proxy, address implementation, bytes memory data) payable public onlyOwner {
-    proxy.upgradeToAndCall{value: msg.value}(implementation, data);
-  }
+        shareListings[stakeId].heartsEarned = heartsEarned;
+
+        emit AddEarnings(stakeId, heartsEarned);
+    }
+
+    function _buyShares(
+        uint40 stakeId,
+        address shareReceiver,
+        uint72 sharesPurchased
+    ) private returns (uint72 heartsOwed) {
+        require(sharesPurchased != 0, "INSUFFICIENT_SHARES_PURCHASED");
+
+        ShareListing storage listing = shareListings[stakeId];
+
+        require(
+            sharesPurchased <= listing.sharesAvailable,
+            "INSUFFICIENT_SHARES_AVAILABLE"
+        );
+
+        heartsOwed = uint72(
+            FullMath.mulDivRoundingUp(
+                sharesPurchased,
+                listing.heartsStaked,
+                listing.sharesTotal
+            )
+        );
+        require(heartsOwed > 0, "INSUFFICIENT_HEARTS_INPUT");
+
+        listing.sharesAvailable -= sharesPurchased;
+        emit SharesUpdate(stakeId, msg.sender, listing.sharesAvailable);
+
+        listing.shareOwners[shareReceiver] += sharesPurchased;
+        listing.supplierHeartsOwed += heartsOwed;
+        emit BuyShares(stakeId, shareReceiver, sharesPurchased);
+
+        return heartsOwed;
+    }
+
+    function multiBuyShares(ShareOrder[] memory orders) external lock {
+        uint256 orderCount = orders.length;
+        require(orderCount <= 30, "EXCEEDED_ORDER_LIMIT");
+
+        uint256 totalHeartsOwed;
+        for (uint256 i = 0; i < orderCount; i++) {
+            ShareOrder memory order = orders[i];
+            totalHeartsOwed += _buyShares(
+                order.stakeId,
+                order.shareReceiver,
+                order.sharesPurchased
+            );
+        }
+
+        hexContract.transferFrom(msg.sender, address(this), totalHeartsOwed);
+    }
+
+    function buyShares(
+        uint40 stakeId,
+        address shareReceiver,
+        uint72 sharesPurchased
+    ) external lock {
+        uint72 heartsOwed = _buyShares(stakeId, shareReceiver, sharesPurchased);
+        hexContract.transferFrom(msg.sender, address(this), heartsOwed);
+    }
+
+    function claimEarnings(uint40 stakeId) external lock {
+        ShareListing storage listing = shareListings[stakeId];
+        require(listing.heartsEarned != 0, "SHARES_NOT_MATURE");
+
+        uint72 ownedShares = listing.shareOwners[msg.sender];
+
+        if (msg.sender == listing.supplier) {
+            ownedShares += listing.sharesAvailable;
+            listing.sharesAvailable = 0;
+            emit SharesUpdate(stakeId, msg.sender, 0);
+        }
+
+        uint256 heartsOwed =
+            FullMath.mulDiv(
+                listing.heartsEarned,
+                ownedShares,
+                listing.sharesTotal
+            );
+        require(heartsOwed != 0, "NO_HEARTS_CLAIMABLE");
+
+        listing.shareOwners[msg.sender] = 0;
+        hexContract.transfer(msg.sender, heartsOwed);
+
+        emit ClaimEarnings(stakeId, msg.sender, heartsOwed);
+    }
+
+    function supplierWithdraw(uint40 stakeId) external lock {
+        ShareListing storage listing = shareListings[stakeId];
+        require(msg.sender == listing.supplier, "SENDER_NOT_SUPPLIER");
+
+        uint72 heartsOwed = listing.supplierHeartsOwed;
+        require(heartsOwed != 0, "NO_HEARTS_OWED");
+
+        listing.supplierHeartsOwed = 0;
+        hexContract.transfer(msg.sender, heartsOwed);
+
+        emit SupplierWithdraw(stakeId, msg.sender, heartsOwed);
+    }
 }

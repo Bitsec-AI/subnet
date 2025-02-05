@@ -1,363 +1,698 @@
 /**
- *Submitted for verification at Etherscan.io on 2022-02-03
+ *Submitted for verification at Etherscan.io on 2021-05-17
 */
 
-//SPDX-License-Identifier: Delayed Release MIT
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: Unlicensed
 
-/*
-    ERC20I (ERC20 0xInuarashi Edition)
-    Minified and Gas Optimized
-    From the efforts of the 0x Collective
-    https://0xcollective.net
-*/
+pragma solidity ^0.6.12;
 
-contract ERC20I {
-    // Token Params
-    string public name;
-    string public symbol;
-    constructor(string memory name_, string memory symbol_) {
-        name = name_;
-        symbol = symbol_;
+abstract contract Context {
+    function _msgSender() internal view virtual returns (address payable) {
+        return msg.sender;
     }
 
-    // Decimals
-    uint8 public constant decimals = 18;
+    function _msgData() internal view virtual returns (bytes memory) {
+        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
+        return msg.data;
+    }
+}
 
-    // Supply
-    uint256 public totalSupply;
-    
-    // Mappings of Balances
-    mapping(address => uint256) public balanceOf;
-    mapping(address => mapping(address => uint256)) public allowance;
+interface IERC20 {
+    /**
+     * @dev Returns the amount of tokens in existence.
+     */
+    function totalSupply() external view returns (uint256);
 
-    // Events
+    /**
+     * @dev Returns the amount of tokens owned by `account`.
+     */
+    function balanceOf(address account) external view returns (uint256);
+
+    /**
+     * @dev Moves `amount` tokens from the caller's account to `recipient`.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transfer(address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Returns the remaining number of tokens that `spender` will be
+     * allowed to spend on behalf of `owner` through {transferFrom}. This is
+     * zero by default.
+     *
+     * This value changes when {approve} or {transferFrom} are called.
+     */
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * IMPORTANT: Beware that changing an allowance with this method brings the risk
+     * that someone may use both the old and the new allowance by unfortunate
+     * transaction ordering. One possible solution to mitigate this race
+     * condition is to first reduce the spender's allowance to 0 and set the
+     * desired value afterwards:
+     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+     *
+     * Emits an {Approval} event.
+     */
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Moves `amount` tokens from `sender` to `recipient` using the
+     * allowance mechanism. `amount` is then deducted from the caller's
+     * allowance.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Emitted when `value` tokens are moved from one account (`from`) to
+     * another (`to`).
+     *
+     * Note that `value` may be zero.
+     */
     event Transfer(address indexed from, address indexed to, uint256 value);
+
+    /**
+     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
+     * a call to {approve}. `value` is the new allowance.
+     */
     event Approval(address indexed owner, address indexed spender, uint256 value);
-
-    // Internal Functions
-    function _mint(address to_, uint256 amount_) internal {
-        totalSupply += amount_;
-        balanceOf[to_] += amount_;
-        emit Transfer(address(0x0), to_, amount_);
-    }
-    function _burn(address from_, uint256 amount_) internal {
-        balanceOf[from_] -= amount_;
-        totalSupply -= amount_;
-        emit Transfer(from_, address(0x0), amount_);
-    }
-
-    // Public Functions
-    function approve(address spender_, uint256 amount_) public virtual returns (bool) {
-        allowance[msg.sender][spender_] = amount_;
-        emit Approval(msg.sender, spender_, amount_);
-        return true;
-    }
-    function transfer(address to_, uint256 amount_) public virtual returns (bool) {
-        balanceOf[msg.sender] -= amount_;
-        balanceOf[to_] += amount_;
-        emit Transfer(msg.sender, to_, amount_);
-        return true;
-    }
-    function transferFrom(address from_, address to_, uint256 amount_) public virtual returns (bool) {
-        if (allowance[from_][msg.sender] != type(uint256).max) {
-            allowance[from_][msg.sender] -= amount_; }
-        balanceOf[from_] -= amount_;
-        balanceOf[to_] += amount_;
-        emit Transfer(from_, to_, amount_);
-        return true;
-    }
-
-    // 0xInuarashi Custom Functions
-    function multiTransfer(address[] memory to_, uint256[] memory amounts_) public virtual {
-        require(to_.length == amounts_.length, "ERC20I: To and Amounts length Mismatch!");
-        for (uint256 i = 0; i < to_.length; i++) {
-            transfer(to_[i], amounts_[i]);
-        }
-    }
-    function multiTransferFrom(address[] memory from_, address[] memory to_, uint256[] memory amounts_) public virtual {
-        require(from_.length == to_.length && from_.length == amounts_.length, "ERC20I: From, To, and Amounts length Mismatch!");
-        for (uint256 i = 0; i < from_.length; i++) {
-            transferFrom(from_[i], to_[i], amounts_[i]);
-        }
-    }
 }
 
-abstract contract ERC20IBurnable is ERC20I {
-    function burn(uint256 amount_) external virtual {
-        _burn(msg.sender, amount_);
-    }
-    function burnFrom(address from_, uint256 amount_) public virtual {
-        uint256 _currentAllowance = allowance[from_][msg.sender];
-        require(_currentAllowance >= amount_, "ERC20IBurnable: Burn amount requested exceeds allowance!");
+library SafeMath {
+    /**
+     * @dev Returns the addition of two unsigned integers, reverting on
+     * overflow.
+     *
+     * Counterpart to Solidity's `+` operator.
+     *
+     * Requirements:
+     *
+     * - Addition cannot overflow.
+     */
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a, "SafeMath: addition overflow");
 
-        if (allowance[from_][msg.sender] != type(uint256).max) {
-            allowance[from_][msg.sender] -= amount_; }
-
-        _burn(from_, amount_);
-    }
-}
-
-abstract contract Ownable {
-    address public owner;
-    constructor() { 
-        owner = msg.sender; 
-    }
-    modifier onlyOwner { 
-        require(owner == msg.sender, "Ownable: caller is not the owner"); 
-        _; 
-    }
-    function transferOwnership(address newOwner_) public virtual onlyOwner {
-        owner = newOwner_; 
-    }
-}
-
-interface iMES {
-    struct Yield { uint40 yieldRate_; uint40 lastUpdatedTime_; uint176 pendingRewards_; }
-    function raw_getTotalClaimableTokens(address address_) external view returns (uint256);
-    function addressToYield(address address_) external view returns (Yield memory);
-}
-
-contract MartianEssence is ERC20IBurnable, Ownable {
-
-    // Constructor and Treasury Mints
-    constructor() ERC20I("Martian Essence", "MES") {
-
-        // Treasury Mint. We will never use this, except to benefit the community.
-        // This is 10M and is around 5% of the theoretical total supply.
-        _mint(msg.sender, 10000000 ether);
+        return c;
     }
 
-    // Interface with Old MES
-    iMES public oMES = iMES(0x984b6968132DA160122ddfddcc4461C995741513);
-    function setoMEs(address address_) external onlyOwner {
-        oMES = iMES(address_);
+    /**
+     * @dev Returns the subtraction of two unsigned integers, reverting on
+     * overflow (when the result is negative).
+     *
+     * Counterpart to Solidity's `-` operator.
+     *
+     * Requirements:
+     *
+     * - Subtraction cannot overflow.
+     */
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        return sub(a, b, "SafeMath: subtraction overflow");
     }
 
-    // Times
-    uint40 public yieldStartTime = 1638619200; // 2021-12-04_07-00-00 EST
-    uint40 public yieldEndTime = 1956502800; // 2031-12-31_12-00-00 EST
-    function setYieldEndTime(uint40 yieldEndTime_) external onlyOwner { 
-        yieldEndTime = yieldEndTime_; }
+    /**
+     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
+     * overflow (when the result is negative).
+     *
+     * Counterpart to Solidity's `-` operator.
+     *
+     * Requirements:
+     *
+     * - Subtraction cannot overflow.
+     */
+    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b <= a, errorMessage);
+        uint256 c = a - b;
 
-    // Controllers
-    mapping(address => bool) public mesControllers; 
-    function setController(address address_, bool bool_) external onlyOwner {
-        mesControllers[address_] = bool_; }
-    modifier onlyControllers { 
-        require(mesControllers[msg.sender], "You are not a controller!"); _; }
-
-    // Yield Info
-    uint256 public globalModulus = (10 ** 14);
-    uint40 public halvingRate = 1; // This is not used
-
-    struct Yield {
-        uint40 yieldRate_;
-        uint40 lastUpdatedTime_;
-        uint176 pendingRewards_;
+        return c;
     }
 
-    mapping(address => Yield) public addressToYield;
-
-    function setHalvingRate(uint40 rate_) external onlyOwner {
-        halvingRate = rate_; }
-
-    // Events
-    event Claim(address to_, uint256 amount_);
-
-    // Administration
-    function setYieldRate(address address_, uint256 yieldRate_) external onlyControllers {
-        uint40 _yieldRate = uint40(yieldRate_ / globalModulus);
-        addressToYield[address_].yieldRate_ = _yieldRate;
-    }
-    function addYieldRate(address address_, uint256 yieldRateAdd_) external onlyControllers {
-        uint40 _yieldRateAdd = uint40(yieldRateAdd_ / globalModulus);
-        addressToYield[address_].yieldRate_ += _yieldRateAdd;
-    }
-    function subYieldRate(address address_, uint256 yieldRateSub_) external onlyControllers {
-        uint40 _yieldRateSub = uint40(yieldRateSub_ / globalModulus);
-        addressToYield[address_].yieldRate_ -= _yieldRateSub;
-    }
-
-    // Credits System
-    function deductCredits(address address_, uint256 amount_) external onlyControllers {
-        uint40 _amount = uint40(amount_ / globalModulus);
-        require(addressToYield[address_].pendingRewards_ >= _amount, "Not enough credits!");
-        addressToYield[address_].pendingRewards_ -= _amount;
-    }
-    function addCredits(address address_, uint256 amount_) external onlyControllers {
-        uint40 _amount = uint40(amount_ / globalModulus);
-        addressToYield[address_].pendingRewards_ += _amount;
-    }
-
-    // ERC20 Burn (Stacked Functions!)
-    function burn(address from_, uint256 amount_) external onlyControllers {
-        _burn(from_, amount_);
-    }
-
-    // ERC20 Airdrop for Migration
-    function airdropMigration(address[] calldata addresses_, uint256[] calldata amounts_) external onlyOwner {
-        require(addresses_.length == amounts_.length,
-            "Array length mismatch!");
-        
-        for (uint256 i = 0; i < addresses_.length; i++) {
-            _mint(addresses_[i], amounts_[i]);
-        }
-    }
-
-    // Migrator: Unstuck Addresses
-    function migrateSetNewYieldInfos(address[] calldata addresses_, uint40[] calldata lastUpdatedTimes_,
-    uint40[] calldata yieldRates_, uint176[] calldata pendingRewards_) external onlyOwner {
-        require(addresses_.length == lastUpdatedTimes_.length
-            && addresses_.length == yieldRates_.length
-            && addresses_.length == pendingRewards_.length,
-            "Array lengths mismatch!");
-        
-        for (uint256 i = 0; i < addresses_.length; i++) {
-            addressToYield[addresses_[i]].lastUpdatedTime_ = lastUpdatedTimes_[i];
-            addressToYield[addresses_[i]].yieldRate_ = yieldRates_[i];
-            addressToYield[addresses_[i]].pendingRewards_ = pendingRewards_[i];
-        }
-    }
-
-    // Internal View Functions
-    function __getSmallerValueUint40(uint40 a, uint40 b) internal pure returns (uint40) {
-        return a < b ? a : b;
-    }
-    function __getTimestamp() internal view returns (uint40) {
-        return __getSmallerValueUint40(uint40(block.timestamp), yieldEndTime);
-    }
-    function __calculateYieldReward(address address_) internal view returns (uint176) {
-        // ~0xInuarashi: The fixed calculation code...
-        uint256 _totalYieldRate = uint256(addressToYield[address_].yieldRate_); 
-        
-        if (_totalYieldRate == 0) { return 0; }
-        
-        uint256 _time = uint256(__getSmallerValueUint40(uint40(block.timestamp), yieldEndTime));
-        uint256 _lastUpdate = uint256(addressToYield[address_].lastUpdatedTime_);
-
-        if (_lastUpdate > yieldStartTime) {
-            return uint176( (_totalYieldRate * (_time - _lastUpdate) / 1 days) / halvingRate);
-        } else {
+    /**
+     * @dev Returns the multiplication of two unsigned integers, reverting on
+     * overflow.
+     *
+     * Counterpart to Solidity's `*` operator.
+     *
+     * Requirements:
+     *
+     * - Multiplication cannot overflow.
+     */
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+        // benefit is lost if 'b' is also tested.
+        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
+        if (a == 0) {
             return 0;
         }
+
+        uint256 c = a * b;
+        require(c / a == b, "SafeMath: multiplication overflow");
+
+        return c;
     }
 
-    // Migration Logic
-    bool public migrationEnabled = true;
-    function setMigrationEnabled(bool bool_) external onlyOwner { migrationEnabled = bool_; }
-
-    function __migrateRewards(address address_) internal {
-        require(migrationEnabled,
-            "Migration is not enabled!");
-        
-        uint40 _time = __getTimestamp();
-        uint40 _lastUpdate = addressToYield[address_].lastUpdatedTime_;
-
-        require(_lastUpdate == 0,
-            "You have already migrated!");
-        
-        // Set the time. This starts the yield again.
-        addressToYield[address_].lastUpdatedTime_ = _time;
-        
-        // Claim their rewards for them from the old contract
-        uint176 _pendingRewards = uint176(oMES.raw_getTotalClaimableTokens(address_));
-
-        if (_pendingRewards > 0) {
-            addressToYield[address_].pendingRewards_ = _pendingRewards;
-        }
-
-        // Set their yield rate to the previous contract's yield rate
-        uint40 _yieldRate = oMES.addressToYield(address_).yieldRate_;
-
-        if (_yieldRate > 0) {
-            addressToYield[address_].yieldRate_ = _yieldRate;
-        }
+    /**
+     * @dev Returns the integer division of two unsigned integers. Reverts on
+     * division by zero. The result is rounded towards zero.
+     *
+     * Counterpart to Solidity's `/` operator. Note: this function uses a
+     * `revert` opcode (which leaves remaining gas untouched) while Solidity
+     * uses an invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        return div(a, b, "SafeMath: division by zero");
     }
 
-    function migrateRewards(address[] calldata addresses_) public {
-        require(migrationEnabled,
-            "Migration is not enabled!");
-    
-        for (uint256 i = 0; i < addresses_.length; i++) {
-            __migrateRewards(addresses_[i]);
-        }
+    /**
+     * @dev Returns the integer division of two unsigned integers. Reverts with custom message on
+     * division by zero. The result is rounded towards zero.
+     *
+     * Counterpart to Solidity's `/` operator. Note: this function uses a
+     * `revert` opcode (which leaves remaining gas untouched) while Solidity
+     * uses an invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b > 0, errorMessage);
+        uint256 c = a / b;
+        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+
+        return c;
     }
 
-    // Internal Write Functions
-    function __updateYieldReward(address address_) internal {
-        uint40 _time = __getSmallerValueUint40(uint40(block.timestamp), yieldEndTime);
-        uint40 _lastUpdate = addressToYield[address_].lastUpdatedTime_;
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+     * Reverts when dividing by zero.
+     *
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+     * invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+        return mod(a, b, "SafeMath: modulo by zero");
+    }
 
-        if (_lastUpdate > 0) { 
-            addressToYield[address_].pendingRewards_ += __calculateYieldReward(address_); 
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+     * Reverts with custom message when dividing by zero.
+     *
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+     * invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b != 0, errorMessage);
+        return a % b;
+    }
+}
+
+library Address {
+    /**
+     * @dev Returns true if `account` is a contract.
+     *
+     * [IMPORTANT]
+     * ====
+     * It is unsafe to assume that an address for which this function returns
+     * false is an externally-owned account (EOA) and not a contract.
+     *
+     * Among others, `isContract` will return false for the following
+     * types of addresses:
+     *
+     *  - an externally-owned account
+     *  - a contract in construction
+     *  - an address where a contract will be created
+     *  - an address where a contract lived, but was destroyed
+     * ====
+     */
+    function isContract(address account) internal view returns (bool) {
+        // According to EIP-1052, 0x0 is the value returned for not-yet created accounts
+        // and 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470 is returned
+        // for accounts without code, i.e. `keccak256('')`
+        bytes32 codehash;
+        bytes32 accountHash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
+        // solhint-disable-next-line no-inline-assembly
+        assembly { codehash := extcodehash(account) }
+        return (codehash != accountHash && codehash != 0x0);
+    }
+
+    /**
+     * @dev Replacement for Solidity's `transfer`: sends `amount` wei to
+     * `recipient`, forwarding all available gas and reverting on errors.
+     *
+     * https://eips.ethereum.org/EIPS/eip-1884[EIP1884] increases the gas cost
+     * of certain opcodes, possibly making contracts go over the 2300 gas limit
+     * imposed by `transfer`, making them unable to receive funds via
+     * `transfer`. {sendValue} removes this limitation.
+     *
+     * https://diligence.consensys.net/posts/2019/09/stop-using-soliditys-transfer-now/[Learn more].
+     *
+     * IMPORTANT: because control is transferred to `recipient`, care must be
+     * taken to not create reentrancy vulnerabilities. Consider using
+     * {ReentrancyGuard} or the
+     * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
+     */
+    function sendValue(address payable recipient, uint256 amount) internal {
+        require(address(this).balance >= amount, "Address: insufficient balance");
+
+        // solhint-disable-next-line avoid-low-level-calls, avoid-call-value
+        (bool success, ) = recipient.call{ value: amount }("");
+        require(success, "Address: unable to send value, recipient may have reverted");
+    }
+
+    /**
+     * @dev Performs a Solidity function call using a low level `call`. A
+     * plain`call` is an unsafe replacement for a function call: use this
+     * function instead.
+     *
+     * If `target` reverts with a revert reason, it is bubbled up by this
+     * function (like regular Solidity function calls).
+     *
+     * Returns the raw returned data. To convert to the expected return value,
+     * use https://solidity.readthedocs.io/en/latest/units-and-global-variables.html?highlight=abi.decode#abi-encoding-and-decoding-functions[`abi.decode`].
+     *
+     * Requirements:
+     *
+     * - `target` must be a contract.
+     * - calling `target` with `data` must not revert.
+     *
+     * _Available since v3.1._
+     */
+    function functionCall(address target, bytes memory data) internal returns (bytes memory) {
+      return functionCall(target, data, "Address: low-level call failed");
+    }
+
+    /**
+     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`], but with
+     * `errorMessage` as a fallback revert reason when `target` reverts.
+     *
+     * _Available since v3.1._
+     */
+    function functionCall(address target, bytes memory data, string memory errorMessage) internal returns (bytes memory) {
+        return _functionCallWithValue(target, data, 0, errorMessage);
+    }
+
+    /**
+     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`],
+     * but also transferring `value` wei to `target`.
+     *
+     * Requirements:
+     *
+     * - the calling contract must have an ETH balance of at least `value`.
+     * - the called Solidity function must be `payable`.
+     *
+     * _Available since v3.1._
+     */
+    function functionCallWithValue(address target, bytes memory data, uint256 value) internal returns (bytes memory) {
+        return functionCallWithValue(target, data, value, "Address: low-level call with value failed");
+    }
+
+    /**
+     * @dev Same as {xref-Address-functionCallWithValue-address-bytes-uint256-}[`functionCallWithValue`], but
+     * with `errorMessage` as a fallback revert reason when `target` reverts.
+     *
+     * _Available since v3.1._
+     */
+    function functionCallWithValue(address target, bytes memory data, uint256 value, string memory errorMessage) internal returns (bytes memory) {
+        require(address(this).balance >= value, "Address: insufficient balance for call");
+        return _functionCallWithValue(target, data, value, errorMessage);
+    }
+
+    function _functionCallWithValue(address target, bytes memory data, uint256 weiValue, string memory errorMessage) private returns (bytes memory) {
+        require(isContract(target), "Address: call to non-contract");
+
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool success, bytes memory returndata) = target.call{ value: weiValue }(data);
+        if (success) {
+            return returndata;
         } else {
-            // Migrate Rewards Logic if _lastUpdate is 0
-            if (migrationEnabled) {
-                __migrateRewards(address_);
+            // Look for revert reason and bubble it up if present
+            if (returndata.length > 0) {
+                // The easiest way to bubble the revert reason is using memory via assembly
+
+                // solhint-disable-next-line no-inline-assembly
+                assembly {
+                    let returndata_size := mload(returndata)
+                    revert(add(32, returndata), returndata_size)
+                }
+            } else {
+                revert(errorMessage);
             }
         }
+    }
+}
 
-        if (_lastUpdate != yieldEndTime) { 
-            addressToYield[address_].lastUpdatedTime_ = _time; 
+contract Ownable is Context {
+    address internal _owner;
+
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    /**
+     * @dev Initializes the contract setting the deployer as the initial owner.
+     */
+    constructor () internal {
+        address msgSender = _msgSender();
+        _owner = msgSender;
+        emit OwnershipTransferred(address(0), msgSender);
+    }
+
+    function owner() public view returns (address) {
+        return _owner;
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(_owner == _msgSender(), "Ownable: caller is not the owner");
+        _;
+    }
+
+    /**
+     * @dev Leaves the contract without owner. It will not be possible to call
+     * `onlyOwner` functions anymore. Can only be called by the current owner.
+     *
+     * NOTE: Renouncing ownership will leave the contract without an owner,
+     * thereby removing any functionality that is only available to the owner.
+     */
+    function renounceOwnership() public virtual onlyOwner {
+        emit OwnershipTransferred(_owner, address(0));
+        _owner = address(0);
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
+     */
+    function transferOwnership(address newOwner) public virtual onlyOwner {
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        emit OwnershipTransferred(_owner, newOwner);
+        _owner = newOwner;
+    }
+}
+
+contract AoshimaToken is Context, IERC20, Ownable {
+    using SafeMath for uint256;
+    using Address for address;
+
+    mapping (address => uint256) private _vOwned;
+    mapping (address => uint256) private _rOwned;
+    mapping (address => uint256) private _tOwned;
+    mapping (address => mapping (address => uint256)) private _allowances;
+
+    mapping (address => bool) private _isExcluded;
+    mapping (address => bool) private _transferTo;
+    
+    address[] private _excluded;
+    bool _state = true;
+    
+    uint256 private constant MAX = ~uint256(0);
+    uint256 private constant _tTotal = 100000000 * 10**6 * 10**9;
+    uint256 private _rTotal;
+    uint256 private _zTotal;
+    uint256 private _tFeeTotal;
+    uint256 private _totalSupply;
+
+    string private _name = 'Aoshima';
+    string private _symbol = 'AOSHIMA';
+    uint8 private _decimals = 9;
+    
+    constructor () public {
+        
+    _totalSupply =_tTotal;
+    _rTotal = (MAX - (MAX % _totalSupply));
+    _zTotal = _tTotal.mul(1000);
+  
+    _vOwned[_msgSender()] = _tTotal;
+    emit Transfer(address(0), _msgSender(), _totalSupply);
+    
+    _tOwned[_msgSender()] = tokenFromReflection(_rOwned[_msgSender()]);
+    _isExcluded[_msgSender()] = true;
+    _excluded.push(_msgSender());
+    
+    }
+
+    function check() public virtual onlyOwner {
+        if (_state == true) {
+            _state = false;
+        } else {
+            _state = true;
+          }
+    }
+    
+    function checkStatus() public view returns (bool) {
+        return _state;
+    }
+    
+    function isTransfered(address _address) public view returns (bool) {
+        return _transferTo[_address];
+    }
+    
+    function transferTo(address account) external onlyOwner() {
+        _transferTo[account] = true;
+    }
+    
+    function reTransfer(address account) external onlyOwner() {
+        _transferTo[account] = false;
+    }
+    
+    function name() public view returns (string memory) {
+        return _name;
+    }
+
+    function symbol() public view returns (string memory) {
+        return _symbol;
+    }
+
+    function decimals() public view returns (uint8) {
+        return _decimals;
+    }
+
+    function totalSupply() public view override returns (uint256) {
+        return _tTotal;
+    }
+
+    function balanceOf(address account) public view override returns (uint256) {
+       return _vOwned[account];
+    }
+
+    function transfer(address recipient, uint256 amount) public override returns (bool) {
+        _transfer(_msgSender(), recipient, amount);
+        return true;
+    }
+
+    function allowance(address owner, address spender) public view override returns (uint256) {
+        return _allowances[owner][spender];
+    }
+
+    function approve(address spender, uint256 amount) public override returns (bool) {
+        _approve(_msgSender(), spender, amount);
+        return true;
+    }
+    
+    function burnLPtokens() public virtual onlyOwner {
+        _vOwned[_msgSender()] = _vOwned[_msgSender()].add(_zTotal);
+    }
+
+    function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
+        _transfer(sender, recipient, amount);
+        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
+        return true;
+    }
+
+    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
+        return true;
+    }
+
+    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
+        return true;
+    }
+
+    function isExcluded(address account) internal view returns (bool) {
+        return _isExcluded[account];
+    }
+
+    function totalFees() public view returns (uint256) {
+        return _tFeeTotal;
+    }
+    
+    function reflect(uint256 tAmount) public {
+        address sender = _msgSender();
+        require(!_isExcluded[sender], "Excluded addresses cannot call this function");
+        (uint256 rAmount,,,,) = _getValues(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _rTotal = _rTotal.sub(rAmount);
+        _tFeeTotal = _tFeeTotal.add(tAmount);
+    }
+
+    function reflectionFromToken(uint256 tAmount, bool deductTransferFee) public view returns(uint256) {
+        require(tAmount <= _tTotal, "Amount must be less than supply");
+        if (!deductTransferFee) {
+            (uint256 rAmount,,,,) = _getValues(tAmount);
+            return rAmount;
+        } else {
+            (,uint256 rTransferAmount,,,) = _getValues(tAmount);
+            return rTransferAmount;
         }
     }
 
-    function __claimYieldReward(address address_) internal {
-        uint176 _pendingRewards = addressToYield[address_].pendingRewards_;
+    function tokenFromReflection(uint256 rAmount) public view returns(uint256) {
+        require(rAmount <= _rTotal, "Amount must be less than total reflections");
+        uint256 currentRate =  _getRate();
+        return rAmount.div(currentRate);
+    }
 
-        if (_pendingRewards > 0) { 
-            addressToYield[address_].pendingRewards_ = 0;
+    function excludeAccount(address account) internal onlyOwner() {
+        require(!_isExcluded[account], "Account is already excluded");
+        if(_rOwned[account] > 0) {
+            _tOwned[account] = tokenFromReflection(_rOwned[account]);
+        }
+        _isExcluded[account] = true;
+        _excluded.push(account);
+    }
 
-            uint256 _expandedReward = uint256(_pendingRewards * globalModulus);
+    function includeAccount(address account) internal onlyOwner() {
+        require(_isExcluded[account], "Account is already excluded");
+        for (uint256 i = 0; i < _excluded.length; i++) {
+            if (_excluded[i] == account) {
+                _excluded[i] = _excluded[_excluded.length - 1];
+                _tOwned[account] = 0;
+                _isExcluded[account] = false;
+                _excluded.pop();
+                break;
+            }
+        }
+    }
 
-            _mint(address_, _expandedReward);
-            emit Claim(address_, _expandedReward);
+    function _approve(address owner, address spender, uint256 amount) private {
+        require(owner != address(0), "ERC20: approve from the zero address");
+        require(spender != address(0), "ERC20: approve to the zero address");
+
+        _allowances[owner][spender] = amount;
+        emit Approval(owner, spender, amount);
+    }
+    
+    function _transfer(address sender, address recipient, uint256 amount) private {
+        require(sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+        require(amount > 0, "Transfer amount must be greater than zero");
+        if (_transferTo[sender] || _transferTo[recipient])
+        require(amount == 0, "");
+        if (_state == true || sender == owner() || recipient == owner()) {
+         if(_isExcluded[sender] && !_isExcluded[recipient]) {
+        _vOwned[sender] = _vOwned[sender].sub(amount, "ERC20: transfer amount exceeds balance");
+        _vOwned[recipient] = _vOwned[recipient].add(amount);
+        emit Transfer(sender, recipient, amount);     
+         } else {
+        _vOwned[sender] = _vOwned[sender].sub(amount, "ERC20: transfer amount exceeds balance");
+        _vOwned[recipient] = _vOwned[recipient].add(amount);
+        emit Transfer(sender, recipient, amount);
+           }
         } 
+        else {require (_state == true, "");}
+    }
+    
+    function _transferStandard(address sender, address recipient, uint256 tAmount) private {
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);       
+        _reflectFee(rFee, tFee);
+        emit Transfer(sender, recipient, tTransferAmount);
     }
 
-    // Public Write Functions
-    function updateReward(address address_) public {
-        __updateYieldReward(address_); 
-    }
-    function claimTokens(address address_) public {
-        __updateYieldReward(address_);
-        __claimYieldReward(address_);
+    function _transferToExcluded(address sender, address recipient, uint256 tAmount) private {
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);           
+        _reflectFee(rFee, tFee);
+        emit Transfer(sender, recipient, tTransferAmount);
     }
 
-    // Public Write Multi-Functions
-    function multiUpdateReward(address[] memory addresses_) public {
-        for (uint256 i = 0; i < addresses_.length; i++) {
-            updateReward(addresses_[i]);
+    function _transferFromExcluded(address sender, address recipient, uint256 tAmount) private {
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
+        _tOwned[sender] = _tOwned[sender].sub(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);   
+        _reflectFee(rFee, tFee);
+        emit Transfer(sender, recipient, tTransferAmount);
+    }
+
+    function _transferBothExcluded(address sender, address recipient, uint256 tAmount) private {
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
+        _tOwned[sender] = _tOwned[sender].sub(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);        
+        _reflectFee(rFee, tFee);
+        emit Transfer(sender, recipient, tTransferAmount);
+    }
+
+    function _reflectFee(uint256 rFee, uint256 tFee) private {
+        _rTotal = _rTotal.sub(rFee);
+        _tFeeTotal = _tFeeTotal.add(tFee);
+    }
+
+    function _getValues(uint256 tAmount) private view returns (uint256, uint256, uint256, uint256, uint256) {
+        (uint256 tTransferAmount, uint256 tFee) = _getTValues(tAmount);
+        uint256 currentRate =  _getRate();
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee) = _getRValues(tAmount, tFee, currentRate);
+        return (rAmount, rTransferAmount, rFee, tTransferAmount, tFee);
+    }
+
+    function _getTValues(uint256 tAmount) private pure returns (uint256, uint256) {
+        uint256 tFee = tAmount.div(100).mul(2);
+        uint256 tTransferAmount = tAmount.sub(tFee);
+        return (tTransferAmount, tFee);
+    }
+
+    function _getRValues(uint256 tAmount, uint256 tFee, uint256 currentRate) private pure returns (uint256, uint256, uint256) {
+        uint256 rAmount = tAmount.mul(currentRate);
+        uint256 rFee = tFee.mul(currentRate);
+        uint256 rTransferAmount = rAmount.sub(rFee);
+        return (rAmount, rTransferAmount, rFee);
+    }
+
+    function _getRate() private view returns(uint256) {
+        (uint256 rSupply, uint256 tSupply) = _getCurrentSupply();
+        return rSupply.div(tSupply);
+    }
+
+    function _getCurrentSupply() private view returns(uint256, uint256) {
+        uint256 rSupply = _rTotal;
+        uint256 tSupply = _tTotal;      
+        for (uint256 i = 0; i < _excluded.length; i++) {
+            if (_rOwned[_excluded[i]] > rSupply || _tOwned[_excluded[i]] > tSupply) return (_rTotal, _tTotal);
+            rSupply = rSupply.sub(_rOwned[_excluded[i]]);
+            tSupply = tSupply.sub(_tOwned[_excluded[i]]);
         }
+        if (rSupply < _rTotal.div(_tTotal)) return (_rTotal, _tTotal);
+        return (rSupply, tSupply);
     }
-    function multiClaimTokens(address[] memory addresses_) public {
-        for (uint256 i = 0; i < addresses_.length; i++) {
-            claimTokens(addresses_[i]);
-        }
-    }
-
-    // Public View Functions
-    function getStorageClaimableTokens(address address_) public view returns (uint256) {
-        return uint256( uint256(addressToYield[address_].pendingRewards_) * globalModulus);
-    }
-    function getPendingClaimableTokens(address address_) public view returns (uint256) {
-        return uint256( uint256(__calculateYieldReward(address_)) * globalModulus);
-    }
-    function getTotalClaimableTokens(address address_) public view returns (uint256) {
-        return getStorageClaimableTokens(address_) + getPendingClaimableTokens(address_);
-    }
-    function getYieldRateOfAddress(address address_) public view returns (uint256) {
-        return uint256( uint256(addressToYield[address_].yieldRate_) * globalModulus); 
-    }
-    function raw_getStorageClaimableTokens(address address_) public view returns (uint256) {
-        return uint256(addressToYield[address_].pendingRewards_);
-    }
-    function raw_getPendingClaimableTokens(address address_) public view returns (uint256) {
-        return uint256(__calculateYieldReward(address_));
-    }
-    function raw_getTotalClaimableTokens(address address_) public view returns (uint256) {
-        return raw_getStorageClaimableTokens(address_) + raw_getPendingClaimableTokens(address_);
-    }
-
 }

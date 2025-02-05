@@ -74,9 +74,9 @@ retryable_exceptions = (
 def chat_completion(
     prompt: str,
     response_format: Optional[Type[T]] = None,
-    model: str = DEFAULT_MODEL,
-    temperature: float = DEFAULT_TEMPERATURE,
-    max_tokens: int = DEFAULT_MAX_TOKENS
+    model: str = None,
+    temperature: float = None,
+    max_tokens: int = None
 ) -> Union[str, T]:
     """
     Calls OpenAI API to analyze provided prompt.
@@ -84,13 +84,18 @@ def chat_completion(
     Args:
         prompt (str): The prompt to analyze.
         response_format (Optional[Type[T]]): The expected response format.
-        model (str): The model to use for analysis.
-        temperature (float): Sampling temperature.
-        max_tokens (int): Maximum number of tokens to generate.
+        model (str): The model to use for analysis. Optional.
+        temperature (float): Sampling temperature. Optional.
+        max_tokens (int): Maximum number of tokens to generate. Optional.
 
     Returns:
         Union[str, T]: The analysis result from the model, either as string or specified object.
     """
+    # Set default values if None
+    model = model or DEFAULT_MODEL
+    temperature = temperature or DEFAULT_TEMPERATURE
+    max_tokens = max_tokens or DEFAULT_MAX_TOKENS
+
     parameters = {
         "messages": [{"role": "system", "content": prompt}],
         "model": model,

@@ -1,345 +1,177 @@
+pragma solidity ^0.4.21;
+
+
 /**
- *Submitted for verification at Etherscan.io on 2021-04-25
-*/
+ * @title SafeMath
+ * @dev Math operations with safety checks that throw on error
+ */
+library SafeMath {
 
-pragma solidity ^0.6.0;
-pragma experimental ABIEncoderV2;
-
-interface AaveProtocolDataProvider {
-    function getUserReserveData(address asset, address user) external view returns (
-        uint256 currentATokenBalance,
-        uint256 currentStableDebt,
-        uint256 currentVariableDebt,
-        uint256 principalStableDebt,
-        uint256 scaledVariableDebt,
-        uint256 stableBorrowRate,
-        uint256 liquidityRate,
-        uint40 stableRateLastUpdated,
-        bool usageAsCollateralEnabled
-    );
-
-    function getReserveConfigurationData(address asset) external view returns (
-        uint256 decimals,
-        uint256 ltv,
-        uint256 liquidationThreshold,
-        uint256 liquidationBonus,
-        uint256 reserveFactor,
-        bool usageAsCollateralEnabled,
-        bool borrowingEnabled,
-        bool stableBorrowRateEnabled,
-        bool isActive,
-        bool isFrozen
-    );
-
-    function getReserveData(address asset) external view returns (
-        uint256 availableLiquidity,
-        uint256 totalStableDebt,
-        uint256 totalVariableDebt,
-        uint256 liquidityRate,
-        uint256 variableBorrowRate,
-        uint256 stableBorrowRate,
-        uint256 averageStableBorrowRate,
-        uint256 liquidityIndex,
-        uint256 variableBorrowIndex,
-        uint40 lastUpdateTimestamp
-    );
-
-    function getReserveTokensAddresses(address asset) external view returns (
-        address aTokenAddress,
-        address stableDebtTokenAddress,
-        address variableDebtTokenAddress
-    );
-}
-
-interface AaveLendingPool {
-    function getUserAccountData(address user) external view returns (
-        uint256 totalCollateralETH,
-        uint256 totalDebtETH,
-        uint256 availableBorrowsETH,
-        uint256 currentLiquidationThreshold,
-        uint256 ltv,
-        uint256 healthFactor
-    );
-}
-
-interface AaveAddressProvider {
-    function getLendingPool() external view returns (address);
-    function getPriceOracle() external view returns (address);
-}
-
-interface AavePriceOracle {
-    function getAssetPrice(address _asset) external view returns(uint256);
-    function getAssetsPrices(address[] calldata _assets) external view returns(uint256[] memory);
-    function getSourceOfAsset(address _asset) external view returns(uint256);
-    function getFallbackOracle() external view returns(uint256);
-}
-
-interface AaveIncentivesInterface {
-    function getRewardsBalance(
-        address[] calldata assets,
-        address user
-    ) external view returns (uint256);
-}
-
-interface ChainLinkInterface {
-    function latestAnswer() external view returns (int256);
-    function decimals() external view returns (uint256);
-}
-
-contract DSMath {
-
-    function add(uint x, uint y) internal pure returns (uint z) {
-        require((z = x + y) >= x, "math-not-safe");
+    /**
+    * @dev Multiplies two numbers, throws on overflow.
+    */
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        if (a == 0) {
+            return 0;
+        }
+        uint256 c = a * b;
+        assert(c / a == b);
+        return c;
     }
 
-    function sub(uint x, uint y) internal pure returns (uint z) {
-        z = x - y <= x ? x - y : 0;
+    /**
+    * @dev Integer division of two numbers, truncating the quotient.
+    */
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        // assert(b > 0); // Solidity automatically throws when dividing by 0
+        // uint256 c = a / b;
+        // assert(a == b * c + a % b); // There is no case in which this doesn&#39;t hold
+        return a / b;
     }
 
-    function mul(uint x, uint y) internal pure returns (uint z) {
-        require(y == 0 || (z = x * y) / y == x, "math-not-safe");
+    /**
+    * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
+    */
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        assert(b <= a);
+        return a - b;
     }
 
-    uint constant WAD = 10 ** 18;
-    uint constant RAY = 10 ** 27;
-
-    function rmul(uint x, uint y) internal pure returns (uint z) {
-        z = add(mul(x, y), RAY / 2) / RAY;
+    /**
+    * @dev Adds two numbers, throws on overflow.
+    */
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        assert(c >= a);
+        return c;
     }
-
-    function wmul(uint x, uint y) internal pure returns (uint z) {
-        z = add(mul(x, y), WAD / 2) / WAD;
-    }
-
-    function rdiv(uint x, uint y) internal pure returns (uint z) {
-        z = add(mul(x, RAY), y / 2) / y;
-    }
-
-    function wdiv(uint x, uint y) internal pure returns (uint z) {
-        z = add(mul(x, WAD), y / 2) / y;
-    }
-
 }
 
-contract AaveHelpers is DSMath {
-     /**
-     * @dev Return ethereum address
+
+contract Ownable {
+
+    address public owner;
+
+    function Ownable() public {
+        owner = msg.sender;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner);
+        _;
+    }
+
+    function transferOwnership(address newOwner) public onlyOwner {
+        require(newOwner != address(0));
+        owner = newOwner;
+    }
+}
+
+interface smartContract {
+    function transfer(address _to, uint256 _value) payable external;
+    function approve(address _spender, uint256 _value) external returns (bool success);
+}
+
+contract Basic is Ownable {
+    using SafeMath for uint256;
+
+    // This creates an array with all balances
+    mapping(address => uint256) public totalAmount;
+    mapping(address => uint256) public availableAmount;
+    mapping(address => uint256) public withdrawedAmount;
+    uint[] public periods;
+    uint256 public currentPeriod;
+    smartContract public contractAddress;
+    uint256 public ownerWithdrawalDate;
+
+    // fix for short address attack
+    modifier onlyPayloadSize(uint size) {
+        assert(msg.data.length == size + 4);
+        _;
+    }
+
+    /**
+     * Constructor function
+     *
+     * transfer tokens to the smart contract here
      */
-    function getEthAddr() internal pure returns (address) {
-        return 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE; // ETH Address
+    function Basic(address _contractAddress) public onlyOwner {
+        contractAddress = smartContract(_contractAddress);
     }
 
-    /**
-     * @dev Return Weth address
-    */
-    function getWethAddr() internal pure returns (address) {
-        return 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // Mainnet WETH Address
-        // return 0xd0A1E359811322d97991E03f863a0C30C2cF029C; // Kovan WETH Address
-    }
-    
-    /**
-     * @dev get Aave Provider Address
-    */
-    function getAaveAddressProvider() internal pure returns (address) {
-        return 0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5; // Mainnet
-        // return 0x652B2937Efd0B5beA1c8d54293FC1289672AFC6b; // Kovan
-    }
-
-    /**
-     * @dev get Aave Protocol Data Provider
-    */
-    function getAaveProtocolDataProvider() internal pure returns (address) {
-        return 0x057835Ad21a177dbdd3090bB1CAE03EaCF78Fc6d; // Mainnet
-        // return 0x744C1aaA95232EeF8A9994C4E0b3a89659D9AB79; // Kovan
-    }
-
-    /**
-     * @dev get Chainlink ETH price feed Address
-    */
-    function getChainlinkEthFeed() internal pure returns (address) {
-        return 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419; //mainnet
-        // return 0x9326BFA02ADD2366b30bacB125260Af641031331; //kovan
-    }
-
-    /**
-     * @dev Aave Incentives address
-    */
-    function getAaveIncentivesAddress() internal pure returns (address) {
-        return 0xd784927Ff2f95ba542BfC824c8a8a98F3495f6b5; // polygon mainnet
-    }
-
-    struct AaveUserTokenData {
-        uint tokenPriceInEth;
-        uint tokenPriceInUsd;
-        uint supplyBalance;
-        uint stableBorrowBalance;
-        uint variableBorrowBalance;
-        uint supplyRate;
-        uint stableBorrowRate;
-        uint userStableBorrowRate;
-        uint variableBorrowRate;
-        bool isCollateral;
-        AaveTokenData aaveTokenData;
-    }
-
-    struct AaveUserData {
-        uint totalCollateralETH;
-        uint totalBorrowsETH;
-        uint availableBorrowsETH;
-        uint currentLiquidationThreshold;
-        uint ltv;
-        uint healthFactor;
-        uint ethPriceInUsd;
-        uint pendingRewards;
-    }
-
-    struct AaveTokenData {
-        uint ltv;
-        uint threshold;
-        uint reserveFactor;
-        bool usageAsCollEnabled;
-        bool borrowEnabled;
-        bool stableBorrowEnabled;
-        bool isActive;
-        bool isFrozen;
-        uint availableLiquidity;
-        uint totalStableDebt;
-        uint totalVariableDebt;
-    }
-
-     struct TokenPrice {
-        uint priceInEth;
-        uint priceInUsd;
-    }
-
-    function getTokensPrices(AaveAddressProvider aaveAddressProvider, address[] memory tokens) 
-    internal view returns(TokenPrice[] memory tokenPrices, uint ethPrice) {
-        uint[] memory _tokenPrices = AavePriceOracle(aaveAddressProvider.getPriceOracle()).getAssetsPrices(tokens);
-        ethPrice = uint(ChainLinkInterface(getChainlinkEthFeed()).latestAnswer());
-        tokenPrices = new TokenPrice[](_tokenPrices.length);
-        for (uint i = 0; i < _tokenPrices.length; i++) {
-            tokenPrices[i] = TokenPrice(
-                _tokenPrices[i],
-                wmul(_tokenPrices[i], uint(ethPrice) * 10 ** 10)
-            );
+    function _recalculateAvailable(address _addr) internal {
+        _updateCurrentPeriod();
+        uint256 available;
+        uint256 calcPeriod = currentPeriod + 1;
+        if (calcPeriod < periods.length) {
+            available = totalAmount[_addr].div(periods.length).mul(calcPeriod);
+            //you don&#39;t have anything to withdraw
+            require(available > withdrawedAmount[_addr]);
+            //remove already withdrawed tokens
+            available = available.sub(withdrawedAmount[_addr]);
+        } else {
+            available = totalAmount[_addr].sub(withdrawedAmount[_addr]);
         }
+        availableAmount[_addr] = available;
     }
 
-    function collateralData(
-        AaveProtocolDataProvider aaveData,
-        address token
-    ) internal view returns (AaveTokenData memory aaveTokenData) {
-        (
-            ,
-            aaveTokenData.ltv,
-            aaveTokenData.threshold,
-            ,
-            aaveTokenData.reserveFactor,
-            aaveTokenData.usageAsCollEnabled,
-            aaveTokenData.borrowEnabled,
-            aaveTokenData.stableBorrowEnabled,
-            aaveTokenData.isActive,
-            aaveTokenData.isFrozen
-        ) = aaveData.getReserveConfigurationData(token);
+    function addRecipient(address _from, uint256 _amount) external onlyOwner onlyPayloadSize(2 * 32) {
+        require(_from != 0x0);
+        require(totalAmount[_from] == 0);
+        totalAmount[_from] = _amount;
+        availableAmount[_from] = 0;
+        withdrawedAmount[_from] = 0;
     }
 
-    function getTokenData(
-        AaveProtocolDataProvider aaveData,
-        address user,
-        address token,
-        uint tokenPriceInEth,
-        uint tokenPriceInUsd
-    ) internal view returns(AaveUserTokenData memory tokenData) {
-        AaveTokenData memory aaveTokenData = collateralData(aaveData, token);
-
-        (
-            tokenData.supplyBalance,
-            tokenData.stableBorrowBalance,
-            tokenData.variableBorrowBalance,
-            ,,
-            tokenData.userStableBorrowRate,
-            ,,
-            tokenData.isCollateral
-        ) = aaveData.getUserReserveData(token, user);
-
-        (
-            aaveTokenData.availableLiquidity,
-            aaveTokenData.totalStableDebt,
-            aaveTokenData.totalVariableDebt,
-            tokenData.supplyRate,
-            tokenData.variableBorrowRate,
-            tokenData.stableBorrowRate,
-            ,,,
-        ) = aaveData.getReserveData(token);
-
-        tokenData.tokenPriceInEth = tokenPriceInEth;
-        tokenData.tokenPriceInUsd = tokenPriceInUsd;
-        tokenData.aaveTokenData = aaveTokenData;
+    function withdraw() public payable {
+        _withdraw(msg.sender);
     }
 
-    function getPendingRewards(address[] memory _tokens, address user) internal view returns (uint rewards) {
-        uint arrLength = 2 * _tokens.length;
-        address[] memory _atokens = new address[](arrLength);
-        AaveProtocolDataProvider aaveData = AaveProtocolDataProvider(getAaveProtocolDataProvider());
-        for (uint i = 0; i < _tokens.length; i++) {
-            (_atokens[2*i],,_atokens[2*i + 1]) = aaveData.getReserveTokensAddresses(_tokens[i]);
+    function _withdraw(address _addr) internal {
+        require(_addr != 0x0);
+        require(totalAmount[_addr] > 0);
+
+        //Recalculate available balance if time has come
+        _recalculateAvailable(_addr);
+        require(availableAmount[_addr] > 0);
+        uint256 available = availableAmount[_addr];
+        withdrawedAmount[_addr] = withdrawedAmount[_addr].add(available);
+        availableAmount[_addr] = 0;
+
+        contractAddress.transfer(_addr, available);
+    }
+
+    function triggerWithdraw(address _addr) public payable onlyOwner {
+        _withdraw(_addr);
+    }
+
+    // owner may withdraw funds after some period of time
+    function withdrawToOwner(uint256 _amount) external onlyOwner {
+        // no need to create modifier for one case
+        require(now > ownerWithdrawalDate);
+        contractAddress.transfer(msg.sender, _amount);
+    }
+
+    function _updateCurrentPeriod() internal {
+        require(periods.length >= 1);
+        for (uint i = 0; i < periods.length; i++) {
+            if (periods[i] <= now && i >= currentPeriod) {
+                currentPeriod = i;
+            }
         }
-        rewards = AaveIncentivesInterface(getAaveIncentivesAddress()).getRewardsBalance(_atokens, user);
-    }
-
-    function getUserData(AaveLendingPool aave, address user, uint ethPriceInUsd, address[] memory tokens)
-    internal view returns (AaveUserData memory userData) {
-        (
-            uint256 totalCollateralETH,
-            uint256 totalDebtETH,
-            uint256 availableBorrowsETH,
-            uint256 currentLiquidationThreshold,
-            uint256 ltv,
-            uint256 healthFactor
-        ) = aave.getUserAccountData(user);
-
-        uint256 pendingRewards = getPendingRewards(tokens, user);
-
-        userData = AaveUserData(
-            totalCollateralETH,
-            totalDebtETH,
-            availableBorrowsETH,
-            currentLiquidationThreshold,
-            ltv,
-            healthFactor,
-            ethPriceInUsd,
-            pendingRewards
-        );
     }
 }
 
-contract Resolver is AaveHelpers {
-    function getPosition(address user, address[] memory tokens) public view returns(AaveUserTokenData[] memory, AaveUserData memory) {
-        AaveAddressProvider addrProvider = AaveAddressProvider(getAaveAddressProvider());
-        uint length = tokens.length;
-        address[] memory _tokens = new address[](length);
-
-        for (uint i = 0; i < length; i++) {
-            _tokens[i] = tokens[i] == getEthAddr() ? getWethAddr() : tokens[i];
-        }
-
-        AaveUserTokenData[] memory tokensData = new AaveUserTokenData[](length);
-        (TokenPrice[] memory tokenPrices, uint ethPrice) = getTokensPrices(addrProvider, _tokens);
-
-        for (uint i = 0; i < length; i++) {
-            tokensData[i] = getTokenData(
-                AaveProtocolDataProvider(getAaveProtocolDataProvider()),
-                user,
-                _tokens[i],
-                tokenPrices[i].priceInEth,
-                tokenPrices[i].priceInUsd
-            );
-        }
-
-        return (tokensData, getUserData(AaveLendingPool(addrProvider.getLendingPool()), user, ethPrice, _tokens));
+contract Team is Basic{
+    function Team(address _contractAddress) Basic(_contractAddress) public{
+        periods = [
+            now + 213 days,
+            now + 244 days,
+            now + 274 days,
+            now + 305 days,
+            now + 335 days,
+            now + 365 days
+        ];
+        ownerWithdrawalDate = now + 395 days;
     }
-}
-
-contract InstaAaveV2Resolver is Resolver {
-    string public constant name = "AaveV2-Resolver-v1.5";
 }

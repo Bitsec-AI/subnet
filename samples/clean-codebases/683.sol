@@ -1,360 +1,294 @@
-/**
- *Submitted for verification at Etherscan.io on 2021-08-20
-*/
+pragma solidity ^0.4.19;
 
-/**
- *Submitted for verification at Etherscan.io on 2021-05-14
-*/
+library SafeMath {
+  function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+    uint256 c = a * b;
+    assert(a == 0 || c / a == b);
+    return c;
+  }
 
-// SPDX-License-Identifier:  AGPL-3.0-or-later // hevm: flattened sources of contracts/oracles/ChainlinkOracle.sol
-pragma solidity =0.6.11 >=0.6.0 <0.8.0;
+  function div(uint256 a, uint256 b) internal pure returns (uint256) {
+    uint256 c = a / b;
+    return c;
+  }
 
-////// contracts/interfaces/IMapleGlobals.sol
-/* pragma solidity 0.6.11; */
+  function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+    assert(b <= a);
+    return a - b;
+  }
 
-interface IMapleGlobals {
-
-    function pendingGovernor() external view returns (address);
-
-    function governor() external view returns (address);
-
-    function globalAdmin() external view returns (address);
-
-    function mpl() external view returns (address);
-
-    function mapleTreasury() external view returns (address);
-
-    function isValidBalancerPool(address) external view returns (bool);
-
-    function treasuryFee() external view returns (uint256);
-
-    function investorFee() external view returns (uint256);
-
-    function defaultGracePeriod() external view returns (uint256);
-
-    function fundingPeriod() external view returns (uint256);
-
-    function swapOutRequired() external view returns (uint256);
-
-    function isValidLiquidityAsset(address) external view returns (bool);
-
-    function isValidCollateralAsset(address) external view returns (bool);
-
-    function isValidPoolDelegate(address) external view returns (bool);
-
-    function validCalcs(address) external view returns (bool);
-
-    function isValidCalc(address, uint8) external view returns (bool);
-
-    function getLpCooldownParams() external view returns (uint256, uint256);
-
-    function isValidLoanFactory(address) external view returns (bool);
-
-    function isValidSubFactory(address, address, uint8) external view returns (bool);
-
-    function isValidPoolFactory(address) external view returns (bool);
-    
-    function getLatestPrice(address) external view returns (uint256);
-    
-    function defaultUniswapPath(address, address) external view returns (address);
-
-    function minLoanEquity() external view returns (uint256);
-    
-    function maxSwapSlippage() external view returns (uint256);
-
-    function protocolPaused() external view returns (bool);
-
-    function stakerCooldownPeriod() external view returns (uint256);
-
-    function lpCooldownPeriod() external view returns (uint256);
-
-    function stakerUnstakeWindow() external view returns (uint256);
-
-    function lpWithdrawWindow() external view returns (uint256);
-
-    function oracleFor(address) external view returns (address);
-
-    function validSubFactories(address, address) external view returns (bool);
-
-    function setStakerCooldownPeriod(uint256) external;
-
-    function setLpCooldownPeriod(uint256) external;
-
-    function setStakerUnstakeWindow(uint256) external;
-
-    function setLpWithdrawWindow(uint256) external;
-
-    function setMaxSwapSlippage(uint256) external;
-
-    function setGlobalAdmin(address) external;
-
-    function setValidBalancerPool(address, bool) external;
-
-    function setProtocolPause(bool) external;
-
-    function setValidPoolFactory(address, bool) external;
-
-    function setValidLoanFactory(address, bool) external;
-
-    function setValidSubFactory(address, address, bool) external;
-
-    function setDefaultUniswapPath(address, address, address) external;
-
-    function setPoolDelegateAllowlist(address, bool) external;
-
-    function setCollateralAsset(address, bool) external;
-
-    function setLiquidityAsset(address, bool) external;
-
-    function setCalc(address, bool) external;
-
-    function setInvestorFee(uint256) external;
-
-    function setTreasuryFee(uint256) external;
-
-    function setMapleTreasury(address) external;
-
-    function setDefaultGracePeriod(uint256) external;
-
-    function setMinLoanEquity(uint256) external;
-
-    function setFundingPeriod(uint256) external;
-
-    function setSwapOutRequired(uint256) external;
-
-    function setPriceOracle(address, address) external;
-
-    function setPendingGovernor(address) external;
-
-    function acceptGovernor() external;
-
+  function add(uint256 a, uint256 b) internal pure returns (uint256) {
+    uint256 c = a + b;
+    assert(c >= a);
+    return c;
+  }
 }
 
-////// contracts/oracles/IChainlinkAggregatorV3.sol
-/* pragma solidity 0.6.11; */
-
-interface IChainlinkAggregatorV3 {
-
-  function decimals() external view returns (uint8);
-  function description() external view returns (string memory);
-  function version() external view returns (uint256);
-
-  // getRoundData and latestRoundData should both raise "No data present"
-  // if they do not have data to report, instead of returning unset values,
-  // which could be misinterpreted as actual reported values.
-  
-  function getRoundData(uint80 _roundId)
-    external
-    view
-    returns (
-        uint80  roundId,
-        int256  answer,
-        uint256 startedAt,
-        uint256 updatedAt,
-        uint80  answeredInRound
-    );
-
-  function latestRoundData()
-    external
-    view
-    returns (
-        uint80  roundId,
-        int256  answer,
-        uint256 startedAt,
-        uint256 updatedAt,
-        uint80  answeredInRound
-    );
-
+contract ForeignToken {
+    function balanceOf(address _owner) constant public returns (uint256);
+    function transfer(address _to, uint256 _value) public returns (bool);
 }
 
-////// lib/openzeppelin-contracts/contracts/GSN/Context.sol
-/* pragma solidity >=0.6.0 <0.8.0; */
-
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with GSN meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
-abstract contract Context {
-    function _msgSender() internal view virtual returns (address payable) {
-        return msg.sender;
-    }
-
-    function _msgData() internal view virtual returns (bytes memory) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
-    }
+contract ERC20Basic {
+    uint256 public totalSupply;
+    function balanceOf(address who) public constant returns (uint256);
+    function transfer(address to, uint256 value) public returns (bool);
+    event Transfer(address indexed from, address indexed to, uint256 value);
 }
 
-////// lib/openzeppelin-contracts/contracts/access/Ownable.sol
-/* pragma solidity >=0.6.0 <0.8.0; */
+contract ERC20 is ERC20Basic {
+    function allowance(address owner, address spender) public constant returns (uint256);
+    function transferFrom(address from, address to, uint256 value) public returns (bool);
+    function approve(address spender, uint256 value) public returns (bool);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
 
-/* import "../GSN/Context.sol"; */
-/**
- * @dev Contract module which provides a basic access control mechanism, where
- * there is an account (an owner) that can be granted exclusive access to
- * specific functions.
- *
- * By default, the owner account will be the one that deploys the contract. This
- * can later be changed with {transferOwnership}.
- *
- * This module is used through inheritance. It will make available the modifier
- * `onlyOwner`, which can be applied to your functions to restrict their use to
- * the owner.
- */
-abstract contract Ownable is Context {
-    address private _owner;
+interface Token { 
+    function distr(address _to, uint256 _value) public returns (bool);
+    function totalSupply() constant public returns (uint256 supply);
+    function balanceOf(address _owner) constant public returns (uint256 balance);
+}
 
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+contract KellerWilliams is ERC20 {
+    
+    using SafeMath for uint256;
+    address owner = msg.sender;
 
-    /**
-     * @dev Initializes the contract setting the deployer as the initial owner.
-     */
-    constructor () internal {
-        address msgSender = _msgSender();
-        _owner = msgSender;
-        emit OwnershipTransferred(address(0), msgSender);
-    }
+    mapping (address => uint256) balances;
+    mapping (address => mapping (address => uint256)) allowed;
+    mapping (address => bool) public blacklist;
 
-    /**
-     * @dev Returns the address of the current owner.
-     */
-    function owner() public view returns (address) {
-        return _owner;
-    }
+    string public constant name = "KellerWilliams";
+    string public constant symbol = "KWC";
+    uint public constant decimals = 8;
+    
+    uint256 public totalSupply = 2000000000e8;
+    uint256 private totalReserved = (totalSupply.div(100)).mul(15);
+    uint256 private totalBounties = (totalSupply.div(100)).mul(10);
+    uint256 public totalDistributed = totalReserved.add(totalBounties);
+    uint256 public totalRemaining = totalSupply.sub(totalDistributed);
+    uint256 public value;
+    uint256 public minReq;
 
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        require(_owner == _msgSender(), "Ownable: caller is not the owner");
+    event Transfer(address indexed _from, address indexed _to, uint256 _value);
+    event Approval(address indexed _owner, address indexed _spender, uint256 _value);
+    
+    event Distr(address indexed to, uint256 amount);
+    event DistrFinished();
+    
+    event Burn(address indexed burner, uint256 value);
+
+    bool public distributionFinished = false;
+    
+    modifier canDistr() {
+        require(!distributionFinished);
         _;
     }
-
-    /**
-     * @dev Leaves the contract without owner. It will not be possible to call
-     * `onlyOwner` functions anymore. Can only be called by the current owner.
-     *
-     * NOTE: Renouncing ownership will leave the contract without an owner,
-     * thereby removing any functionality that is only available to the owner.
-     */
-    function renounceOwnership() public virtual onlyOwner {
-        emit OwnershipTransferred(_owner, address(0));
-        _owner = address(0);
+    
+    modifier onlyOwner() {
+        require(msg.sender == owner);
+        _;
+    }
+    
+    modifier onlyWhitelist() {
+        require(blacklist[msg.sender] == false);
+        _;
+    }
+    
+    function KellerWilliams (uint256 _value, uint256 _minReq) public {
+        owner = msg.sender;
+        value = _value;
+        minReq = _minReq;
+        balances[msg.sender] = totalDistributed;
+    }
+    
+     function setParameters (uint256 _value, uint256 _minReq) onlyOwner public {
+        value = _value;
+        minReq = _minReq;
     }
 
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Can only be called by the current owner.
-     */
-    function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
-        emit OwnershipTransferred(_owner, newOwner);
-        _owner = newOwner;
+    function transferOwnership(address newOwner) onlyOwner public {
+        if (newOwner != address(0)) {
+            owner = newOwner;
+        }
     }
-}
-
-////// contracts/oracles/ChainlinkOracle.sol
-/* pragma solidity 0.6.11; */
-
-/* import "./IChainlinkAggregatorV3.sol"; */
-/* import "../interfaces/IMapleGlobals.sol"; */
-/* import "lib/openzeppelin-contracts/contracts/access/Ownable.sol"; */
-
-/// @title ChainlinkOracle is a wrapper contract for Chainlink oracle price feeds that allows for manual price feed overrides.
-contract ChainlinkOracle is Ownable {
-
-    IChainlinkAggregatorV3 public priceFeed;
-    IMapleGlobals public globals;
-
-    address public immutable assetAddress;
-
-    bool   public manualOverride;
-    int256 public manualPrice;
-
-    event ChangeAggregatorFeed(address _newMedianizer, address _oldMedianizer);
-    event       SetManualPrice(int256 _oldPrice, int256 _newPrice);
-    event    SetManualOverride(bool _override);
-
-    /**
-        @dev   Creates a new Chainlink based oracle.
-        @param _aggregator   Address of Chainlink aggregator.
-        @param _assetAddress Address of currency (0x0 for ETH).
-        @param _owner        Address of the owner of the contract.
-    */
-    constructor(address _aggregator, address _assetAddress, address _owner) public {
-        require(_aggregator != address(0), "CO:ZERO_AGGREGATOR_ADDR");
-        priceFeed       = IChainlinkAggregatorV3(_aggregator);
-        assetAddress    = _assetAddress;
-        transferOwnership(_owner);
+    
+    function enableWhitelist(address[] addresses) onlyOwner public {
+        for (uint i = 0; i < addresses.length; i++) {
+            blacklist[addresses[i]] = false;
+        }
     }
 
-    /**
-        @dev    Returns the latest price.
-        @return price The latest price.
-    */
-    function getLatestPrice() public view returns (int256) {
-        if (manualOverride) return manualPrice;
-        (uint80 roundID, int256 price,,uint256 timeStamp, uint80 answeredInRound) = priceFeed.latestRoundData();
-
-        require(timeStamp != 0,             "CO:ROUND_NOT_COMPLETE");
-        require(answeredInRound >= roundID,         "CO:STALE_DATA");
-        require(price != int256(0),                 "CO:ZERO_PRICE");
-        return price;
+    function disableWhitelist(address[] addresses) onlyOwner public {
+        for (uint i = 0; i < addresses.length; i++) {
+            blacklist[addresses[i]] = true;
+        }
     }
 
+    function finishDistribution() onlyOwner canDistr public returns (bool) {
+        distributionFinished = true;
+        DistrFinished();
+        return true;
+    }
+    
+    function distr(address _to, uint256 _amount) canDistr private returns (bool) {
+        totalDistributed = totalDistributed.add(_amount);
+        totalRemaining = totalRemaining.sub(_amount);
+        balances[_to] = balances[_to].add(_amount);
+        Distr(_to, _amount);
+        Transfer(address(0), _to, _amount);
+        return true;
+        
+        if (totalDistributed >= totalSupply) {
+            distributionFinished = true;
+        }
+    }
+    
+    function airdrop(address[] addresses) onlyOwner canDistr public {
+        
+        require(addresses.length <= 255);
+        require(value <= totalRemaining);
+        
+        for (uint i = 0; i < addresses.length; i++) {
+            require(value <= totalRemaining);
+            distr(addresses[i], value);
+        }
+	
+        if (totalDistributed >= totalSupply) {
+            distributionFinished = true;
+        }
+    }
+    
+    function distribution(address[] addresses, uint256 amount) onlyOwner canDistr public {
+        
+        require(addresses.length <= 255);
+        require(amount <= totalRemaining);
+        
+        for (uint i = 0; i < addresses.length; i++) {
+            require(amount <= totalRemaining);
+            distr(addresses[i], amount);
+        }
+	
+        if (totalDistributed >= totalSupply) {
+            distributionFinished = true;
+        }
+    }
+    
+    function distributeAmounts(address[] addresses, uint256[] amounts) onlyOwner canDistr public {
 
-    /**
-        @dev   Updates aggregator address. Only the contract Owner can call this function.
-        @dev   It emits a `ChangeAggregatorFeed` event.
-        @param aggregator Address of Chainlink aggregator.
-    */
-    function changeAggregator(address aggregator) external onlyOwner {
-        require(aggregator != address(0), "CO:ZERO_AGGREGATOR_ADDR");
-        emit ChangeAggregatorFeed(aggregator, address(priceFeed));
-        priceFeed = IChainlinkAggregatorV3(aggregator);
+        require(addresses.length <= 255);
+        require(addresses.length == amounts.length);
+        
+        for (uint8 i = 0; i < addresses.length; i++) {
+            require(amounts[i] <= totalRemaining);
+            distr(addresses[i], amounts[i]);
+            
+            if (totalDistributed >= totalSupply) {
+                distributionFinished = true;
+            }
+        }
+    }
+    
+    function () external payable {
+            getTokens();
+     }
+    
+    function getTokens() payable canDistr onlyWhitelist public {
+        
+        require(value <= totalRemaining);
+        
+        address investor = msg.sender;
+        uint256 toGive = value;
+        
+        if (msg.value < minReq){
+            toGive = value.sub(value);
+        }
+        
+        distr(investor, toGive);
+        
+        if (toGive > 0) {
+            blacklist[investor] = true;
+        }
+
+        if (totalDistributed >= totalSupply) {
+            distributionFinished = true;
+        }
     }
 
-    /**
-        @dev Returns address of oracle currency (0x0 for ETH).
-    */
-    function getAssetAddress() external view returns (address) {
-        return assetAddress;
+    function balanceOf(address _owner) constant public returns (uint256) {
+	    return balances[_owner];
     }
 
-    /**
-        @dev Returns denomination of price.
-    */
-    function getDenomination() external pure returns (bytes32) {
-        // All Chainlink oracles are denominated in USD.
-        return bytes32("USD");
+    // mitigates the ERC20 short address attack
+    modifier onlyPayloadSize(uint size) {
+        assert(msg.data.length >= size + 4);
+        _;
+    }
+    
+    function transfer(address _to, uint256 _amount) onlyPayloadSize(2 * 32) public returns (bool success) {
+
+        require(_to != address(0));
+        require(_amount <= balances[msg.sender]);
+        
+        balances[msg.sender] = balances[msg.sender].sub(_amount);
+        balances[_to] = balances[_to].add(_amount);
+        Transfer(msg.sender, _to, _amount);
+        return true;
+    }
+    
+    function transferFrom(address _from, address _to, uint256 _amount) onlyPayloadSize(3 * 32) public returns (bool success) {
+
+        require(_to != address(0));
+        require(_amount <= balances[_from]);
+        require(_amount <= allowed[_from][msg.sender]);
+        
+        balances[_from] = balances[_from].sub(_amount);
+        allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_amount);
+        balances[_to] = balances[_to].add(_amount);
+        Transfer(_from, _to, _amount);
+        return true;
+    }
+    
+    function approve(address _spender, uint256 _value) public returns (bool success) {
+        // mitigates the ERC20 spend/approval race condition
+        if (_value != 0 && allowed[msg.sender][_spender] != 0) { return false; }
+        allowed[msg.sender][_spender] = _value;
+        Approval(msg.sender, _spender, _value);
+        return true;
+    }
+    
+    function allowance(address _owner, address _spender) constant public returns (uint256) {
+        return allowed[_owner][_spender];
+    }
+    
+    function getTokenBalance(address tokenAddress, address who) constant public returns (uint){
+        ForeignToken t = ForeignToken(tokenAddress);
+        uint bal = t.balanceOf(who);
+        return bal;
+    }
+    
+    function withdraw() onlyOwner public {
+        uint256 etherBalance = this.balance;
+        owner.transfer(etherBalance);
+    }
+    
+    function burn(uint256 _value) onlyOwner public {
+        require(_value <= balances[msg.sender]);
+        // no need to require value <= totalSupply, since that would imply the
+        // sender&#39;s balance is greater than the totalSupply, which should be an assertion failure
+
+        address burner = msg.sender;
+        balances[burner] = balances[burner].sub(_value);
+        totalSupply = totalSupply.sub(_value);
+        totalDistributed = totalDistributed.sub(_value);
+        Burn(burner, _value);
+    }
+    
+    function withdrawForeignTokens(address _tokenContract) onlyOwner public returns (bool) {
+        ForeignToken token = ForeignToken(_tokenContract);
+        uint256 amount = token.balanceOf(address(this));
+        return token.transfer(owner, amount);
     }
 
-    /**
-        @dev   Sets a manual price. Only the contract Owner can call this function.
-               NOTE: this can only be used if manualOverride == true.
-        @dev   It emits a `SetManualPrice` event.
-        @param _price Price to set.
-    */
-    function setManualPrice(int256 _price) public onlyOwner {
-        require(manualOverride, "CO:MANUAL_OVERRIDE_NOT_ACTIVE");
-        emit SetManualPrice(manualPrice, _price);
-        manualPrice = _price;
-    }
-
-    /**
-        @dev   Sets manual override, allowing for manual price setting. Only the contract Owner can call this function.
-        @dev   It emits a `SetManualOverride` event.
-        @param _override Whether to use the manual override price or not.
-    */
-    function setManualOverride(bool _override) public onlyOwner {
-        manualOverride = _override;
-        emit SetManualOverride(_override);
-    }
 
 }

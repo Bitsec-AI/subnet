@@ -1,551 +1,227 @@
 /**
- *Submitted for verification at Etherscan.io on 2021-06-03
+ *Submitted for verification at Etherscan.io on 2021-12-10
 */
 
-// SPDX-License-Identifier: MIT
-
-/*
- * Token has been generated for FREE using https://vittominacori.github.io/erc20-generator/
- *
- * NOTE: "Contract Source Code Verified (Similar Match)" means that this Token is similar to other tokens deployed
- *  using the same generator. It is not an issue. It means that you won't need to verify your source code because of
- *  it is already verified.
- *
- * DISCLAIMER: GENERATOR'S AUTHOR IS FREE OF ANY LIABILITY REGARDING THE TOKEN AND THE USE THAT IS MADE OF IT.
- *  The following code is provided under MIT License. Anyone can use it as per their needs.
- *  The generator's purpose is to make people able to tokenize their ideas without coding or paying for it.
- *  Source code is well tested and continuously updated to reduce risk of bugs and to introduce language optimizations.
- *  Anyway the purchase of tokens involves a high degree of risk. Before acquiring tokens, it is recommended to
- *  carefully weighs all the information and risks detailed in Token owner's Conditions.
- */
-
-
-// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
-
-
-
-pragma solidity ^0.8.0;
-
 /**
- * @dev Interface of the ERC20 standard as defined in the EIP.
- */
-interface IERC20 {
-    /**
-     * @dev Returns the amount of tokens in existence.
-     */
-    function totalSupply() external view returns (uint256);
+ *Submitted for verification at Etherscan.io on 2021-10-16
+*/
 
-    /**
-     * @dev Returns the amount of tokens owned by `account`.
-     */
-    function balanceOf(address account) external view returns (uint256);
+// hevm: flattened sources of src/LerpFactory.sol
+// SPDX-License-Identifier: AGPL-3.0-or-later
+pragma solidity >=0.6.12 <0.7.0;
 
-    /**
-     * @dev Moves `amount` tokens from the caller's account to `recipient`.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transfer(address recipient, uint256 amount) external returns (bool);
+////// src/Lerp.sol
+//
+/// Lerp.sol -- Linear Interpolation module
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-    /**
-     * @dev Returns the remaining number of tokens that `spender` will be
-     * allowed to spend on behalf of `owner` through {transferFrom}. This is
-     * zero by default.
-     *
-     * This value changes when {approve} or {transferFrom} are called.
-     */
-    function allowance(address owner, address spender) external view returns (uint256);
+/* pragma solidity ^0.6.12; */
 
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * IMPORTANT: Beware that changing an allowance with this method brings the risk
-     * that someone may use both the old and the new allowance by unfortunate
-     * transaction ordering. One possible solution to mitigate this race
-     * condition is to first reduce the spender's allowance to 0 and set the
-     * desired value afterwards:
-     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-     *
-     * Emits an {Approval} event.
-     */
-    function approve(address spender, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Moves `amount` tokens from `sender` to `recipient` using the
-     * allowance mechanism. `amount` is then deducted from the caller's
-     * allowance.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
-     *
-     * Note that `value` may be zero.
-     */
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to {approve}. `value` is the new allowance.
-     */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+interface DenyLike {
+    function deny(address) external;
 }
 
-// File: @openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol
-
-
-
-pragma solidity ^0.8.0;
-
-
-/**
- * @dev Interface for the optional metadata functions from the ERC20 standard.
- *
- * _Available since v4.1._
- */
-interface IERC20Metadata is IERC20 {
-    /**
-     * @dev Returns the name of the token.
-     */
-    function name() external view returns (string memory);
-
-    /**
-     * @dev Returns the symbol of the token.
-     */
-    function symbol() external view returns (string memory);
-
-    /**
-     * @dev Returns the decimals places of the token.
-     */
-    function decimals() external view returns (uint8);
+interface FileLike {
+    function file(bytes32, uint256) external;
 }
 
-// File: @openzeppelin/contracts/utils/Context.sol
-
-
-
-pragma solidity ^0.8.0;
-
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
-abstract contract Context {
-    function _msgSender() internal view virtual returns (address) {
-        return msg.sender;
-    }
-
-    function _msgData() internal view virtual returns (bytes calldata) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
-    }
+interface FileIlkLike {
+    function file(bytes32, bytes32, uint256) external;
 }
 
-// File: @openzeppelin/contracts/token/ERC20/ERC20.sol
+// Perform linear interpolation on a dss administrative value over time
 
+abstract contract BaseLerp {
 
+    uint256 constant WAD = 10 ** 18;
 
-pragma solidity ^0.8.0;
+    address immutable public target;
+    bytes32 immutable public what;
+    uint256 immutable public start;
+    uint256 immutable public end;
+    uint256 immutable public duration;
 
+    bool              public done;
+    uint256           public startTime;
 
-
-
-/**
- * @dev Implementation of the {IERC20} interface.
- *
- * This implementation is agnostic to the way tokens are created. This means
- * that a supply mechanism has to be added in a derived contract using {_mint}.
- * For a generic mechanism see {ERC20PresetMinterPauser}.
- *
- * TIP: For a detailed writeup see our guide
- * https://forum.zeppelin.solutions/t/how-to-implement-erc20-supply-mechanisms/226[How
- * to implement supply mechanisms].
- *
- * We have followed general OpenZeppelin guidelines: functions revert instead
- * of returning `false` on failure. This behavior is nonetheless conventional
- * and does not conflict with the expectations of ERC20 applications.
- *
- * Additionally, an {Approval} event is emitted on calls to {transferFrom}.
- * This allows applications to reconstruct the allowance for all accounts just
- * by listening to said events. Other implementations of the EIP may not emit
- * these events, as it isn't required by the specification.
- *
- * Finally, the non-standard {decreaseAllowance} and {increaseAllowance}
- * functions have been added to mitigate the well-known issues around setting
- * allowances. See {IERC20-approve}.
- */
-contract ERC20 is Context, IERC20, IERC20Metadata {
-    mapping (address => uint256) private _balances;
-
-    mapping (address => mapping (address => uint256)) private _allowances;
-
-    uint256 private _totalSupply;
-
-    string private _name;
-    string private _symbol;
-
-    /**
-     * @dev Sets the values for {name} and {symbol}.
-     *
-     * The defaut value of {decimals} is 18. To select a different value for
-     * {decimals} you should overload it.
-     *
-     * All two of these values are immutable: they can only be set once during
-     * construction.
-     */
-    constructor (string memory name_, string memory symbol_) {
-        _name = name_;
-        _symbol = symbol_;
+    constructor(address target_, bytes32 what_, uint256 startTime_, uint256 start_, uint256 end_, uint256 duration_) public {
+        require(duration_ != 0, "Lerp/no-zero-duration");
+        require(duration_ <= 365 days, "Lerp/max-duration-one-year");
+        require(startTime_ <= block.timestamp + 365 days, "Lerp/start-within-one-year");
+        // This is not the exact upper bound, but it's a practical one
+        // Ballparked from 2^256 / 10^18 and verified that this is less than that value
+        require(start_ <= 10 ** 59, "Lerp/start-too-large");
+        require(end_ <= 10 ** 59, "Lerp/end-too-large");
+        target = target_;
+        what = what_;
+        startTime = startTime_;
+        start = start_;
+        end = end_;
+        duration = duration_;
     }
 
-    /**
-     * @dev Returns the name of the token.
-     */
-    function name() public view virtual override returns (string memory) {
-        return _name;
+    function tick() external returns (uint256 result) {
+        require(!done, "Lerp/finished");
+        if (block.timestamp >= startTime) {
+            if (block.timestamp < startTime + duration) {
+                // All bounds are constrained in the constructor so no need for safe-math
+                // 0 <= t < WAD
+                uint256 t = (block.timestamp - startTime) * WAD / duration;
+                // y = (end - start) * t + start [Linear Interpolation]
+                //   = end * t + start - start * t [Avoids overflow by moving the subtraction to the end]
+                update(result = end * t / WAD + start - start * t / WAD);
+            } else {
+                // Set the end value and mark as done
+                update(result = end);
+                try DenyLike(target).deny(address(this)) {} catch {}
+                done = true;
+            }
+        }
     }
 
-    /**
-     * @dev Returns the symbol of the token, usually a shorter version of the
-     * name.
-     */
-    function symbol() public view virtual override returns (string memory) {
-        return _symbol;
-    }
+    function update(uint256 value) virtual internal;
 
-    /**
-     * @dev Returns the number of decimals used to get its user representation.
-     * For example, if `decimals` equals `2`, a balance of `505` tokens should
-     * be displayed to a user as `5,05` (`505 / 10 ** 2`).
-     *
-     * Tokens usually opt for a value of 18, imitating the relationship between
-     * Ether and Wei. This is the value {ERC20} uses, unless this function is
-     * overridden;
-     *
-     * NOTE: This information is only used for _display_ purposes: it in
-     * no way affects any of the arithmetic of the contract, including
-     * {IERC20-balanceOf} and {IERC20-transfer}.
-     */
-    function decimals() public view virtual override returns (uint8) {
-        return 18;
-    }
-
-    /**
-     * @dev See {IERC20-totalSupply}.
-     */
-    function totalSupply() public view virtual override returns (uint256) {
-        return _totalSupply;
-    }
-
-    /**
-     * @dev See {IERC20-balanceOf}.
-     */
-    function balanceOf(address account) public view virtual override returns (uint256) {
-        return _balances[account];
-    }
-
-    /**
-     * @dev See {IERC20-transfer}.
-     *
-     * Requirements:
-     *
-     * - `recipient` cannot be the zero address.
-     * - the caller must have a balance of at least `amount`.
-     */
-    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(_msgSender(), recipient, amount);
-        return true;
-    }
-
-    /**
-     * @dev See {IERC20-allowance}.
-     */
-    function allowance(address owner, address spender) public view virtual override returns (uint256) {
-        return _allowances[owner][spender];
-    }
-
-    /**
-     * @dev See {IERC20-approve}.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function approve(address spender, uint256 amount) public virtual override returns (bool) {
-        _approve(_msgSender(), spender, amount);
-        return true;
-    }
-
-    /**
-     * @dev See {IERC20-transferFrom}.
-     *
-     * Emits an {Approval} event indicating the updated allowance. This is not
-     * required by the EIP. See the note at the beginning of {ERC20}.
-     *
-     * Requirements:
-     *
-     * - `sender` and `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `amount`.
-     * - the caller must have allowance for ``sender``'s tokens of at least
-     * `amount`.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(sender, recipient, amount);
-
-        uint256 currentAllowance = _allowances[sender][_msgSender()];
-        require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
-        _approve(sender, _msgSender(), currentAllowance - amount);
-
-        return true;
-    }
-
-    /**
-     * @dev Atomically increases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender] + addedValue);
-        return true;
-    }
-
-    /**
-     * @dev Atomically decreases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     * - `spender` must have allowance for the caller of at least
-     * `subtractedValue`.
-     */
-    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
-        uint256 currentAllowance = _allowances[_msgSender()][spender];
-        require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
-        _approve(_msgSender(), spender, currentAllowance - subtractedValue);
-
-        return true;
-    }
-
-    /**
-     * @dev Moves tokens `amount` from `sender` to `recipient`.
-     *
-     * This is internal function is equivalent to {transfer}, and can be used to
-     * e.g. implement automatic token fees, slashing mechanisms, etc.
-     *
-     * Emits a {Transfer} event.
-     *
-     * Requirements:
-     *
-     * - `sender` cannot be the zero address.
-     * - `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `amount`.
-     */
-    function _transfer(address sender, address recipient, uint256 amount) internal virtual {
-        require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
-
-        _beforeTokenTransfer(sender, recipient, amount);
-
-        uint256 senderBalance = _balances[sender];
-        require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
-        _balances[sender] = senderBalance - amount;
-        _balances[recipient] += amount;
-
-        emit Transfer(sender, recipient, amount);
-    }
-
-    /** @dev Creates `amount` tokens and assigns them to `account`, increasing
-     * the total supply.
-     *
-     * Emits a {Transfer} event with `from` set to the zero address.
-     *
-     * Requirements:
-     *
-     * - `to` cannot be the zero address.
-     */
-    function _mint(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: mint to the zero address");
-
-        _beforeTokenTransfer(address(0), account, amount);
-
-        _totalSupply += amount;
-        _balances[account] += amount;
-        emit Transfer(address(0), account, amount);
-    }
-
-    /**
-     * @dev Destroys `amount` tokens from `account`, reducing the
-     * total supply.
-     *
-     * Emits a {Transfer} event with `to` set to the zero address.
-     *
-     * Requirements:
-     *
-     * - `account` cannot be the zero address.
-     * - `account` must have at least `amount` tokens.
-     */
-    function _burn(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: burn from the zero address");
-
-        _beforeTokenTransfer(account, address(0), amount);
-
-        uint256 accountBalance = _balances[account];
-        require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
-        _balances[account] = accountBalance - amount;
-        _totalSupply -= amount;
-
-        emit Transfer(account, address(0), amount);
-    }
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the `owner` s tokens.
-     *
-     * This internal function is equivalent to `approve`, and can be used to
-     * e.g. set automatic allowances for certain subsystems, etc.
-     *
-     * Emits an {Approval} event.
-     *
-     * Requirements:
-     *
-     * - `owner` cannot be the zero address.
-     * - `spender` cannot be the zero address.
-     */
-    function _approve(address owner, address spender, uint256 amount) internal virtual {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
-
-        _allowances[owner][spender] = amount;
-        emit Approval(owner, spender, amount);
-    }
-
-    /**
-     * @dev Hook that is called before any transfer of tokens. This includes
-     * minting and burning.
-     *
-     * Calling conditions:
-     *
-     * - when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
-     * will be to transferred to `to`.
-     * - when `from` is zero, `amount` tokens will be minted for `to`.
-     * - when `to` is zero, `amount` of ``from``'s tokens will be burned.
-     * - `from` and `to` are never both zero.
-     *
-     * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
-     */
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
 }
 
-// File: contracts/service/ServicePayer.sol
+// Standard Lerp with only a uint256 value
 
+contract Lerp is BaseLerp {
 
+    constructor(address target_, bytes32 what_, uint256 startTime_, uint256 start_, uint256 end_, uint256 duration_) public BaseLerp(target_, what_, startTime_, start_, end_, duration_) {
+    }
 
-pragma solidity ^0.8.0;
+    function update(uint256 value) override internal {
+        FileLike(target).file(what, value);
+    }
 
-interface IPayable {
-    function pay(string memory serviceName) external payable;
 }
 
-/**
- * @title ServicePayer
- * @dev Implementation of the ServicePayer
- */
-abstract contract ServicePayer {
+// Lerp that takes an ilk parameter
 
-    constructor (address payable receiver, string memory serviceName) payable {
-        IPayable(receiver).pay{value: msg.value}(serviceName);
+contract IlkLerp is BaseLerp {
+
+    bytes32 immutable public ilk;
+
+    constructor(address target_, bytes32 ilk_, bytes32 what_, uint256 startTime_, uint256 start_, uint256 end_, uint256 duration_) public BaseLerp(target_, what_, startTime_, start_, end_, duration_) {
+        ilk = ilk_;
     }
+
+    function update(uint256 value) override internal {
+        FileIlkLike(target).file(ilk, what, value);
+    }
+
 }
 
-// File: contracts/utils/GeneratorCopyright.sol
+////// src/LerpFactory.sol
+//
+/// LerpFactory.sol -- Linear Interpolation creation module
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+/* pragma solidity ^0.6.12; */
 
+/* import "./Lerp.sol"; */
 
+contract LerpFactory {
 
-pragma solidity ^0.8.0;
-
-/**
- * @title GeneratorCopyright
- * @author ERC20 Generator (https://vittominacori.github.io/erc20-generator)
- * @dev Implementation of the GeneratorCopyright
- */
-contract GeneratorCopyright {
-
-    string private constant _GENERATOR = "https://vittominacori.github.io/erc20-generator";
-    string private _version;
-
-    constructor (string memory version_) {
-        _version = version_;
+    // --- Auth ---
+    function rely(address guy) external auth { wards[guy] = 1; emit Rely(guy); }
+    function deny(address guy) external auth { wards[guy] = 0; emit Deny(guy); }
+    mapping (address => uint256) public wards;
+    modifier auth {
+        require(wards[msg.sender] == 1, "LerpFactory/not-authorized");
+        _;
     }
 
-    /**
-     * @dev Returns the token generator tool.
-     */
-    function generator() public pure returns (string memory) {
-        return _GENERATOR;
+    mapping (bytes32 => address) public lerps;
+    address[] public active;  // Array of active lerps in no particular order
+
+    event Rely(address indexed usr);
+    event Deny(address indexed usr);
+    event NewLerp(bytes32 name, address indexed target, bytes32 what, uint256 startTime, uint256 start, uint256 end, uint256 duration);
+    event NewIlkLerp(bytes32 name, address indexed target, bytes32 ilk, bytes32 what, uint256 startTime, uint256 start, uint256 end, uint256 duration);
+    event LerpFinished(address indexed lerp);
+
+    constructor() public {
+        wards[msg.sender] = 1;
+        emit Rely(msg.sender);
     }
 
-    /**
-     * @dev Returns the token generator version.
-     */
-    function version() public view returns (string memory) {
-        return _version;
+    function newLerp(bytes32 name_, address target_, bytes32 what_, uint256 startTime_, uint256 start_, uint256 end_, uint256 duration_) external auth returns (address lerp) {
+        require(lerps[name_] == address(0));
+        lerp = address(new Lerp(target_, what_, startTime_, start_, end_, duration_));
+        lerps[name_] = lerp;
+        active.push(lerp);
+
+        emit NewLerp(name_, target_, what_, startTime_, start_, end_, duration_);
     }
-}
 
-// File: contracts/token/ERC20/SimpleERC20.sol
+    function newIlkLerp(bytes32 name_, address target_, bytes32 ilk_, bytes32 what_, uint256 startTime_, uint256 start_, uint256 end_, uint256 duration_) external auth returns (address lerp) {
+        require(lerps[name_] == address(0));
+        lerp = address(new IlkLerp(target_, ilk_, what_, startTime_, start_, end_, duration_));
+        lerps[name_] = lerp;
+        active.push(lerp);
 
-
-
-pragma solidity ^0.8.0;
-
-
-
-
-/**
- * @title SimpleERC20
- * @author ERC20 Generator (https://vittominacori.github.io/erc20-generator)
- * @dev Implementation of the SimpleERC20
- */
-contract SimpleERC20 is ERC20, ServicePayer, GeneratorCopyright("v5.0.1") {
-
-    constructor (
-        string memory name_,
-        string memory symbol_,
-        uint256 initialBalance_,
-        address payable feeReceiver_
-    )
-        ERC20(name_, symbol_)
-        ServicePayer(feeReceiver_, "SimpleERC20")
-        payable
-    {
-        require(initialBalance_ > 0, "SimpleERC20: supply cannot be zero");
-
-        _mint(_msgSender(), initialBalance_);
+        emit NewIlkLerp(name_, target_, ilk_, what_, startTime_, start_, end_, duration_);
     }
+
+    function remove(uint256 index) internal {
+        address lerp = active[index];
+        if (index != active.length - 1) {
+            active[index] = active[active.length - 1];
+        }
+        active.pop();
+
+        emit LerpFinished(lerp);
+    }
+
+    // Tick all active lerps or wipe them if they are done
+    function tall() external {
+        for (uint256 i = 0; i < active.length; i++) {
+            BaseLerp lerp = BaseLerp(active[i]);
+            try lerp.tick() {
+                if (lerp.done()) {
+                    remove(i);
+                    i--;
+                }
+            } catch {
+                // Stop tracking if this lerp fails
+                remove(i);
+                i--;
+            }
+        }
+    }
+
+    // The number of active lerps
+    function count() external view returns (uint256) {
+        return active.length;
+    }
+
+    // Return the entire array of active lerps
+    function list() external view returns (address[] memory) {
+        return active;
+    }
+
 }

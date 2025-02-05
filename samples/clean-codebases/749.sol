@@ -1,155 +1,54 @@
-pragma solidity 0.4.21;
+pragma solidity ^0.4.11;
 
-/** @title LockableToken
-  * @dev Base contract which allows token issuer control over when token transfer
-  * is allowed globally as well as per address based.
-  */
-contract LockableToken {
-    // token issuer
-    address public owner;
-
-    // Check if msg.sender is token issuer
-    modifier isOwner {
-        require(owner == msg.sender);
-        _;
-    }
-
-    /**
-      * @dev The LockableToken constructor sets the original `owner` of the
-      * contract to the issuer, and sets global lock in locked state.
-      */
-    function LockableToken() public {
-        owner = msg.sender;
-    }
-}
 
 /**
  * @title SafeMath
  * @dev Math operations with safety checks that throw on error
  */
 library SafeMath {
-
-  /**
-  * @dev Multiplies two numbers, throws on overflow.
-  */
-  function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-    if (a == 0) {
-      return 0;
-    }
-    uint256 c = a * b;
-    assert(c / a == b);
-    return c;
-  }
-
-  /**
-  * @dev Integer division of two numbers, truncating the quotient.
-  */
-  function div(uint256 a, uint256 b) internal pure returns (uint256) {
-    // assert(b > 0); // Solidity automatically throws when dividing by 0
-    uint256 c = a / b;
-    // assert(a == b * c + a % b); // There is no case in which this doesn&#39;t hold
-    return c;
-  }
-
-  /**
-  * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
-  */
-  function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-    assert(b <= a);
-    return a - b;
-  }
-
-  /**
-  * @dev Adds two numbers, throws on overflow.
-  */
-  function add(uint256 a, uint256 b) internal pure returns (uint256) {
-    uint256 c = a + b;
-    assert(c >= a);
-    return c;
-  }
+	function mul(uint a, uint b) internal returns (uint) {
+		uint c = a * b;
+		assert(a == 0 || c / a == b);
+		return c;
+	}
+	function safeSub(uint a, uint b) internal returns (uint) {
+		assert(b <= a);
+		return a - b;
+	}
+	function div(uint a, uint b) internal returns (uint) {
+		assert(b > 0);
+		uint c = a / b;
+		assert(a == b * c + a % b);
+		return c;
+	}
+	function sub(uint a, uint b) internal returns (uint) {
+		assert(b <= a);
+		return a - b;
+	}
+	function add(uint a, uint b) internal returns (uint) {
+		uint c = a + b;
+		assert(c >= a);
+		return c;
+	}
+	function max64(uint64 a, uint64 b) internal constant returns (uint64) {
+		return a >= b ? a : b;
+	}
+	function min64(uint64 a, uint64 b) internal constant returns (uint64) {
+		return a < b ? a : b;
+	}
+	function max256(uint256 a, uint256 b) internal constant returns (uint256) {
+		return a >= b ? a : b;
+	}
+	function min256(uint256 a, uint256 b) internal constant returns (uint256) {
+		return a < b ? a : b;
+	}
+	function assert(bool assertion) internal {
+		if (!assertion) {
+			throw;
+		}
+	}
 }
 
-/**
- * @title ERC20Basic
- * @dev Simpler version of ERC20 interface
- * @dev see https://github.com/ethereum/EIPs/issues/179
- */
-contract ERC20Basic {
-  function totalSupply() public view returns (uint256);
-  function balanceOf(address who) public view returns (uint256);
-  function transfer(address to, uint256 value) public returns (bool);
-  event Transfer(address indexed from, address indexed to, uint256 value);
-}
-
-/**
- * @title Basic token
- * @dev Basic version of StandardToken, with no allowances.
- */
-contract BasicToken is ERC20Basic {
-  using SafeMath for uint256;
-
-  mapping(address => uint256) balances;
-
-  uint256 totalSupply_;
-
-  /**
-  * @dev total number of tokens in existence
-  */
-  function totalSupply() public view returns (uint256) {
-    return totalSupply_;
-  }
-
-  /**
-  * @dev transfer token for a specified address
-  * @param _to The address to transfer to.
-  * @param _value The amount to be transferred.
-  */
-  function transfer(address _to, uint256 _value) public returns (bool) {
-    require(_to != address(0));
-    require(_value <= balances[msg.sender]);
-
-    // SafeMath.sub will throw if there is not enough balance.
-    balances[msg.sender] = balances[msg.sender].sub(_value);
-    balances[_to] = balances[_to].add(_value);
-    Transfer(msg.sender, _to, _value);
-    return true;
-  }
-
-  /**
-  * @dev Gets the balance of the specified address.
-  * @param _owner The address to query the the balance of.
-  * @return An uint256 representing the amount owned by the passed address.
-  */
-  function balanceOf(address _owner) public view returns (uint256 balance) {
-    return balances[_owner];
-  }
-
-}
-
-/**
- * @title Burnable Token
- * @dev Token that can be irreversibly burned (destroyed).
- */
-contract BurnableToken is BasicToken {
-
-  event Burn(address indexed burner, uint256 value);
-
-  /**
-   * @dev Burns a specific amount of tokens.
-   * @param _value The amount of token to be burned.
-   */
-  function burn(uint256 _value) public {
-    require(_value <= balances[msg.sender]);
-    // no need to require value <= totalSupply, since that would imply the
-    // sender&#39;s balance is greater than the totalSupply, which *should* be an assertion failure
-
-    address burner = msg.sender;
-    balances[burner] = balances[burner].sub(_value);
-    totalSupply_ = totalSupply_.sub(_value);
-    Burn(burner, _value);
-    Transfer(burner, address(0), _value);
-  }
-}
 
 /**
  * @title Ownable
@@ -157,50 +56,144 @@ contract BurnableToken is BasicToken {
  * functions, this simplifies the implementation of "user permissions".
  */
 contract Ownable {
-  address public owner;
-
-
-  event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-
-  /**
-   * @dev The Ownable constructor sets the original `owner` of the contract to the sender
-   * account.
-   */
-  function Ownable() public {
-    owner = msg.sender;
-  }
-
-  /**
-   * @dev Throws if called by any account other than the owner.
-   */
-  modifier onlyOwner() {
-    require(msg.sender == owner);
-    _;
-  }
-
-  /**
-   * @dev Allows the current owner to transfer control of the contract to a newOwner.
-   * @param newOwner The address to transfer ownership to.
-   */
-  function transferOwnership(address newOwner) public onlyOwner {
-    require(newOwner != address(0));
-    OwnershipTransferred(owner, newOwner);
-    owner = newOwner;
-  }
-
+    address public owner;
+    function Ownable() {
+        owner = msg.sender;
+    }
+    modifier onlyOwner {
+        if (msg.sender != owner) throw;
+        _;
+    }
+    function transferOwnership(address newOwner) onlyOwner {
+        if (newOwner != address(0)) {
+            owner = newOwner;
+        }
+    }
 }
+
+
+/**
+ * @title Pausable
+ * @dev Base contract which allows children to implement an emergency stop mechanism.
+ */
+contract Pausable is Ownable {
+	bool public stopped;
+	modifier stopInEmergency {
+		if (stopped) {
+			throw;
+		}
+		_;
+	}
+
+	modifier onlyInEmergency {
+		if (!stopped) {
+		  throw;
+		}
+	_;
+	}
+	// called by the owner on emergency, triggers stopped state
+	function emergencyStop() external onlyOwner {
+		stopped = true;
+	}
+	// called by the owner on end of emergency, returns to normal state
+	function release() external onlyOwner onlyInEmergency {
+		stopped = false;
+	}
+}
+
+
+
+/**
+ * @title PullPayment
+ * @dev Base contract supporting async send for pull payments. Inherit from this
+ * contract and use asyncSend instead of send.
+ */
+contract PullPayment {
+	using SafeMath for uint;
+
+	mapping(address => uint) public payments;
+	event LogRefundETH(address to, uint value);
+	/**
+	*  Store sent amount as credit to be pulled, called by payer 
+	**/
+	function asyncSend(address dest, uint amount) internal {
+		payments[dest] = payments[dest].add(amount);
+	}
+	// withdraw accumulated balance, called by payee
+	function withdrawPayments() {
+		address payee = msg.sender;
+		uint payment = payments[payee];
+
+		if (payment == 0) {
+			throw;
+		}
+		if (this.balance < payment) {
+		    throw;
+		}
+		payments[payee] = 0;
+		if (!payee.send(payment)) {
+		    throw;
+		}
+		LogRefundETH(payee,payment);
+	}
+}
+
+
+
+/**
+ * @title ERC20Basic
+ * @dev Simpler version of ERC20 interface
+ * @dev see https://github.com/ethereum/EIPs/issues/179
+ */
+contract ERC20Basic {
+	uint public totalSupply;
+	function balanceOf(address who) constant returns (uint);
+	function transfer(address to, uint value);
+	event Transfer(address indexed from, address indexed to, uint value);
+}
+
 
 /**
  * @title ERC20 interface
  * @dev see https://github.com/ethereum/EIPs/issues/20
  */
 contract ERC20 is ERC20Basic {
-  function allowance(address owner, address spender) public view returns (uint256);
-  function transferFrom(address from, address to, uint256 value) public returns (bool);
-  function approve(address spender, uint256 value) public returns (bool);
-  event Approval(address indexed owner, address indexed spender, uint256 value);
+	function allowance(address owner, address spender) constant returns (uint);
+	function transferFrom(address from, address to, uint value);
+	function approve(address spender, uint value);
+	event Approval(address indexed owner, address indexed spender, uint value);
 }
+
+
+/**
+ * @title Basic token
+ * @dev Basic version of StandardToken, with no allowances. 
+ */
+contract BasicToken is ERC20Basic {
+  
+	using SafeMath for uint;
+
+	mapping(address => uint) balances;
+
+	/*
+	* Fix for the ERC20 short address attack  
+	*/
+	modifier onlyPayloadSize(uint size) {
+	   if(msg.data.length < size + 4) {
+	     throw;
+	   }
+	 _;
+	}
+	function transfer(address _to, uint _value) onlyPayloadSize(2 * 32) {
+		balances[msg.sender] = balances[msg.sender].sub(_value);
+		balances[_to] = balances[_to].add(_value);
+		Transfer(msg.sender, _to, _value);
+	}
+	function balanceOf(address _owner) constant returns (uint balance) {
+		return balances[_owner];
+	}
+}
+
 
 /**
  * @title Standard ERC20 token
@@ -209,258 +202,251 @@ contract ERC20 is ERC20Basic {
  * @dev https://github.com/ethereum/EIPs/issues/20
  * @dev Based on code by FirstBlood: https://github.com/Firstbloodio/token/blob/master/smart_contract/FirstBloodToken.sol
  */
-contract StandardToken is ERC20, BasicToken {
-
-  mapping (address => mapping (address => uint256)) internal allowed;
-
-
-  /**
-   * @dev Transfer tokens from one address to another
-   * @param _from address The address which you want to send tokens from
-   * @param _to address The address which you want to transfer to
-   * @param _value uint256 the amount of tokens to be transferred
-   */
-  function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-    require(_to != address(0));
-    require(_value <= balances[_from]);
-    require(_value <= allowed[_from][msg.sender]);
-
-    balances[_from] = balances[_from].sub(_value);
-    balances[_to] = balances[_to].add(_value);
-    allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
-    Transfer(_from, _to, _value);
-    return true;
-  }
-
-  /**
-   * @dev Approve the passed address to spend the specified amount of tokens on behalf of msg.sender.
-   *
-   * Beware that changing an allowance with this method brings the risk that someone may use both the old
-   * and the new allowance by unfortunate transaction ordering. One possible solution to mitigate this
-   * race condition is to first reduce the spender&#39;s allowance to 0 and set the desired value afterwards:
-   * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-   * @param _spender The address which will spend the funds.
-   * @param _value The amount of tokens to be spent.
-   */
-  function approve(address _spender, uint256 _value) public returns (bool) {
-    allowed[msg.sender][_spender] = _value;
-    Approval(msg.sender, _spender, _value);
-    return true;
-  }
-
-  /**
-   * @dev Function to check the amount of tokens that an owner allowed to a spender.
-   * @param _owner address The address which owns the funds.
-   * @param _spender address The address which will spend the funds.
-   * @return A uint256 specifying the amount of tokens still available for the spender.
-   */
-  function allowance(address _owner, address _spender) public view returns (uint256) {
-    return allowed[_owner][_spender];
-  }
-
-  /**
-   * @dev Increase the amount of tokens that an owner allowed to a spender.
-   *
-   * approve should be called when allowed[_spender] == 0. To increment
-   * allowed value is better to use this function to avoid 2 calls (and wait until
-   * the first transaction is mined)
-   * From MonolithDAO Token.sol
-   * @param _spender The address which will spend the funds.
-   * @param _addedValue The amount of tokens to increase the allowance by.
-   */
-  function increaseApproval(address _spender, uint _addedValue) public returns (bool) {
-    allowed[msg.sender][_spender] = allowed[msg.sender][_spender].add(_addedValue);
-    Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
-    return true;
-  }
-
-  /**
-   * @dev Decrease the amount of tokens that an owner allowed to a spender.
-   *
-   * approve should be called when allowed[_spender] == 0. To decrement
-   * allowed value is better to use this function to avoid 2 calls (and wait until
-   * the first transaction is mined)
-   * From MonolithDAO Token.sol
-   * @param _spender The address which will spend the funds.
-   * @param _subtractedValue The amount of tokens to decrease the allowance by.
-   */
-  function decreaseApproval(address _spender, uint _subtractedValue) public returns (bool) {
-    uint oldValue = allowed[msg.sender][_spender];
-    if (_subtractedValue > oldValue) {
-      allowed[msg.sender][_spender] = 0;
-    } else {
-      allowed[msg.sender][_spender] = oldValue.sub(_subtractedValue);
+contract StandardToken is BasicToken, ERC20 {
+	mapping (address => mapping (address => uint)) allowed;
+	function transferFrom(address _from, address _to, uint _value) onlyPayloadSize(3 * 32) {
+		var _allowance = allowed[_from][msg.sender];
+		balances[_to] = balances[_to].add(_value);
+		balances[_from] = balances[_from].sub(_value);
+		allowed[_from][msg.sender] = _allowance.sub(_value);
+		Transfer(_from, _to, _value);
     }
-    Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
-    return true;
-  }
-
+	function approve(address _spender, uint _value) {
+		if ((_value != 0) && (allowed[msg.sender][_spender] != 0)) throw;
+		allowed[msg.sender][_spender] = _value;
+		Approval(msg.sender, _spender, _value);
+	}
+	function allowance(address _owner, address _spender) constant returns (uint remaining) {
+		return allowed[_owner][_spender];
+	}
 }
+
 
 /**
- * @title Mintable token
- * @dev Simple ERC20 Token example, with mintable token creation
- * @dev Issue: * https://github.com/OpenZeppelin/zeppelin-solidity/issues/120
- * Based on code by TokenMarketNet: https://github.com/TokenMarketNet/ico/blob/master/contracts/MintableToken.sol
+ *  ClusterToken presale contract.
  */
-contract MintableToken is StandardToken, Ownable {
-  event Mint(address indexed to, uint256 amount);
-  event MintFinished();
-
-  bool public mintingFinished = false;
-
-
-  modifier canMint() {
-    require(!mintingFinished);
-    _;
-  }
-
-  /**
-   * @dev Function to mint tokens
-   * @param _to The address that will receive the minted tokens.
-   * @param _amount The amount of tokens to mint.
-   * @return A boolean that indicates if the operation was successful.
-   */
-  function mint(address _to, uint256 _amount) onlyOwner canMint public returns (bool) {
-    totalSupply_ = totalSupply_.add(_amount);
-    balances[_to] = balances[_to].add(_amount);
-    Mint(_to, _amount);
-    Transfer(address(0), _to, _amount);
-    return true;
-  }
-
-  /**
-   * @dev Function to stop minting new tokens.
-   * @return True if the operation was successful.
-   */
-  function finishMinting() onlyOwner canMint public returns (bool) {
-    mintingFinished = true;
-    MintFinished();
-    return true;
-  }
-}
-
-/** @title CNUS Token
-  * An ERC20-compliant token that is transferable only after preordered product
-  * reception is confirmed. Once the product is used by the holder, token lock
-  * will be automatically released.
-  */
-contract CnusToken is MintableToken, LockableToken, BurnableToken {
-    using SafeMath for uint256;
-
-    string public name = "CoinUs";
-    string public symbol = "CNUS";
-    uint256 public decimals = 18;
-
-    // global token transfer lock
-    bool public globalTokenTransferLock;
-
-    // mapping that provides address based lock. default at the time of issueance
-    // is locked, and will not be transferrable until explicit unlock call for
-    // the address.
-    mapping( address => bool ) public lockedStatusAddress;
-
-    event Locked(address lockedAddress);
-    event Unlocked(address unlockedaddress);
-
-    // Check for global lock status to be unlocked
-    modifier checkGlobalTokenTransferLock {
-        require(!globalTokenTransferLock);
-        _;
+contract ClusterToken is StandardToken, PullPayment, Ownable, Pausable {
+	
+  using SafeMath for uint;
+  
+  struct Backer {
+        address buyer;
+        uint contribution;
+        uint withdrawnAtSegment;
+        uint withdrawnAtCluster;
+        bool state;
     }
+    
+    /**
+     * Variables
+    */
+    string public constant name = "ClusterToken";
+    string public constant symbol = "CLRT";
+    uint256 public constant decimals = 18;
+    uint256 private buyPriceEth = 10000000000000000;
+    
+    uint256 public initialBlockCount;
+    uint256 private testBlockEnd;
+    uint256 public contributors;
+    
+    uint256 private minedBlocks;
+    uint256 private ClusterCurrent;
+    uint256 private SegmentCurrent;
+    uint256 private UnitCurrent;
+  
+  
+    mapping(address => Backer) public backers;
+    
+   
+    /**
+     * @dev Contract constructor
+     */ 
+    function ClusterToken() {
+    totalSupply = 750000000000000000000;
+    balances[msg.sender] = totalSupply;
+    
+    initialBlockCount = 4086356;
 
-    // Check for address lock to be unlocked
-    modifier checkAddressLock {
-        require(!lockedStatusAddress[msg.sender]);
-        _;
+    contributors = 0;
     }
-
-    function setGlobalTokenTransferLock(bool locked) public
-    isOwner
-    returns (bool)
+    
+    
+    /**
+     * @return Returns the current amount of CLUSTERS
+     */ 
+    function currentCluster() constant returns (uint256 currentCluster)
     {
-        globalTokenTransferLock = locked;
-        return globalTokenTransferLock;
+    	uint blockCount = block.number - initialBlockCount;
+    	uint result = blockCount.div(1000000);
+    	return result;
     }
+    
+    
+    /**
+     * @return Returns the current amount of SEGMENTS
+     */ 
+    function currentSegment() constant returns (uint256 currentSegment)
+    {
+    	uint blockCount = block.number - initialBlockCount;
+    	uint newSegment = currentCluster().mul(1000);
+    	uint result = blockCount.div(1000).sub(newSegment);
+
+    	return result;
+    }
+    
+    
+    /**
+     * @return Returns the current amount of UNITS
+     */ 
+    function currentUnit() constant returns (uint256 currentUnit)
+    {
+    	uint blockCount = block.number - initialBlockCount;
+    	uint getClusters = currentCluster().mul(1000000);
+        uint newUnit = currentSegment().mul(1000);
+    	return blockCount.sub(getClusters).sub(newUnit);      
+    	
+    }
+    
+    
+    /**
+     * @return Returns the current network block
+     */ 
+    function currentBlock() constant returns (uint256 blockNumber)
+    {
+    	return block.number - initialBlockCount;
+    }
+
+
 
     /**
-      * @dev Allows token issuer to lock token transfer for an address.
-      * @param target Target address to lock token transfer.
-      */
-    function initialLockAddress(address target) public
-    onlyOwner
-    {
-        require(owner != target);
-        lockedStatusAddress[target] = true;
-        emit Locked(target);
+     * @dev Allows users to buy CLUSTER and receive their tokens at once.
+     * @return The amount of CLUSTER bought by sender.
+     */ 
+    function buyClusterToken() payable returns (uint amount) {
+        
+        if (balances[this] < amount) throw;                          
+        amount = msg.value.mul(buyPriceEth).div(1 ether);
+        balances[msg.sender] += amount;
+        balances[this] -= amount;
+        Transfer(this, msg.sender, amount);
+        
+        Backer backer = backers[msg.sender];
+        backer.contribution = backer.contribution.add(amount);
+        backer.withdrawnAtSegment = backer.withdrawnAtSegment.add(0);
+        backer.withdrawnAtCluster = backer.withdrawnAtCluster.add(0);
+        backer.state = backer.state = true;
+        
+        contributors++;
+        
+        return amount;
     }
-
+    
+    
     /**
-      * @dev Allows token issuer to lock token transfer for an address.
-      * @param target Target address to lock token transfer.
-      */
-    function lockAddress(address target) public
-    isOwner
-    {
-        require(owner != target);
-        lockedStatusAddress[target] = true;
-        emit Locked(target);
+     * @dev Allows users to claim CLUSTER every 1000 SEGMENTS (1.000.000 blocks).
+     * @return The amount of CLUSTER claimed by sender.
+     */
+    function claimClusters() public returns (uint amount) {
+        
+        if (currentSegment() == 0) throw;
+        if (!backers[msg.sender].state) throw; 
+        
+        uint previousWithdraws = backers[msg.sender].withdrawnAtCluster;
+        uint entitledToClusters = currentCluster().sub(previousWithdraws);
+        
+        if (entitledToClusters == 0) throw;
+        if (!isEntitledForCluster(msg.sender)) throw;
+        
+        uint userShares = backers[msg.sender].contribution.div(1 finney);
+        uint amountForPayout = buyPriceEth.div(contributors);
+        
+        amount =  amountForPayout.mul(userShares).mul(1000);                           
+        
+        balances[msg.sender] += amount;
+        balances[this] -= amount;
+        Transfer(this, msg.sender, amount);
+        
+        backers[msg.sender].withdrawnAtCluster = currentCluster(); 
+        
+        return amount;
     }
-
+    
+    
     /**
-      * @dev Allows token issuer to unlock token transfer for an address.
-      * @param target Target address to unlock token transfer.
-      */
-    function unlockAddress(address target) public
-    isOwner
-    {
-        lockedStatusAddress[target] = false;
-        emit Unlocked(target);
+     * @dev Allows users to claim segments every 1000 UNITS (blocks).
+     * @dev NOTE: Users claiming SEGMENTS instead of CLUSTERS get only half of the reward.
+     * @return The amount of SEGMENTS claimed by sender.
+     */
+    function claimSegments() public returns (uint amount) {
+        
+        if (currentSegment() == 0) throw;
+        if (!backers[msg.sender].state) throw;  
+        
+        
+        uint previousWithdraws = currentCluster().add(backers[msg.sender].withdrawnAtSegment);
+        uint entitledToSegments = currentCluster().add(currentSegment().sub(previousWithdraws));
+        
+        if (entitledToSegments == 0 ) throw;
+        
+        uint userShares = backers[msg.sender].contribution.div(1 finney);
+        uint amountForPayout = buyPriceEth.div(contributors);
+        
+        amount =  amountForPayout.mul(userShares).div(10).div(2);                           
+        
+        balances[msg.sender] += amount;
+        balances[this] -= amount;
+        Transfer(this, msg.sender, amount);
+        
+        backers[msg.sender].withdrawnAtSegment = currentSegment(); 
+        
+        return amount;
     }
 
-    /** @dev Transfer `_value` token to `_to` from `msg.sender`, on the condition
-      * that global token lock and individual address lock in the `msg.sender`
-      * accountare both released.
-      * @param _to The address of the recipient.
-      * @param _value The amount of token to be transferred.
-      * @return Whether the transfer was successful or not.
-      */
-    function transfer(address _to, uint256 _value)
-    public
-    checkGlobalTokenTransferLock
-    checkAddressLock
-    returns (bool) {
-        require(_to != address(0));
-        require(_value <= balances[msg.sender]);
-
-        // SafeMath.sub will throw if there is not enough balance.
+    
+    /**
+     * @dev Function if users send funds to this contract, call the buy function.
+     */ 
+    function() payable {
+        if (msg.sender != owner) {
+            buyClusterToken();
+        }
+    }
+    
+    
+    /**
+     * @dev Allows owner to withdraw funds from the account.
+     */ 
+    function Drain() onlyOwner public {
+        if(this.balance > 0) {
+            if (!owner.send(this.balance)) throw;
+        }
+    }
+    
+    
+    
+    /**
+    *  Burn away the specified amount of ClusterToken tokens.
+    * @return Returns success boolean.
+    */
+    function burn(uint _value) onlyOwner returns (bool) {
         balances[msg.sender] = balances[msg.sender].sub(_value);
-        balances[_to] = balances[_to].add(_value);
-        emit Transfer(msg.sender, _to, _value);
+        totalSupply = totalSupply.sub(_value);
+        Transfer(msg.sender, 0x0, _value);
         return true;
     }
+    
+    
+    /**
+     * @dev Internal check to see if at least 1000 segments passed without withdrawal prior to rewarding a cluster
+     */ 
+    function isEntitledForCluster(address _sender) private constant returns (bool) {
+        
+        uint t1 = currentCluster().mul(1000).add(currentSegment()); 
+        uint t2 = backers[_sender].withdrawnAtSegment;      
 
-    /** @dev Send `_value` token to `_to` from `_from` on the condition
-      * that global token lock and individual address lock in the `from` account
-      * are both released.
-      * @param _from The address of the sender.
-      * @param _to The address of the recipient.
-      * @param _value The amount of token to be transferred.
-      * @return Whether the transfer was successful or not.
-      */
-    function transferFrom(address _from, address _to, uint256 _value)
-    public
-    checkGlobalTokenTransferLock
-    checkAddressLock
-    returns (bool) {
-        require(_to != address(0));
-        require(_value <= balances[_from]);
-        require(_value <= allowed[_from][msg.sender]);
-
-        balances[_from] = balances[_from].sub(_value);
-        balances[_to] = balances[_to].add(_value);
-        allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
-        emit Transfer(_from, _to, _value);
-        return true;
+        if (t1.sub(t2) >= 1000) { return true; }
+        return false;
+        
     }
+    
 }

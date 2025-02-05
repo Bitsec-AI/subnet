@@ -1,10 +1,25 @@
-// SPDX-License-Identifier: MIT
-
-pragma solidity ^0.6.12;
+/**
+ *Submitted for verification at Etherscan.io on 2021-06-10
+*/
 
 /**
- * @dev Interface of the ERC20 standard as defined in the EIP.
- */
+ *Submitted for verification at Etherscan.io on 2021-06-09
+*/
+
+
+pragma solidity ^0.6.12;
+// SPDX-License-Identifier: Unlicensed
+abstract contract Context {
+    function _msgSender() internal view virtual returns (address payable) {
+        return msg.sender;
+    }
+
+    function _msgData() internal view virtual returns (bytes memory) {
+        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
+        return msg.data;
+    }
+}
+
 interface IERC20 {
     /**
      * @dev Returns the amount of tokens in existence.
@@ -76,20 +91,6 @@ interface IERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-
-/**
- * @dev Wrappers over Solidity's arithmetic operations with added overflow
- * checks.
- *
- * Arithmetic operations in Solidity wrap on overflow. This can easily result
- * in bugs, because programmers usually assume that an overflow raises an
- * error, which is the standard behavior in high level programming languages.
- * `SafeMath` restores this intuition by reverting the transaction when an
- * operation overflows.
- *
- * Using this library instead of the unchecked operations eliminates an entire
- * class of bugs, so it's recommended to use it always.
- */
 library SafeMath {
     /**
      * @dev Returns the addition of two unsigned integers, reverting on
@@ -233,9 +234,6 @@ library SafeMath {
     }
 }
 
-/**
- * @dev Collection of functions related to the address type
- */
 library Address {
     /**
      * @dev Returns true if `account` is a contract.
@@ -371,146 +369,292 @@ library Address {
     }
 }
 
+contract Ownable is Context {
+    address private _owner;
+
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    /**
+     * @dev Initializes the contract setting the deployer as the initial owner.
+     */
+    constructor () internal {
+        address msgSender = _msgSender();
+        _owner = msgSender;
+        emit OwnershipTransferred(address(0), msgSender);
+    }
+
+    /**
+     * @dev Returns the address of the current owner.
+     */
+    function owner() public view returns (address) {
+        return _owner;
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(_owner == _msgSender(), "Ownable: caller is not the owner");
+        _;
+    }
+
+    /**
+     * @dev Leaves the contract without owner. It will not be possible to call
+     * `onlyOwner` functions anymore. Can only be called by the current owner.
+     *
+     * NOTE: Renouncing ownership will leave the contract without an owner,
+     * thereby removing any functionality that is only available to the owner.
+     */
+    function renounceOwnership() public virtual onlyOwner {
+        emit OwnershipTransferred(_owner, address(0));
+        _owner = address(0);
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
+     */
+    function transferOwnership(address newOwner) public virtual onlyOwner {
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        emit OwnershipTransferred(_owner, newOwner);
+        _owner = newOwner;
+    }
+}
 
 
-/**
- * @title SafeERC20
- * @dev Wrappers around ERC20 operations that throw on failure (when the token
- * contract returns false). Tokens that return no value (and instead revert or
- * throw on failure) are also supported, non-reverting calls are assumed to be
- * successful.
- * To use this library you can add a `using SafeERC20 for IERC20;` statement to your contract,
- * which allows you to call the safe operations as `token.safeTransfer(...)`, etc.
- */
-library SafeERC20 {
+
+contract WolfyInuFinance is Context, IERC20, Ownable {
     using SafeMath for uint256;
     using Address for address;
 
-    function safeTransfer(IERC20 token, address to, uint256 value) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
+    mapping (address => uint256) private _rOwned;
+    mapping (address => uint256) private _tOwned;
+    mapping (address => mapping (address => uint256)) private _allowances;
+
+    mapping (address => bool) private _isExcluded;
+    address[] private _excluded;
+   
+    uint256 private constant MAX = ~uint256(0);
+    uint256 private constant _tTotal = 1000000000 * 10**6 * 10**9;
+    uint256 private _rTotal = (MAX - (MAX % _tTotal));
+    uint256 private _tFeeTotal;
+
+    string private _name = 'Wolfy Inu Finance';
+    string private _symbol = '🐕 WOLFY 🐕';
+    uint8 private _decimals = 9;
+
+    constructor () public {
+        _rOwned[_msgSender()] = _rTotal;
+        emit Transfer(address(0), _msgSender(), _tTotal);
     }
 
-    function safeTransferFrom(IERC20 token, address from, address to, uint256 value) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
+    function name() public view returns (string memory) {
+        return _name;
     }
 
-    /**
-     * @dev Deprecated. This function has issues similar to the ones found in
-     * {IERC20-approve}, and its usage is discouraged.
-     *
-     * Whenever possible, use {safeIncreaseAllowance} and
-     * {safeDecreaseAllowance} instead.
-     */
-    function safeApprove(IERC20 token, address spender, uint256 value) internal {
-        // safeApprove should only be called when setting an initial allowance,
-        // or when resetting it to zero. To increase and decrease it, use
-        // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
-        // solhint-disable-next-line max-line-length
-        require((value == 0) || (token.allowance(address(this), spender) == 0),
-            "SafeERC20: approve from non-zero to non-zero allowance"
-        );
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
+    function symbol() public view returns (string memory) {
+        return _symbol;
     }
 
-    function safeIncreaseAllowance(IERC20 token, address spender, uint256 value) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).add(value);
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+    function decimals() public view returns (uint8) {
+        return _decimals;
     }
 
-    function safeDecreaseAllowance(IERC20 token, address spender, uint256 value) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).sub(value, "SafeERC20: decreased allowance below zero");
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+    function totalSupply() public view override returns (uint256) {
+        return _tTotal;
     }
 
-    /**
-     * @dev Imitates a Solidity high-level call (i.e. a regular function call to a contract), relaxing the requirement
-     * on the return value: the return value is optional (but if data is returned, it must not be false).
-     * @param token The token targeted by the call.
-     * @param data The call data (encoded using abi.encode or one of its variants).
-     */
-    function _callOptionalReturn(IERC20 token, bytes memory data) private {
-        // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
-        // we're implementing it ourselves. We use {Address.functionCall} to perform this call, which verifies that
-        // the target address contains contract code and also asserts for success in the low-level call.
+    function balanceOf(address account) public view override returns (uint256) {
+        if (_isExcluded[account]) return _tOwned[account];
+        return tokenFromReflection(_rOwned[account]);
+    }
 
-        bytes memory returndata = address(token).functionCall(data, "SafeERC20: low-level call failed");
-        if (returndata.length > 0) { // Return data is optional
-            // solhint-disable-next-line max-line-length
-            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
+    function transfer(address recipient, uint256 amount) public override returns (bool) {
+        _transfer(_msgSender(), recipient, amount);
+        return true;
+    }
+
+    function allowance(address owner, address spender) public view override returns (uint256) {
+        return _allowances[owner][spender];
+    }
+
+    function approve(address spender, uint256 amount) public override returns (bool) {
+        _approve(_msgSender(), spender, amount);
+        return true;
+    }
+
+    function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
+        _transfer(sender, recipient, amount);
+        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
+        return true;
+    }
+
+    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
+        return true;
+    }
+
+    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
+        return true;
+    }
+
+    function isExcluded(address account) public view returns (bool) {
+        return _isExcluded[account];
+    }
+
+    function totalFees() public view returns (uint256) {
+        return _tFeeTotal;
+    }
+
+    function reflect(uint256 tAmount) public {
+        address sender = _msgSender();
+        require(!_isExcluded[sender], "Excluded addresses cannot call this function");
+        (uint256 rAmount,,,,) = _getValues(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _rTotal = _rTotal.sub(rAmount);
+        _tFeeTotal = _tFeeTotal.add(tAmount);
+    }
+
+    function reflectionFromToken(uint256 tAmount, bool deductTransferFee) public view returns(uint256) {
+        require(tAmount <= _tTotal, "Amount must be less than supply");
+        if (!deductTransferFee) {
+            (uint256 rAmount,,,,) = _getValues(tAmount);
+            return rAmount;
+        } else {
+            (,uint256 rTransferAmount,,,) = _getValues(tAmount);
+            return rTransferAmount;
         }
     }
-}
 
-/**
- * @dev A token holder contract that will allow a beneficiary to extract the
- * tokens after a given release time.
- *
- * Useful for simple vesting schedules like "advisors get all of their tokens
- * after 1 year".
- */
-contract TokenTimelock {
-    using SafeERC20 for IERC20;
-
-    // ERC20 basic token contract being held
-    IERC20 private _token;
-
-    // beneficiary of tokens after they are released
-    address private _beneficiary;
-
-    // timestamp when token release is enabled
-    uint256 private _releaseTime;
-
-    constructor (IERC20 token, address beneficiary, uint256 releaseTime) public {
-        // solhint-disable-next-line not-rely-on-time
-        require(releaseTime > block.timestamp, "TokenTimelock: release time is before current time");
-        _token = token;
-        _beneficiary = beneficiary;
-        _releaseTime = releaseTime;
+    function tokenFromReflection(uint256 rAmount) public view returns(uint256) {
+        require(rAmount <= _rTotal, "Amount must be less than total reflections");
+        uint256 currentRate =  _getRate();
+        return rAmount.div(currentRate);
     }
 
-    /**
-     * @return the token being held.
-     */
-    function token() public view returns (IERC20) {
-        return _token;
+    function excludeAccount(address account) external onlyOwner() {
+        require(!_isExcluded[account], "Account is already excluded");
+        if(_rOwned[account] > 0) {
+            _tOwned[account] = tokenFromReflection(_rOwned[account]);
+        }
+        _isExcluded[account] = true;
+        _excluded.push(account);
     }
 
-    /**
-     * @return the beneficiary of the tokens.
-     */
-    function beneficiary() public view returns (address) {
-        return _beneficiary;
+    function includeAccount(address account) external onlyOwner() {
+        require(_isExcluded[account], "Account is already excluded");
+        for (uint256 i = 0; i < _excluded.length; i++) {
+            if (_excluded[i] == account) {
+                _excluded[i] = _excluded[_excluded.length - 1];
+                _tOwned[account] = 0;
+                _isExcluded[account] = false;
+                _excluded.pop();
+                break;
+            }
+        }
     }
 
-    /**
-     * @return the time when the tokens are released.
-     */
-    function releaseTime() public view returns (uint256) {
-        return _releaseTime;
+    function _approve(address owner, address spender, uint256 amount) private {
+        require(owner != address(0), "ERC20: approve from the zero address");
+        require(spender != address(0), "ERC20: approve to the zero address");
+
+        _allowances[owner][spender] = amount;
+        emit Approval(owner, spender, amount);
     }
 
-    /**
-     * @notice Transfers tokens held by timelock to beneficiary.
-     */
-    function release() public virtual {
-        // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp >= _releaseTime, "TokenTimelock: current time is before release time");
-
-        uint256 amount = _token.balanceOf(address(this));
-        require(amount > 0, "TokenTimelock: no tokens to release");
-
-        _token.safeTransfer(_beneficiary, amount);
+    function _transfer(address sender, address recipient, uint256 amount) private {
+        require(sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+        require(amount > 0, "Transfer amount must be greater than zero");
+        if (_isExcluded[sender] && !_isExcluded[recipient]) {
+            _transferFromExcluded(sender, recipient, amount);
+        } else if (!_isExcluded[sender] && _isExcluded[recipient]) {
+            _transferToExcluded(sender, recipient, amount);
+        } else if (!_isExcluded[sender] && !_isExcluded[recipient]) {
+            _transferStandard(sender, recipient, amount);
+        } else if (_isExcluded[sender] && _isExcluded[recipient]) {
+            _transferBothExcluded(sender, recipient, amount);
+        } else {
+            _transferStandard(sender, recipient, amount);
+        }
     }
-}
 
-contract CATXTimeLock is TokenTimelock {
-    constructor (
-        address token,
-        address beneficiary,
-        uint256 releaseTime
-    ) public TokenTimelock(
-        IERC20(token), // token
-        beneficiary, // beneficiary
-        releaseTime) {
+    function _transferStandard(address sender, address recipient, uint256 tAmount) private {
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);       
+        _reflectFee(rFee, tFee);
+        emit Transfer(sender, recipient, tTransferAmount);
+    }
+
+    function _transferToExcluded(address sender, address recipient, uint256 tAmount) private {
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);           
+        _reflectFee(rFee, tFee);
+        emit Transfer(sender, recipient, tTransferAmount);
+    }
+
+    function _transferFromExcluded(address sender, address recipient, uint256 tAmount) private {
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
+        _tOwned[sender] = _tOwned[sender].sub(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);   
+        _reflectFee(rFee, tFee);
+        emit Transfer(sender, recipient, tTransferAmount);
+    }
+
+    function _transferBothExcluded(address sender, address recipient, uint256 tAmount) private {
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
+        _tOwned[sender] = _tOwned[sender].sub(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);        
+        _reflectFee(rFee, tFee);
+        emit Transfer(sender, recipient, tTransferAmount);
+    }
+
+    function _reflectFee(uint256 rFee, uint256 tFee) private {
+        _rTotal = _rTotal.sub(rFee);
+        _tFeeTotal = _tFeeTotal.add(tFee);
+    }
+
+    function _getValues(uint256 tAmount) private view returns (uint256, uint256, uint256, uint256, uint256) {
+        (uint256 tTransferAmount, uint256 tFee) = _getTValues(tAmount);
+        uint256 currentRate =  _getRate();
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee) = _getRValues(tAmount, tFee, currentRate);
+        return (rAmount, rTransferAmount, rFee, tTransferAmount, tFee);
+    }
+
+    function _getTValues(uint256 tAmount) private pure returns (uint256, uint256) {
+        uint256 tFee = tAmount.div(100).mul(2);
+        uint256 tTransferAmount = tAmount.sub(tFee);
+        return (tTransferAmount, tFee);
+    }
+
+    function _getRValues(uint256 tAmount, uint256 tFee, uint256 currentRate) private pure returns (uint256, uint256, uint256) {
+        uint256 rAmount = tAmount.mul(currentRate);
+        uint256 rFee = tFee.mul(currentRate);
+        uint256 rTransferAmount = rAmount.sub(rFee);
+        return (rAmount, rTransferAmount, rFee);
+    }
+
+    function _getRate() private view returns(uint256) {
+        (uint256 rSupply, uint256 tSupply) = _getCurrentSupply();
+        return rSupply.div(tSupply);
+    }
+
+    function _getCurrentSupply() private view returns(uint256, uint256) {
+        uint256 rSupply = _rTotal;
+        uint256 tSupply = _tTotal;      
+        for (uint256 i = 0; i < _excluded.length; i++) {
+            if (_rOwned[_excluded[i]] > rSupply || _tOwned[_excluded[i]] > tSupply) return (_rTotal, _tTotal);
+            rSupply = rSupply.sub(_rOwned[_excluded[i]]);
+            tSupply = tSupply.sub(_tOwned[_excluded[i]]);
+        }
+        if (rSupply < _rTotal.div(_tTotal)) return (_rTotal, _tTotal);
+        return (rSupply, tSupply);
     }
 }

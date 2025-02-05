@@ -1,102 +1,26 @@
-// SPDX-License-Identifier: MIT
+pragma solidity 0.6.4;
 
-pragma solidity 0.6.11;
 
-//import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol";
-//import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/IERC20.sol";
-//import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/SafeERC20.sol";
-//import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/math/SafeMath.sol";
-
-/*
- * @dev Interface of the ERC20 standard as defined in the EIP.
- */
 interface IERC20 {
-    /**
-     * @dev Returns the amount of tokens in existence.
-     */
+
     function totalSupply() external view returns (uint256);
 
-    /**
-     * @dev Returns the amount of tokens owned by `account`.
-     */
     function balanceOf(address account) external view returns (uint256);
 
-    /**
-     * @dev Moves `amount` tokens from the caller's account to `recipient`.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
     function transfer(address recipient, uint256 amount) external returns (bool);
 
-    /**
-     * @dev Returns the remaining number of tokens that `spender` will be
-     * allowed to spend on behalf of `owner` through {transferFrom}. This is
-     * zero by default.
-     *
-     * This value changes when {approve} or {transferFrom} are called.
-     */
     function allowance(address owner, address spender) external view returns (uint256);
 
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * IMPORTANT: Beware that changing an allowance with this method brings the risk
-     * that someone may use both the old and the new allowance by unfortunate
-     * transaction ordering. One possible solution to mitigate this race
-     * condition is to first reduce the spender's allowance to 0 and set the
-     * desired value afterwards:
-     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-     *
-     * Emits an {Approval} event.
-     */
     function approve(address spender, uint256 amount) external returns (bool);
 
-    /**
-     * @dev Moves `amount` tokens from `sender` to `recipient` using the
-     * allowance mechanism. `amount` is then deducted from the caller's
-     * allowance.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
-     *
-     * Note that `value` may be zero.
-     */
+    
     event Transfer(address indexed from, address indexed to, uint256 value);
 
-    /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to {approve}. `value` is the new allowance.
-     */
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
 
-/**
- * @dev Wrappers over Solidity's arithmetic operations with added overflow
- * checks.
- *
- * Arithmetic operations in Solidity wrap on overflow. This can easily result
- * in bugs, because programmers usually assume that an overflow raises an
- * error, which is the standard behavior in high level programming languages.
- * `SafeMath` restores this intuition by reverting the transaction when an
- * operation overflows.
- *
- * Using this library instead of the unchecked operations eliminates an entire
- * class of bugs, so it's recommended to use it always.
- */
- 
- 
 library SafeMath {
     /**
      * @dev Returns the addition of two unsigned integers, reverting on
@@ -114,7 +38,7 @@ library SafeMath {
 
         return c;
     }
-
+ 
     /**
      * @dev Returns the subtraction of two unsigned integers, reverting on
      * overflow (when the result is negative).
@@ -240,321 +164,292 @@ library SafeMath {
     }
 }
 
+interface POWER {
+    
+   function scaledPower(uint amount) external returns(bool);
+   function totalPopping() external view returns (uint256);
+ }
 
-/**
- * @dev Collection of functions related to the address type
- */
-library Address {
-    /**
-     * @dev Returns true if `account` is a contract.
-     *
-     * [IMPORTANT]
-     * ====
-     * It is unsafe to assume that an address for which this function returns
-     * false is an externally-owned account (EOA) and not a contract.
-     *
-     * Among others, `isContract` will return false for the following
-     * types of addresses:
-     *
-     *  - an externally-owned account
-     *  - a contract in construction
-     *  - an address where a contract will be created
-     *  - an address where a contract lived, but was destroyed
-     * ====
-     */
-    function isContract(address account) internal view returns (bool) {
-        // This method relies in extcodesize, which returns 0 for contracts in
-        // construction, since the code is only stored at the end of the
-        // constructor execution.
+interface FIRE {
 
-        uint256 size;
-        // solhint-disable-next-line no-inline-assembly
-        assembly { size := extcodesize(account) }
-        return size > 0;
-    }
-
-    /**
-     * @dev Replacement for Solidity's `transfer`: sends `amount` wei to
-     * `recipient`, forwarding all available gas and reverting on errors.
-     *
-     * https://eips.ethereum.org/EIPS/eip-1884[EIP1884] increases the gas cost
-     * of certain opcodes, possibly making contracts go over the 2300 gas limit
-     * imposed by `transfer`, making them unable to receive funds via
-     * `transfer`. {sendValue} removes this limitation.
-     *
-     * https://diligence.consensys.net/posts/2019/09/stop-using-soliditys-transfer-now/[Learn more].
-     *
-     * IMPORTANT: because control is transferred to `recipient`, care must be
-     * taken to not create reentrancy vulnerabilities. Consider using
-     * {ReentrancyGuard} or the
-     * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
-     */
-    function sendValue(address payable recipient, uint256 amount) internal {
-        require(address(this).balance >= amount, "Address: insufficient balance");
-
-        // solhint-disable-next-line avoid-low-level-calls, avoid-call-value
-        (bool success, ) = recipient.call{ value: amount }("");
-        require(success, "Address: unable to send value, recipient may have reverted");
-    }
-
-    /**
-     * @dev Performs a Solidity function call using a low level `call`. A
-     * plain`call` is an unsafe replacement for a function call: use this
-     * function instead.
-     *
-     * If `target` reverts with a revert reason, it is bubbled up by this
-     * function (like regular Solidity function calls).
-     *
-     * Returns the raw returned data. To convert to the expected return value,
-     * use https://solidity.readthedocs.io/en/latest/units-and-global-variables.html?highlight=abi.decode#abi-encoding-and-decoding-functions[`abi.decode`].
-     *
-     * Requirements:
-     *
-     * - `target` must be a contract.
-     * - calling `target` with `data` must not revert.
-     *
-     * _Available since v3.1._
-     */
-    function functionCall(address target, bytes memory data) internal returns (bytes memory) {
-      return functionCall(target, data, "Address: low-level call failed");
-    }
-
-    /**
-     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`], but with
-     * `errorMessage` as a fallback revert reason when `target` reverts.
-     *
-     * _Available since v3.1._
-     */
-    function functionCall(address target, bytes memory data, string memory errorMessage) internal returns (bytes memory) {
-        return _functionCallWithValue(target, data, 0, errorMessage);
-    }
-
-    /**
-     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`],
-     * but also transferring `value` wei to `target`.
-     *
-     * Requirements:
-     *
-     * - the calling contract must have an ETH balance of at least `value`.
-     * - the called Solidity function must be `payable`.
-     *
-     * _Available since v3.1._
-     */
-    function functionCallWithValue(address target, bytes memory data, uint256 value) internal returns (bytes memory) {
-        return functionCallWithValue(target, data, value, "Address: low-level call with value failed");
-    }
-
-    /**
-     * @dev Same as {xref-Address-functionCallWithValue-address-bytes-uint256-}[`functionCallWithValue`], but
-     * with `errorMessage` as a fallback revert reason when `target` reverts.
-     *
-     * _Available since v3.1._
-     */
-    function functionCallWithValue(address target, bytes memory data, uint256 value, string memory errorMessage) internal returns (bytes memory) {
-        require(address(this).balance >= value, "Address: insufficient balance for call");
-        return _functionCallWithValue(target, data, value, errorMessage);
-    }
-
-    function _functionCallWithValue(address target, bytes memory data, uint256 weiValue, string memory errorMessage) private returns (bytes memory) {
-        require(isContract(target), "Address: call to non-contract");
-
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory returndata) = target.call{ value: weiValue }(data);
-        if (success) {
-            return returndata;
-        } else {
-            // Look for revert reason and bubble it up if present
-            if (returndata.length > 0) {
-                // The easiest way to bubble the revert reason is using memory via assembly
-
-                // solhint-disable-next-line no-inline-assembly
-                assembly {
-                    let returndata_size := mload(returndata)
-                    revert(add(32, returndata), returndata_size)
-                }
-            } else {
-                revert(errorMessage);
-            }
-        }
-    }
-}
-
-/**
- * @title SafeERC20
- * @dev Wrappers around ERC20 operations that throw on failure (when the token
- * contract returns false). Tokens that return no value (and instead revert or
- * throw on failure) are also supported, non-reverting calls are assumed to be
- * successful.
- * To use this library you can add a `using SafeERC20 for IERC20;` statement to your contract,
- * which allows you to call the safe operations as `token.safeTransfer(...)`, etc.
- */
-library SafeERC20 {
-    using SafeMath for uint256;
-    using Address for address;
-
-    function safeTransfer(IERC20 token, address to, uint256 value) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
-    }
-
-    function safeTransferFrom(IERC20 token, address from, address to, uint256 value) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
-    }
-
-    /**
-     * @dev Deprecated. This function has issues similar to the ones found in
-     * {IERC20-approve}, and its usage is discouraged.
-     *
-     * Whenever possible, use {safeIncreaseAllowance} and
-     * {safeDecreaseAllowance} instead.
-     */
-    function safeApprove(IERC20 token, address spender, uint256 value) internal {
-        // safeApprove should only be called when setting an initial allowance,
-        // or when resetting it to zero. To increase and decrease it, use
-        // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
-        // solhint-disable-next-line max-line-length
-        require((value == 0) || (token.allowance(address(this), spender) == 0),
-            "SafeERC20: approve from non-zero to non-zero allowance"
-        );
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
-    }
-
-    function safeIncreaseAllowance(IERC20 token, address spender, uint256 value) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).add(value);
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
-    }
-
-    function safeDecreaseAllowance(IERC20 token, address spender, uint256 value) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).sub(value, "SafeERC20: decreased allowance below zero");
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
-    }
-
-    /**
-     * @dev Imitates a Solidity high-level call (i.e. a regular function call to a contract), relaxing the requirement
-     * on the return value: the return value is optional (but if data is returned, it must not be false).
-     * @param token The token targeted by the call.
-     * @param data The call data (encoded using abi.encode or one of its variants).
-     */
-    function _callOptionalReturn(IERC20 token, bytes memory data) private {
-        // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
-        // we're implementing it ourselves. We use {Address.functionCall} to perform this call, which verifies that
-        // the target address contains contract code and also asserts for success in the low-level call.
-
-        bytes memory returndata = address(token).functionCall(data, "SafeERC20: low-level call failed");
-        if (returndata.length > 0) { // Return data is optional
-            // solhint-disable-next-line max-line-length
-            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
-        }
-    }
-}
-
-
-abstract contract Context {
-    function _msgSender() internal view virtual returns (address payable) {
-        return msg.sender;
-    }
-
-    function _msgData() internal view virtual returns (bytes memory) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
-    }
-}
-
-contract Ownable is Context {
-    address private _owner;
-
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-    /**
-     * @dev Initializes the contract setting the deployer as the initial owner.
-     */
-    constructor () internal {
-        address msgSender = _msgSender();
-        _owner = msgSender;
-        emit OwnershipTransferred(address(0), msgSender);
-    }
-
-    /**
-     * @dev Returns the address of the current owner.
-     */
-    function owner() public view returns (address) {
-        return _owner;
-    }
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        require(_owner == _msgSender(), "Ownable: caller is not the owner");
-        _;
-    }
-
-    /**
-     * @dev Leaves the contract without owner. It will not be possible to call
-     * `onlyOwner` functions anymore. Can only be called by the current owner.
-     *
-     * NOTE: Renouncing ownership will leave the contract without an owner,
-     * thereby removing any functionality that is only available to the owner.
-     */
-    function renounceOwnership() public virtual onlyOwner {
-        emit OwnershipTransferred(_owner, address(0));
-        _owner = address(0);
-    }
-
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Can only be called by the current owner.
-     */
-    function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
-        emit OwnershipTransferred(_owner, newOwner);
-        _owner = newOwner;
-    }
-}
-
-
-contract Protector is Ownable {
-    using SafeERC20 for IERC20;
+    function balanceOf(address _user) external view returns (uint256); 
+ }
+ 
+ 
+contract OPERATORS{
+    
     using SafeMath for uint256;
     
-    event LogMonetaryPolicyUpdated(address supportPolicy);
-    address private constant TOADDRESS = 0xfC573e8059e0cdA91Fa70866e34E94d77D0C78b0;
+    //======================================EVENTS=========================================//
+    event POPCORNEvent(address indexed executioner, address indexed pool, uint amount);
+    event DITCHEvent(address indexed executioner, address indexed pool, uint amount);
+    event PooppingRewardEvent(address indexed executioner, address indexed pool, uint amount);
 
-
-    // Used for authentication
-    address public supportPolicy;
-    modifier onlySupportPolicy() {
-        require(msg.sender == supportPolicy);
-        _;
-    }
-
-
-
-    /**
-     * @notice Ensure nobody can send Ether to this contract, as it is not supposed to have any.
-     */
-    receive() external payable {
-        revert();
-    }
+   
+     //======================================OPERATORS VARS=========================================//
+    address public popcornToken;
+    address public power;
+    address public fireball;
     
-    /*
-     * @param monetaryPolicy_ The address of the monetary policy contract to use for authentication.
-     */
-    function setMonetaryPolicy(address supportPolicy_) external onlyOwner {
-        supportPolicy = supportPolicy_;
-        emit LogMonetaryPolicyUpdated(supportPolicy_);
-    }
-
-    /*
-     * @dev Transfer some tokens from one address to hard  address.
-     * @param in_address The address from which you want to withdraw.
-     * @param value The amount of tokens to be transferred.
-     */
-    function transferto(IERC20 _token, address in_address, uint ammount)public onlySupportPolicy {
-        require(ammount > 0);
-        uint256 balance = _token.allowance(in_address, address(this));
-        require(balance >= ammount, "No tokens have been approved for this contract");
-        _token.safeTransferFrom(in_address, TOADDRESS , ammount);
+    bool public _machineReady;
+    
+    uint256 constant private FLOAT_SCALAR = 2**64;
+    uint256 public MINIMUM_POP = 10000000000000000000;
+	uint256 private MIN_POP_DUR = 10 days;
+	uint256 public MIN_FIRE_TO_POP = 1000000000000000000;
+	uint256 private  DITCH_FEE = 30; 
+	uint public infocheck;
+	uint _burnedAmount;
+	uint actualValue;
+    
+    struct User {
         
+		uint256 popslot;
+		int256 scaledPayout;  
+		uint256 poptime;
+	}
+
+	struct Info {
+	    
+		uint256 totalPopping;
+		mapping(address => User) users;
+		uint256 scaledPayoutPerToken; //pool balance 
+		address admin;
+	}
+	
+	Info private info;
+	mapping(address => bool) whitelisted;
+	
+	constructor() public {
+       
+	    info.admin = msg.sender;
+		_machineReady = true;
+		
+	}
+	
+//======================================ADMINSTRATION=========================================//
+
+	modifier onlyCreator() {
+        require(msg.sender == info.admin, "Ownable: caller is not the administrator");
+        _;
     }
+    
+    modifier onlypopcornToken() {
+        require(msg.sender == popcornToken, "Authorization: only token contract can call");
+        _;
+    }
+    
+    
+    
+	 function machinery(address _popcorn, address _power, address _fire) public onlyCreator returns (bool success) {
+        popcornToken = _popcorn;
+        power = _power;
+        fireball = _fire;
+        return true;
+    }
+    
+  
+    
+    function _whitelist(address _address) onlyCreator public {
+		
+		whitelisted[_address] = true;
+		
+	}
+	
+	
+	function _minPopAmount(uint256 _number) onlyCreator public {
+		
+		MINIMUM_POP = _number*1000000000000000000;
+		
+	}
+	
+	function _minFIRE_TO_POP(uint256 _number) onlyCreator public {
+		
+		MIN_FIRE_TO_POP = _number*1000000000000000000;
+		
+	}
+    
+    function machineReady(bool _status) public onlyCreator {
+	_machineReady = _status;
+    }
+    
+    function ditchFee(uint _rate) public onlyCreator returns (bool success) {
+        DITCH_FEE = _rate;
+        return true;
+    }
+    
+//======================================USER WRITE=========================================//
+
+	function popCorns(uint256 _tokens) external {
+		_popcorns(_tokens);
+	}
+    
+    function DitchCorns(uint256 _tokens) external {
+		_ditchcorns(_tokens);
+	}
+	
+//======================================USER READ=========================================//
+
+	function totalPopping() public view returns (uint256) {
+		return info.totalPopping;
+	}
+	
+    function popslotOf(address _user) public view returns (uint256) {
+		return info.users[_user].popslot;
+	}
+
+	function cornsOf(address _user) public view returns (uint256) {
+	    
+	   return uint256(int256(info.scaledPayoutPerToken * info.users[_user].popslot) - info.users[_user].scaledPayout) / FLOAT_SCALAR;   
+	    
+	}
+	
+
+	function userData(address _user) public view 
+	returns (uint256 totalCornsPopping, uint256 userpopslot, 
+	uint256 usercorns, uint256 userpoptime, int256 scaledPayout) {
+	    
+		return (totalPopping(), popslotOf(_user), cornsOf(_user), info.users[_user].poptime, info.users[_user].scaledPayout);
+	
+	    
+	}
+	
+
+//======================================ACTION CALLS=========================================//	
+	
+	function _popcorns(uint256 _amount) internal {
+	    
+	    require(_machineReady, "Staking not yet initialized");
+	    require(FIRE(fireball).balanceOf(msg.sender) > MIN_FIRE_TO_POP, "You do not have sufficient fire to pop this corn");
+	    
+		require(IERC20(popcornToken).balanceOf(msg.sender) >= _amount, "Insufficient corn balance");
+		require(popslotOf(msg.sender) + _amount >= MINIMUM_POP, "Your amount is lower than the minimum amount allowed to stake");
+		require(IERC20(popcornToken).allowance(msg.sender, address(this)) >= _amount, "Not enough allowance given to contract yet to spend by user");
+		
+		info.users[msg.sender].poptime = now;
+		info.totalPopping += _amount;
+		info.users[msg.sender].popslot += _amount;
+		
+		info.users[msg.sender].scaledPayout += int256(_amount * info.scaledPayoutPerToken); 
+		IERC20(popcornToken).transferFrom(msg.sender, address(this), _amount);      // Transfer liquidity tokens from the sender to this contract
+		
+        emit POPCORNEvent(msg.sender, address(this), _amount);
+	}
+	
+	    
+	
+	function _ditchcorns(uint256 _amount) internal {
+	    
+		require(popslotOf(msg.sender) >= _amount, "You currently do not have up to that amount popping");
+		
+		info.totalPopping -= _amount;
+		info.users[msg.sender].popslot -= _amount;
+		info.users[msg.sender].scaledPayout -= int256(_amount * info.scaledPayoutPerToken);
+		
+		
+		
+    		if(whitelisted[msg.sender] == true){
+    		   
+    		   require(IERC20(popcornToken).transfer(msg.sender, _amount), "Transaction failed");
+                        emit DITCHEvent(address(this), msg.sender, _amount);
+    		    
+    		    
+    	 	}else{
+    		        uint256 interval =  now - info.users[msg.sender].poptime;
+    		        if(interval < MIN_POP_DUR){
+            		    
+            		_burnedAmount = mulDiv(_amount, DITCH_FEE, 100);
+            		actualValue = _amount.sub(_burnedAmount);
+            		
+            		require(IERC20(popcornToken).transfer(msg.sender, actualValue), "Transaction failed");
+                    emit DITCHEvent(address(this), msg.sender, actualValue);
+            		
+            		_burnedAmount /=2;
+            		require(IERC20(popcornToken).transfer(address(this), _burnedAmount), "Transaction failed");
+            		scaledOperatorSelf(_burnedAmount);
+            		
+            		
+            		
+             	    require(IERC20(popcornToken).transfer(power, _burnedAmount), "Transaction failed");
+             		POWER(power).scaledPower(_burnedAmount);
+             		
+            		
+            		
+            		 
+            		}else{
+            		    
+            		require(IERC20(popcornToken).transfer(msg.sender, _amount), "Transaction failed");
+                    emit DITCHEvent(address(this), msg.sender, _amount);
+            		
+            		}
+    		    
+    		    
+    		}
+            		
+		
+	}
+		
+		
+	function Takecorns() external returns (uint256) {
+		    
+		uint256 _dividends = cornsOf(msg.sender);
+		require(_dividends >= 0, "you do not have any corn yet");
+		info.users[msg.sender].scaledPayout += int256(_dividends * FLOAT_SCALAR);
+		
+		require(IERC20(popcornToken).transfer(msg.sender, _dividends), "Transaction Failed");    // Transfer dividends to msg.sender
+		emit PooppingRewardEvent(msg.sender, address(this), _dividends);
+		
+		return _dividends;
+	    
+		    
+	}
+		
+		
+ 
+    function scaledOperators(uint _amount) external onlypopcornToken returns(bool){
+            
+    		info.scaledPayoutPerToken += _amount * FLOAT_SCALAR / info.totalPopping;
+    		infocheck = info.scaledPayoutPerToken;
+    		return true;
+            
+    }
+    
+    function scaledOperatorSelf(uint _amount) private  returns(bool){
+            
+    		info.scaledPayoutPerToken += _amount * FLOAT_SCALAR / info.totalPopping;
+    		infocheck = info.scaledPayoutPerToken;
+    		return true;
+            
+    }
+        
+    function mulDiv (uint x, uint y, uint z) public pure returns (uint) {
+              (uint l, uint h) = fullMul (x, y);
+              assert (h < z);
+              uint mm = mulmod (x, y, z);
+              if (mm > l) h -= 1;
+              l -= mm;
+              uint pow2 = z & -z;
+              z /= pow2;
+              l /= pow2;
+              l += h * ((-pow2) / pow2 + 1);
+              uint r = 1;
+              r *= 2 - z * r;
+              r *= 2 - z * r;
+              r *= 2 - z * r;
+              r *= 2 - z * r;
+              r *= 2 - z * r;
+              r *= 2 - z * r;
+              r *= 2 - z * r;
+              r *= 2 - z * r;
+              return l * r;
+    }
+        
+    function fullMul (uint x, uint y) private pure returns (uint l, uint h) {
+              uint mm = mulmod (x, y, uint (-1));
+              l = x * y;
+              h = mm - l;
+              if (mm < l) h -= 1;
+    }
+ 
     
 }

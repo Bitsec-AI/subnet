@@ -4,6 +4,8 @@
 import json
 import re
 import os
+from typing import List
+from bitsec.base.vulnerability_category import VulnerabilityCategory
 from bitsec.protocol import PredictionResponse
 from bitsec.utils.data import SAMPLE_DIR
 from bitsec.utils.llm import chat_completion
@@ -19,12 +21,16 @@ Ignore privacy concerns since the code is deployed on a public blockchain.
 ### Code:
 {code}
 
+### Acceptable Vulnerability Categories:
+{acceptable_vulnerability_categories}
+
 List vulnerabilities and possible ways for potential financial loss:
 """
 
 
 def analyze_code(
     code: str,
+    acceptable_vulnerability_categories: List[VulnerabilityCategory] = [],
     model: str | None = None,
     temperature: float | None = None,
     max_tokens: int = 10000
@@ -34,6 +40,7 @@ def analyze_code(
 
     Args:
         code (str): The code to analyze.
+        acceptable_vulnerability_categories (List[VulnerabilityCategory]): List of acceptable vulnerability categories.
         model (str, optional): The model to use for analysis.
         temperature (float, optional): Sampling temperature.
         max_tokens (int, optional): Maximum number of tokens to generate. Defaults to 4000.
@@ -41,7 +48,8 @@ def analyze_code(
     Returns:
         PredictionResponse: The analysis result from the model.
     """
-    prompt = VULN_PROMPT_TEMPLATE.format(code=code)
+    categories = ", ".join([vulnerability_category.value for vulnerability_category in acceptable_vulnerability_categories])
+    prompt = VULN_PROMPT_TEMPLATE.format(code=code, acceptable_vulnerability_categories=categories)
     kwargs = {
         'prompt': prompt,
         'response_format': PredictionResponse,

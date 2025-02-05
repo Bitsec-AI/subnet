@@ -85,6 +85,9 @@ class BaseValidatorNeuron(BaseNeuron):
         self.thread: Union[threading.Thread, None] = None
         self.lock = asyncio.Lock()
 
+        # Initialize set to track first-time miner connections
+        self.seen_miners = set()
+
     def serve_axon(self):
         """Serve axon to enable external connections."""
 
@@ -298,9 +301,16 @@ class BaseValidatorNeuron(BaseNeuron):
 
         # Copies state of metagraph before syncing.
         previous_metagraph = copy.deepcopy(self.metagraph)
+        previous_axons = set((axon.ip, axon.port) for axon in previous_metagraph.axons)
 
         # Sync the metagraph.
         self.metagraph.sync(subtensor=self.subtensor)
+        current_axons = set((axon.ip, axon.port) for axon in self.metagraph.axons)
+
+        # Check for new miners that have registered
+        new_axons = current_axons - previous_axons
+        for ip, port in new_axons:
+            bt.logging.info(f"📡 New miner available at {ip}:{port}")
 
         # Check if the metagraph axon info has changed.
         if previous_metagraph.axons == self.metagraph.axons:

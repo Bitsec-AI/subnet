@@ -1,554 +1,599 @@
-/**
- *Submitted for verification at Etherscan.io on 2021-08-23
+/*
+   ____            __   __        __   _
+  / __/__ __ ___  / /_ / /  ___  / /_ (_)__ __
+ _\ \ / // // _ \/ __// _ \/ -_)/ __// / \ \ /
+/___/ \_, //_//_/\__//_//_/\__/ \__//_/ /_\_\
+     /___/
+
+* Synthetix: Pyramid.sol
+*
+* Docs: https://docs.synthetix.io/
+*
+*
+* MIT License
+* ===========
+*
+* Copyright (c) 2020 Synthetix
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 */
 
-/**
- *Submitted for verification at Etherscan.io on 2021-08-23
-*/
+// File: @openzeppelin/contracts/math/Math.sol
 
-// Sources flattened with hardhat v2.6.1 https://hardhat.org
-
-// File contracts/mainnet/connectors/b.protocol/liquity/interface.sol
-
-pragma solidity ^0.7.6;
-
-interface StabilityPoolLike {
-    function provideToSP(uint _amount, address _frontEndTag) external;
-    function withdrawFromSP(uint _amount) external;
-    function withdrawETHGainToTrove(address _upperHint, address _lowerHint) external;
-    function getDepositorETHGain(address _depositor) external view returns (uint);
-    function getDepositorLQTYGain(address _depositor) external view returns (uint);
-    function getCompoundedLUSDDeposit(address _depositor) external view returns (uint);
-}
-
-interface BAMMLike {
-    function deposit(uint lusdAmount) external;
-    function withdraw(uint numShares) external;
-    function balanceOf(address a) external view returns(uint);
-    function totalSupply() external view returns(uint);
-}
-
-
-// File contracts/mainnet/common/interfaces.sol
-
-pragma solidity ^0.7.0;
-
-interface TokenInterface {
-    function approve(address, uint256) external;
-    function transfer(address, uint) external;
-    function transferFrom(address, address, uint) external;
-    function deposit() external payable;
-    function withdraw(uint) external;
-    function balanceOf(address) external view returns (uint);
-    function decimals() external view returns (uint);
-}
-
-interface MemoryInterface {
-    function getUint(uint id) external returns (uint num);
-    function setUint(uint id, uint val) external;
-}
-
-interface InstaMapping {
-    function cTokenMapping(address) external view returns (address);
-    function gemJoinMapping(bytes32) external view returns (address);
-}
-
-interface AccountInterface {
-    function enable(address) external;
-    function disable(address) external;
-    function isAuth(address) external view returns (bool);
-}
-
-
-// File contracts/mainnet/common/stores.sol
-
-pragma solidity ^0.7.0;
-
-abstract contract Stores {
-
-  /**
-   * @dev Return ethereum address
-   */
-  address constant internal ethAddr = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
-
-  /**
-   * @dev Return Wrapped ETH address
-   */
-  address constant internal wethAddr = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-
-  /**
-   * @dev Return memory variable address
-   */
-  MemoryInterface constant internal instaMemory = MemoryInterface(0x8a5419CfC711B2343c17a6ABf4B2bAFaBb06957F);
-
-  /**
-   * @dev Return InstaDApp Mapping Addresses
-   */
-  InstaMapping constant internal instaMapping = InstaMapping(0xe81F70Cc7C0D46e12d70efc60607F16bbD617E88);
-
-  /**
-   * @dev Get Uint value from InstaMemory Contract.
-   */
-  function getUint(uint getId, uint val) internal returns (uint returnVal) {
-    returnVal = getId == 0 ? val : instaMemory.getUint(getId);
-  }
-
-  /**
-  * @dev Set Uint value in InstaMemory Contract.
-  */
-  function setUint(uint setId, uint val) virtual internal {
-    if (setId != 0) instaMemory.setUint(setId, val);
-  }
-
-}
-
-
-// File @openzeppelin/contracts/math/[email protected]
-
-// SPDX-License-Identifier: MIT
-
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity ^0.5.0;
 
 /**
- * @dev Wrappers over Solidity's arithmetic operations with added overflow
- * checks.
- *
- * Arithmetic operations in Solidity wrap on overflow. This can easily result
- * in bugs, because programmers usually assume that an overflow raises an
- * error, which is the standard behavior in high level programming languages.
- * `SafeMath` restores this intuition by reverting the transaction when an
- * operation overflows.
- *
- * Using this library instead of the unchecked operations eliminates an entire
- * class of bugs, so it's recommended to use it always.
+ * @dev Standard math utilities missing in the Solidity language.
  */
+library Math {
+
+    function max(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a >= b ? a : b;
+    }
+
+    function min(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a < b ? a : b;
+    }
+
+    function average(uint256 a, uint256 b) internal pure returns (uint256) {
+        // (a + b) / 2 can overflow, so we distribute
+        return (a / 2) + (b / 2) + ((a % 2 + b % 2) / 2);
+    }
+}
+
+// File: @openzeppelin/contracts/math/SafeMath.sol
+
+pragma solidity ^0.5.0;
+
 library SafeMath {
-    /**
-     * @dev Returns the addition of two unsigned integers, with an overflow flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryAdd(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        uint256 c = a + b;
-        if (c < a) return (false, 0);
-        return (true, c);
-    }
 
-    /**
-     * @dev Returns the substraction of two unsigned integers, with an overflow flag.
-     *
-     * _Available since v3.4._
-     */
-    function trySub(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        if (b > a) return (false, 0);
-        return (true, a - b);
-    }
-
-    /**
-     * @dev Returns the multiplication of two unsigned integers, with an overflow flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryMul(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-        // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
-        if (a == 0) return (true, 0);
-        uint256 c = a * b;
-        if (c / a != b) return (false, 0);
-        return (true, c);
-    }
-
-    /**
-     * @dev Returns the division of two unsigned integers, with a division by zero flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryDiv(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        if (b == 0) return (false, 0);
-        return (true, a / b);
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers, with a division by zero flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryMod(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        if (b == 0) return (false, 0);
-        return (true, a % b);
-    }
-
-    /**
-     * @dev Returns the addition of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `+` operator.
-     *
-     * Requirements:
-     *
-     * - Addition cannot overflow.
-     */
     function add(uint256 a, uint256 b) internal pure returns (uint256) {
         uint256 c = a + b;
         require(c >= a, "SafeMath: addition overflow");
+
         return c;
     }
 
-    /**
-     * @dev Returns the subtraction of two unsigned integers, reverting on
-     * overflow (when the result is negative).
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
-     */
     function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b <= a, "SafeMath: subtraction overflow");
-        return a - b;
+        return sub(a, b, "SafeMath: subtraction overflow");
     }
 
-    /**
-     * @dev Returns the multiplication of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `*` operator.
-     *
-     * Requirements:
-     *
-     * - Multiplication cannot overflow.
-     */
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        if (a == 0) return 0;
-        uint256 c = a * b;
-        require(c / a == b, "SafeMath: multiplication overflow");
-        return c;
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers, reverting on
-     * division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b > 0, "SafeMath: division by zero");
-        return a / b;
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * reverting when dividing by zero.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b > 0, "SafeMath: modulo by zero");
-        return a % b;
-    }
-
-    /**
-     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
-     * overflow (when the result is negative).
-     *
-     * CAUTION: This function is deprecated because it requires allocating memory for the error
-     * message unnecessarily. For custom revert reasons use {trySub}.
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
-     */
     function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
         require(b <= a, errorMessage);
-        return a - b;
+        uint256 c = a - b;
+
+        return c;
     }
 
-    /**
-     * @dev Returns the integer division of two unsigned integers, reverting with custom message on
-     * division by zero. The result is rounded towards zero.
-     *
-     * CAUTION: This function is deprecated because it requires allocating memory for the error
-     * message unnecessarily. For custom revert reasons use {tryDiv}.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        if (a == 0) {
+            return 0;
+        }
+
+        uint256 c = a * b;
+        require(c / a == b, "SafeMath: multiplication overflow");
+
+        return c;
+    }
+
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        return div(a, b, "SafeMath: division by zero");
+    }
+
     function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        // Solidity only automatically asserts when dividing by 0
         require(b > 0, errorMessage);
-        return a / b;
+        uint256 c = a / b;
+        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+
+        return c;
     }
 
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * reverting with custom message when dividing by zero.
-     *
-     * CAUTION: This function is deprecated because it requires allocating memory for the error
-     * message unnecessarily. For custom revert reasons use {tryMod}.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
+    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+        return mod(a, b, "SafeMath: modulo by zero");
+    }
+
     function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        require(b > 0, errorMessage);
+        require(b != 0, errorMessage);
         return a % b;
     }
 }
 
 
-// File contracts/mainnet/common/math.sol
+// File: @openzeppelin/contracts/ownership/Ownable.sol
 
-pragma solidity ^0.7.0;
+contract Ownable {
+    address private _owner;
 
-contract DSMath {
-  uint constant WAD = 10 ** 18;
-  uint constant RAY = 10 ** 27;
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
-  function add(uint x, uint y) internal pure returns (uint z) {
-    z = SafeMath.add(x, y);
-  }
+    constructor () internal {
+        _owner = msg.sender;
+        emit OwnershipTransferred(address(0), _owner);
+    }
 
-  function sub(uint x, uint y) internal virtual pure returns (uint z) {
-    z = SafeMath.sub(x, y);
-  }
+    function owner() public view returns (address) {
+        return _owner;
+    }
 
-  function mul(uint x, uint y) internal pure returns (uint z) {
-    z = SafeMath.mul(x, y);
-  }
+    modifier onlyOwner() {
+        require(isOwner(), "Ownable: caller is not the owner");
+        _;
+    }
 
-  function div(uint x, uint y) internal pure returns (uint z) {
-    z = SafeMath.div(x, y);
-  }
+    function isOwner() public view returns (bool) {
+        return msg.sender == _owner;
+    }
 
-  function wmul(uint x, uint y) internal pure returns (uint z) {
-    z = SafeMath.add(SafeMath.mul(x, y), WAD / 2) / WAD;
-  }
+    function renounceOwnership() public onlyOwner {
+        emit OwnershipTransferred(_owner, address(0));
+        _owner = address(0);
+    }
 
-  function wdiv(uint x, uint y) internal pure returns (uint z) {
-    z = SafeMath.add(SafeMath.mul(x, WAD), y / 2) / y;
-  }
+    function transferOwnership(address newOwner) public onlyOwner {
+        _transferOwnership(newOwner);
+    }
 
-  function rdiv(uint x, uint y) internal pure returns (uint z) {
-    z = SafeMath.add(SafeMath.mul(x, RAY), y / 2) / y;
-  }
-
-  function rmul(uint x, uint y) internal pure returns (uint z) {
-    z = SafeMath.add(SafeMath.mul(x, y), RAY / 2) / RAY;
-  }
-
-  function toInt(uint x) internal pure returns (int y) {
-    y = int(x);
-    require(y >= 0, "int-overflow");
-  }
-
-  function toRad(uint wad) internal pure returns (uint rad) {
-    rad = mul(wad, 10 ** 27);
-  }
-
+    function _transferOwnership(address newOwner) internal {
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        emit OwnershipTransferred(_owner, newOwner);
+        _owner = newOwner;
+    }
 }
+// File: eth-token-recover/contracts/TokenRecover.sol
 
+contract TokenRecover is Ownable {
 
-// File contracts/mainnet/common/basic.sol
-
-pragma solidity ^0.7.0;
-
-
-
-abstract contract Basic is DSMath, Stores {
-
-    function convert18ToDec(uint _dec, uint256 _amt) internal pure returns (uint256 amt) {
-        amt = (_amt / 10 ** (18 - _dec));
-    }
-
-    function convertTo18(uint _dec, uint256 _amt) internal pure returns (uint256 amt) {
-        amt = mul(_amt, 10 ** (18 - _dec));
-    }
-
-    function getTokenBal(TokenInterface token) internal view returns(uint _amt) {
-        _amt = address(token) == ethAddr ? address(this).balance : token.balanceOf(address(this));
-    }
-
-    function getTokensDec(TokenInterface buyAddr, TokenInterface sellAddr) internal view returns(uint buyDec, uint sellDec) {
-        buyDec = address(buyAddr) == ethAddr ?  18 : buyAddr.decimals();
-        sellDec = address(sellAddr) == ethAddr ?  18 : sellAddr.decimals();
-    }
-
-    function encodeEvent(string memory eventName, bytes memory eventParam) internal pure returns (bytes memory) {
-        return abi.encode(eventName, eventParam);
-    }
-
-    function approve(TokenInterface token, address spender, uint256 amount) internal {
-        try token.approve(spender, amount) {
-
-        } catch {
-            token.approve(spender, 0);
-            token.approve(spender, amount);
-        }
-    }
-
-    function changeEthAddress(address buy, address sell) internal pure returns(TokenInterface _buy, TokenInterface _sell){
-        _buy = buy == ethAddr ? TokenInterface(wethAddr) : TokenInterface(buy);
-        _sell = sell == ethAddr ? TokenInterface(wethAddr) : TokenInterface(sell);
-    }
-
-    function convertEthToWeth(bool isEth, TokenInterface token, uint amount) internal {
-        if(isEth) token.deposit{value: amount}();
-    }
-
-    function convertWethToEth(bool isEth, TokenInterface token, uint amount) internal {
-       if(isEth) {
-            approve(token, address(token), amount);
-            token.withdraw(amount);
-        }
+    function recoverERC20(address tokenAddress, uint256 tokenAmount) public onlyOwner {
+        IERC20(tokenAddress).transfer(owner(), tokenAmount);
     }
 }
 
-
-// File contracts/mainnet/connectors/b.protocol/liquity/helpers.sol
-
-pragma solidity ^0.7.6;
-
-
-abstract contract Helpers is DSMath, Basic {
-    StabilityPoolLike internal constant stabilityPool = StabilityPoolLike(0x66017D22b0f8556afDd19FC67041899Eb65a21bb);
-    TokenInterface internal constant lqtyToken = TokenInterface(0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D);
-    TokenInterface internal constant lusdToken = TokenInterface(0x5f98805A4E8be255a32880FDeC7F6728C6568bA0);    
-    BAMMLike internal constant BAMM = BAMMLike(0x0d3AbAA7E088C2c82f54B2f47613DA438ea8C598);
-}
-
-
-// File contracts/mainnet/connectors/b.protocol/liquity/events.sol
-
-pragma solidity ^0.7.6;
-
-contract Events {
-
-    /* Stability Pool */
-    event LogStabilityDeposit(
-        address indexed borrower,
-        uint amount,
-        uint lqtyGain,
-        uint getDepositId,
-        uint setDepositId,
-        uint setLqtyGainId
-    );
-    event LogStabilityWithdraw(
-        address indexed borrower,
-        uint numShares,
-        uint lqtyGain,
-        uint getWithdrawId,
-        uint setWithdrawId,
-        uint setLqtyGainId
-    );
-}
-
-
-// File contracts/mainnet/connectors/b.protocol/liquity/main.sol
-
-pragma solidity ^0.7.6;
+// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
 
 /**
- * @title B.Liquity.
- * @dev Lending & Borrowing.
+ * @dev Interface of the ERC20 standard as defined in the EIP. Does not include
+ * the optional functions; to access them see {ERC20Detailed}.
  */
+interface IERC20 {
 
+    function totalStaked() external view returns (uint256);
+    function balanceOf(address account) external view returns (uint256);
+    function transfer(address recipient, uint256 amount) external returns (bool);
+    function allowance(address owner, address spender) external view returns (uint256);
+    function approve(address spender, uint256 amount) external returns (bool);
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    function burn(uint256 amount, uint256 bRate) external returns(uint256);
 
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
 
+// File: @openzeppelin/contracts/utils/Address.sol
 
-abstract contract BLiquityResolver is Events, Helpers {
-    /* Begin: Stability Pool */
+pragma solidity ^0.5.5;
 
+library Address {
     /**
-     * @dev Deposit LUSD into Stability Pool
-     * @notice Deposit LUSD into Stability Pool
-     * @param amount Amount of LUSD to deposit into Stability Pool
-     * @param getDepositId Optional storage slot to retrieve the amount of LUSD from
-     * @param setDepositId Optional storage slot to store the final amount of LUSD deposited
-     * @param setLqtyGainId Optional storage slot to store any LQTY gains in
-    */
-    function deposit(
-        uint amount,
-        uint getDepositId,
-        uint setDepositId,
-        uint setLqtyGainId
-    ) external payable returns (string memory _eventName, bytes memory _eventParam) {
-        amount = getUint(getDepositId, amount);
+     * @dev Returns true if `account` is a contract.
+     *
+     * This test is non-exhaustive, and there may be false-negatives: during the
+     * execution of a contract's constructor, its address will be reported as
+     * not containing a contract.
+     *
+     * IMPORTANT: It is unsafe to assume that an address for which this
+     * function returns false is an externally-owned account (EOA) and not a
+     * contract.
+     */
+    function isContract(address account) internal view returns (bool) {
+        // This method relies in extcodesize, which returns 0 for contracts in
+        // construction, since the code is only stored at the end of the
+        // constructor execution.
 
-        amount = amount == uint(-1) ? lusdToken.balanceOf(address(this)) : amount;
-
-        uint lqtyBalanceBefore = lqtyToken.balanceOf(address(this));
-        
-        lusdToken.approve(address(BAMM), amount);
-        BAMM.deposit(amount);
-        
-        uint lqtyBalanceAfter = lqtyToken.balanceOf(address(this));
-        uint lqtyGain = sub(lqtyBalanceAfter, lqtyBalanceBefore);
-
-        setUint(setDepositId, amount);
-        setUint(setLqtyGainId, lqtyGain);
-
-        _eventName = "LogStabilityDeposit(address,uint256,uint256,uint256,uint256,uint256)";
-        _eventParam = abi.encode(address(this), amount,lqtyGain, getDepositId, setDepositId, setLqtyGainId);
+        // According to EIP-1052, 0x0 is the value returned for not-yet created accounts
+        // and 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470 is returned
+        // for accounts without code, i.e. `keccak256('')`
+        bytes32 codehash;
+        bytes32 accountHash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
+        // solhint-disable-next-line no-inline-assembly
+        assembly { codehash := extcodehash(account) }
+        return (codehash != 0x0 && codehash != accountHash);
     }
 
     /**
-     * @dev Withdraw user deposited LUSD from Stability Pool
-     * @notice Withdraw LUSD from Stability Pool
-     * @param numShares amount of shares to withdraw from the BAMM
-     * @param getWithdrawId Optional storage slot to retrieve the amount of LUSD to withdraw from
-     * @param setWithdrawId Optional storage slot to store the withdrawn LUSD
-     * @param setLqtyGainId Optional storage slot to store any LQTY gains in
-    */
-    function withdraw(
-        uint numShares,
-        uint getWithdrawId,
-        uint setWithdrawId,
-        uint setLqtyGainId
-    ) external payable returns (string memory _eventName, bytes memory _eventParam) {
-        numShares = getUint(getWithdrawId, numShares);
+     * @dev Converts an `address` into `address payable`. Note that this is
+     * simply a type cast: the actual underlying value is not changed.
+     *
+     * _Available since v2.4.0._
+     */
+    function toPayable(address account) internal pure returns (address payable) {
+        return address(uint160(account));
+    }
 
-        numShares = numShares == uint(-1) ? BAMM.balanceOf(address(this)) : numShares;
+    /**
+     * @dev Replacement for Solidity's `transfer`: sends `amount` wei to
+     * `recipient`, forwarding all available gas and reverting on errors.
+     *
+     * https://eips.ethereum.org/EIPS/eip-1884[EIP1884] increases the gas cost
+     * of certain opcodes, possibly making contracts go over the 2300 gas limit
+     * imposed by `transfer`, making them unable to receive funds via
+     * `transfer`. {sendValue} removes this limitation.
+     *
+     * https://diligence.consensys.net/posts/2019/09/stop-using-soliditys-transfer-now/[Learn more].
+     *
+     * IMPORTANT: because control is transferred to `recipient`, care must be
+     * taken to not create reentrancy vulnerabilities. Consider using
+     * {ReentrancyGuard} or the
+     * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
+     *
+     * _Available since v2.4.0._
+     */
+    function sendValue(address payable recipient, uint256 amount) internal {
+        require(address(this).balance >= amount, "Address: insufficient balance");
 
-        uint lqtyBalanceBefore = lqtyToken.balanceOf(address(this));
-        
-        BAMM.withdraw(numShares);
-        
-        uint lqtyBalanceAfter = lqtyToken.balanceOf(address(this));
-        uint lqtyGain = sub(lqtyBalanceAfter, lqtyBalanceBefore);
-
-        setUint(setWithdrawId, numShares);
-        setUint(setLqtyGainId, lqtyGain);
-
-        _eventName = "LogStabilityWithdraw(address,uint256,uint256,uint256,uint256,uint256)";
-        _eventParam = abi.encode(address(this), numShares, lqtyGain, getWithdrawId, setWithdrawId, setLqtyGainId);
+        // solhint-disable-next-line avoid-call-value
+        (bool success, ) = recipient.call.value(amount)("");
+        require(success, "Address: unable to send value, recipient may have reverted");
     }
 }
 
-contract ConnectV2BLiquity is BLiquityResolver {
-    string public name = "B.Liquity-v1";
+// File: @openzeppelin/contracts/token/ERC20/SafeERC20.sol
+
+/**
+ * @title SafeERC20
+ * @dev Wrappers around ERC20 operations that throw on failure (when the token
+ * contract returns false). Tokens that return no value (and instead revert or
+ * throw on failure) are also supported, non-reverting calls are assumed to be
+ * successful.
+ * To use this library you can add a `using SafeERC20 for ERC20;` statement to your contract,
+ * which allows you to call the safe operations as `token.safeTransfer(...)`, etc.
+ */
+library SafeERC20 {
+    using SafeMath for uint256;
+    using Address for address;
+
+    function safeTransfer(IERC20 token, address to, uint256 value) internal {
+        callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
+    }
+
+    function safeTransferFrom(IERC20 token, address from, address to, uint256 value) internal {
+        callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
+    }
+
+    function safeApprove(IERC20 token, address spender, uint256 value) internal {
+        // safeApprove should only be called when setting an initial allowance,
+        // or when resetting it to zero. To increase and decrease it, use
+        // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
+        // solhint-disable-next-line max-line-length
+        require((value == 0) || (token.allowance(address(this), spender) == 0),
+            "SafeERC20: approve from non-zero to non-zero allowance"
+        );
+        callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
+    }
+
+    function safeIncreaseAllowance(IERC20 token, address spender, uint256 value) internal {
+        uint256 newAllowance = token.allowance(address(this), spender).add(value);
+        callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+    }
+
+    function safeDecreaseAllowance(IERC20 token, address spender, uint256 value) internal {
+        uint256 newAllowance = token.allowance(address(this), spender).sub(value, "SafeERC20: decreased allowance below zero");
+        callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+    }
+
+    /**
+     * @dev Imitates a Solidity high-level call (i.e. a regular function call to a contract), relaxing the requirement
+     * on the return value: the return value is optional (but if data is returned, it must not be false).
+     * @param token The token targeted by the call.
+     * @param data The call data (encoded using abi.encode or one of its variants).
+     */
+    function callOptionalReturn(IERC20 token, bytes memory data) private {
+        // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
+        // we're implementing it ourselves.
+
+        // A Solidity high level call has three parts:
+        //  1. The target address is checked to verify it contains contract code
+        //  2. The call itself is made, and success asserted
+        //  3. The return value is decoded, which in turn checks the size of the returned data.
+        // solhint-disable-next-line max-line-length
+        require(address(token).isContract(), "SafeERC20: call to non-contract");
+
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool success, bytes memory returndata) = address(token).call(data);
+        require(success, "SafeERC20: low-level call failed");
+
+        if (returndata.length > 0) { // Return data is optional
+            // solhint-disable-next-line max-line-length
+            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
+        }
+    }
+}
+
+// File: contracts/IRewardDistributionRecipient.sol
+
+contract IRewardDistributionRecipient is Ownable {
+    address public rewardDistribution;
+
+    function notifyRewardAmount(uint256 reward) external;
+
+    modifier onlyRewardDistribution() {
+        require(msg.sender == rewardDistribution, "Caller is not reward distribution");
+        _;
+    }
+
+    function setRewardDistribution(address _rewardDistribution)
+        external
+        onlyOwner
+    {
+        rewardDistribution = _rewardDistribution;
+    }
+}
+
+// File: contracts/CurveRewards.sol
+
+contract LPTokenWrapper {
+    using SafeMath for uint256;
+    using SafeERC20 for IERC20;
+    
+    event Stake(address staker, uint256 amount, uint256 operateAmount);
+
+    IERC20 public rugStake;
+    uint256 burnRate = 3;
+    uint256 redistributeRate = 7;
+
+    uint256 internal _totalDividends;
+    uint256 internal _totalStaked;
+    uint256 internal _dividendsPerRug;
+
+    mapping(address => uint256) internal _stakeAmount;
+    mapping(address => uint256) internal _dividendsSnapshot; // Get "position" relative to _totalDividends
+    mapping(address => uint256) internal _userDividends;
+   
+    function totalStaked() public view returns (uint256) {
+        return _totalStaked;
+    }
+
+    function totalDividends() public view returns (uint256) {
+        return _totalDividends;
+    }
+
+    function balanceOf(address account) public view returns (uint256) {
+        return _stakeAmount[account];
+    }
+
+    function checkUserPayout(address staker) public view returns (uint256) {
+        return _dividendsSnapshot[staker];
+    }
+ 
+    function dividendsPerRug() public view returns (uint256) {
+        return _dividendsPerRug;
+    }
+
+    function userDividends(address account) public view returns (uint256) { // Returns the amount of dividends that has been synced by _updateDividends()
+        return _userDividends[account];
+    }
+
+    function dividendsOf(address staker) public view returns (uint256) {
+        require(_dividendsPerRug >= _dividendsSnapshot[staker], "dividend calc overflow");
+        uint256 sum = balanceOf(staker).mul((_dividendsPerRug.sub(_dividendsSnapshot[staker]))).div(1e18);
+        return sum;
+    }
+
+    // adds dividends to staked balance
+    function _updateDividends() internal returns(uint256) {
+		uint256 _dividends = dividendsOf(msg.sender);
+		require(_dividends >= 0);
+
+        _userDividends[msg.sender] = _userDividends[msg.sender].add(_dividends);
+        _dividendsSnapshot[msg.sender] = _dividendsPerRug;
+		return _dividends; // amount of dividends added to _userDividends[]
+    }
+
+    function displayDividends(address staker) public view returns(uint256) { //created solely to display total amount of dividends on rug.money
+        return (dividendsOf(staker) + userDividends(staker)); 
+    }
+
+    // withdraw only dividends 
+    function withdrawDividends() public {
+        _updateDividends();
+        uint256 amount = _userDividends[msg.sender];
+        _userDividends[msg.sender] = 0;
+        _totalDividends = _totalDividends.sub(amount);
+        rugStake.safeTransfer(msg.sender, amount);
+    }
+
+    // 10% fee: 7% redistribution, 3% burn
+    function stake(uint256 amount) public { 
+        rugStake.safeTransferFrom(msg.sender, address(this), amount);
+
+        bool firstTime = false;
+        if (_stakeAmount[msg.sender] == 0) firstTime = true;
+
+        uint256 amountToStake = (amount.mul(uint256(100).sub((redistributeRate.add(burnRate)))).div(100));
+        uint256 operateAmount = amount.sub(amountToStake);
+        
+        uint256 burnAmount = operateAmount.mul(burnRate).div(10);
+        rugStake.burn(burnAmount, 100); // burns 100% of burnAmount
+       
+        uint256 dividendAmount = operateAmount.sub(burnAmount);
+
+        _totalDividends = _totalDividends.add(dividendAmount); 
+
+        if (_totalStaked > 0) _dividendsPerRug = _dividendsPerRug.add(dividendAmount.mul(1e18).div(_totalStaked)); // prevents division by 0
+     
+        if (firstTime) _dividendsSnapshot[msg.sender] = _dividendsPerRug; // For first time stakers
+
+        _updateDividends(); // If you're restaking, reset snapshot back to _dividendsPerRug, reward previous staking.
+
+        _totalStaked = _totalStaked.add(amountToStake);
+        _stakeAmount[msg.sender] = _stakeAmount[msg.sender].add(amountToStake);
+     
+        emit Stake(msg.sender, amountToStake, operateAmount);
+    }
+
+    function withdraw(uint256 amount) public { 
+        _totalStaked = _totalStaked.sub(amount);
+        _stakeAmount[msg.sender] = _stakeAmount[msg.sender].sub(amount);
+        rugStake.safeTransfer(msg.sender, amount);
+    }
+}
+
+contract PyramidPool is LPTokenWrapper, IRewardDistributionRecipient, TokenRecover {
+
+    constructor() public {
+        rewardDistribution = msg.sender;
+    }
+
+    IERC20 public rugReward;
+    uint256 public DURATION = 1641600; // 19 days
+
+    uint256 public starttime = 0; 
+    uint256 public periodFinish = 0;
+    uint256 public rewardRate = 0;
+    uint256 public lastUpdateTime;
+    uint256 public rewardPerTokenStored;
+    mapping(address => uint256) public userRewardPerTokenPaid;
+    mapping(address => uint256) public rewards;
+
+    event RewardAdded(uint256 reward);
+    event Staked(address indexed user, uint256 amount);
+    event Withdrawn(address indexed user, uint256 amount);
+    event RewardPaid(address indexed user, uint256 reward);
+    event SetRewardToken(address rewardAddress);
+    event SetStakeToken(address stakeAddress);
+    event SetStartTime(uint256 unixtime);
+    event SetDuration(uint256 duration);
+
+    modifier checkStart() {
+        require(block.timestamp >= starttime,"Rewards haven't started yet!");
+        _;
+    }
+
+    modifier updateReward(address account) {
+        rewardPerTokenStored = rewardPerToken();
+        lastUpdateTime = lastTimeRewardApplicable();
+        if (account != address(0)) {
+            rewards[account] = earned(account);
+            userRewardPerTokenPaid[account] = rewardPerTokenStored;
+        }
+        _;
+    }
+
+    function lastTimeRewardApplicable() public view returns (uint256) {
+        return Math.min(block.timestamp, periodFinish);
+    }
+
+    function rewardPerToken() public view returns (uint256) {
+        if (totalStaked() == 0) {
+            return rewardPerTokenStored;
+        }
+        return
+            rewardPerTokenStored.add(
+                lastTimeRewardApplicable()
+                    .sub(lastUpdateTime)
+                    .mul(rewardRate)
+                    .mul(1e18)
+                    .div(totalStaked())
+            );
+    }
+
+    function earned(address account) public view returns (uint256) {
+        return
+            balanceOf(account)
+                .mul(rewardPerToken().sub(userRewardPerTokenPaid[account]))
+                .div(1e18)
+                .add(rewards[account]);
+    }
+
+    // stake visibility is public as overriding LPTokenWrapper's stake() function
+    function stake(uint256 amount) public updateReward(msg.sender) checkStart {
+        require(amount > 0, "Cannot stake 0");
+        super.stake(amount);
+    }
+
+    function withdraw(uint256 amount) public updateReward(msg.sender) checkStart {
+        require(amount > 0, "Cannot withdraw 0");
+        super.withdraw(amount);
+        emit Withdrawn(msg.sender, amount);
+    }
+
+    function exit() external {  
+        withdrawDividends();
+        getReward();
+        withdraw(balanceOf(msg.sender));
+    }
+
+    function collectRewardsOnly() public {
+        withdrawDividends();
+        getReward();        
+    }
+
+    function getReward() public updateReward(msg.sender) checkStart {
+        uint256 reward = earned(msg.sender);
+        if (reward > 0) {
+            rewards[msg.sender] = 0;
+            rugReward.safeTransfer(msg.sender, reward);
+            emit RewardPaid(msg.sender, reward);
+        }
+    }
+
+    function notifyRewardAmount(uint256 reward)
+        external
+        onlyRewardDistribution
+        updateReward(address(0))
+    {
+        if (block.timestamp > starttime) {
+          if (block.timestamp >= periodFinish) {
+              rewardRate = reward.div(DURATION);
+          } else {
+              uint256 remaining = periodFinish.sub(block.timestamp);
+              uint256 leftover = remaining.mul(rewardRate);
+              rewardRate = reward.add(leftover).div(DURATION);
+          }
+          lastUpdateTime = block.timestamp;
+          periodFinish = block.timestamp.add(DURATION);
+          emit RewardAdded(reward);
+        } else {
+          rewardRate = reward.div(DURATION);
+          lastUpdateTime = starttime;
+          periodFinish = starttime.add(DURATION);
+          emit RewardAdded(reward);
+        }
+    }
+
+    function setRewardAddress(address rewardAddress) public onlyOwner {
+        rugReward = IERC20(rewardAddress);
+        emit SetRewardToken(rewardAddress);
+    } 
+
+    function setStakeAddress(address stakeAddress) public onlyOwner {
+        rugStake = IERC20(stakeAddress);
+        emit SetStakeToken(stakeAddress);
+    }
+
+    function setStartTime(uint256 unixtime) public onlyOwner {
+        starttime = unixtime;
+        emit SetStartTime(unixtime);
+    }
+
+    function setDuration(uint256 duration) public onlyOwner {
+        DURATION = duration;
+        emit SetDuration(duration);
+    }
+
 }

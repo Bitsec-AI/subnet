@@ -1,87 +1,70 @@
 /**
- *Submitted for verification at Etherscan.io on 2021-03-31
+ *Submitted for verification at Etherscan.io on 2021-06-20
 */
 
-// Sources flattened with hardhat v2.1.2 https://hardhat.org
-
-// File @chainlink/contracts/src/v0.6/interfaces/[email protected]
-
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.6.0;
 
-interface AggregatorV3Interface {
+// SIVA Pre-Sale Contract | T3M
 
-  function decimals() external view returns (uint8);
-  function description() external view returns (string memory);
-  function version() external view returns (uint256);
+pragma solidity ^0.7.6;
 
-  // getRoundData and latestRoundData should both raise "No data present"
-  // if they do not have data to report, instead of returning unset values
-  // which could be misinterpreted as actual reported values.
-  function getRoundData(uint80 _roundId)
-    external
-    view
-    returns (
-      uint80 roundId,
-      int256 answer,
-      uint256 startedAt,
-      uint256 updatedAt,
-      uint80 answeredInRound
-    );
-  function latestRoundData()
-    external
-    view
-    returns (
-      uint80 roundId,
-      int256 answer,
-      uint256 startedAt,
-      uint256 updatedAt,
-      uint80 answeredInRound
-    );
-
-}
-
-
-// File contracts/oracle/IPriceConsumerV3.sol
-
-pragma solidity ^0.6.2;
-pragma experimental ABIEncoderV2;
-
-abstract contract IPriceConsumerV3 {
-    function getLatestPrice() public view virtual returns (int256);
-}
-
-
-// File contracts/oracle/PriceConsumerV3.sol
-
-pragma solidity ^0.6.2;
-
-
-contract PriceConsumerV3 is IPriceConsumerV3 {
-    AggregatorV3Interface internal priceFeed;
-
-    /**
-     * Network: rinkeby
-     * Aggregator: ETH/USD
-     * Address: 0x8A753747A1Fa494EC906cE90E9f37563A8AF630e
-     */
-    constructor() public {
-        priceFeed = AggregatorV3Interface(
-            0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419
-        );
+contract SIVA {
+    address payable public controller;
+    uint256 public totalRaised;
+    mapping (address => uint256) private _amountSent;
+    uint256 public deadline;
+    bool private status;
+    uint256 public salePriceETH;
+    address private SIVAcontract;
+    
+    constructor() payable {
+        controller = payable(msg.sender);
+        deadline = 1625943600;
+        status = true;
+        salePriceETH = 153531709095794;
+        SIVAcontract = 0xFD18E5BCfbc2f898ab00b430C2059f1389e1B55a;
     }
 
-    /**
-     * Returns the latest price
-     */
-    function getLatestPrice() public view override returns (int256) {
-        (
-            uint80 roundID,
-            int256 price,
-            uint256 startedAt,
-            uint256 timeStamp,
-            uint80 answeredInRound
-        ) = priceFeed.latestRoundData();
-        return price;
+    function buySIVA() public payable {
+        require (block.timestamp < deadline, "Pre-Sale no Longer Active.");
+        totalRaised += msg.value;
+        _amountSent[msg.sender] += msg.value;
+    }
+
+    function conclude() public {
+        require (msg.sender == controller, "Unable.");
+        uint amount = address(this).balance;
+        (bool success,) = controller.call{value: amount}("");
+        require(success, "Failed to send Ether");
+        status = false;
+    }
+    
+    function presaleBalance() public view returns (uint256) {
+        return address(this).balance;
+    }
+    
+    function userETH(address _useraddress) public view returns (uint256) {
+        return _amountSent[_useraddress];
+    }
+    
+    function userShare(address _useraddress) public view returns (uint256) {
+        uint256 tokens = _amountSent[_useraddress] / salePriceETH * 10 ** 18;
+        return tokens;
+    }
+    
+    function adjustDeadline(uint256 _deadline) public virtual returns (bool) {
+        require (msg.sender == controller, "Unable.");
+        deadline = _deadline;
+        return true;
+    }
+    
+    function adjustPrice(uint256 _price) public virtual returns (bool) {
+        require (msg.sender == controller, "Unable.");
+        salePriceETH = _price;
+        return true;
+    }
+
+    function isLive() public view returns (bool) {
+        return status;
     }
 }

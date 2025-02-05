@@ -1,211 +1,268 @@
+pragma solidity 0.4.24;
+
 /**
- *Submitted for verification at Etherscan.io on 2021-07-25
-*/
+ * https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/math/SafeMath.sol
+ * @title SafeMath
+ * @dev Math operations with safety checks that throw on error
+ */
+library SafeMath {
 
-// SPDX-License-Identifier: UNLICENSED
+    /**
+     * @dev Multiplies two numbers, throws on overflow.
+     */
+    function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {
+        // Gas optimization: this is cheaper than asserting &#39;a&#39; not being zero, but the
+        // benefit is lost if &#39;b&#39; is also tested.
+        // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
+        if (a == 0) {
+            return 0;
+        }
 
-pragma solidity 0.8.6;
+        c = a * b;
+        assert(c / a == b);
+        return c;
+    }
 
-interface IERC20 {
-  function totalSupply() external view returns (uint);
-  function balanceOf(address account) external view returns (uint);
-  function transfer(address recipient, uint256 amount) external returns (bool);
-  function allowance(address owner, address spender) external view returns (uint);
-  function symbol() external view returns (string memory);
-  function decimals() external view returns (uint);
-  function approve(address spender, uint amount) external returns (bool);
-  function mint(address account, uint amount) external;
-  function burn(address account, uint amount) external;
-  function transferFrom(address sender, address recipient, uint amount) external returns (bool);
-  event Transfer(address indexed from, address indexed to, uint value);
-  event Approval(address indexed owner, address indexed spender, uint value);
+    /**
+     * @dev Integer division of two numbers, truncating the quotient.
+     */
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        assert(b > 0);
+        // uint256 c = a / b;
+        // assert(a == b * c + a % b); // There is no case in which this doesn&#39;t hold
+        return a / b;
+    }
+
+    /**
+     * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
+     */
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        assert(b <= a);
+        return a - b;
+    }
+
+    /**
+     * @dev Adds two numbers, throws on overflow.
+     */
+    function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
+        c = a + b;
+        assert(c >= a);
+        return c;
+    }
 }
 
-interface IUniswapV3Pool {
+/**
+ * @title Ownable
+ * @dev The Ownable contract has an owner address, and provides basic authorization control
+ * functions, this simplifies the implementation of "user permissions".
+ */
+contract Ownable {
+  address public owner;
 
-  function slot0() external view returns (
-    uint160 sqrtPriceX96,
-    int24 tick,
-    uint16 observationIndex,
-    uint16 observationCardinality,
-    uint16 observationCardinalityNext,
-    uint8 feeProtocol,
-    bool unlocked
+
+  event OwnershipRenounced(address indexed previousOwner);
+  event OwnershipTransferred(
+    address indexed previousOwner,
+    address indexed newOwner
   );
 
-  function increaseObservationCardinalityNext(
-    uint16 observationCardinalityNext
-  ) external;
-}
 
-interface IUniswapV3Factory {
-
-  function getPool(
-    address tokenA,
-    address tokenB,
-    uint24 fee
-  ) external view returns (address pool);
-}
-
-interface ILinkOracle {
-  function latestAnswer() external view returns(uint);
-  function decimals() external view returns(int256);
-}
-
-interface IUniswapPriceConverter {
-
-  function assetToAssetThruRoute(
-    address _tokenIn,
-    uint256 _amountIn,
-    address _tokenOut,
-    uint32 _twapPeriod,
-    address _routeThruToken,
-    uint24[2] memory _poolFees
-  ) external view returns (uint256 amountOut);
-}
-
-contract Ownable {
-
-  address public owner;
-  address public pendingOwner;
-
-  event OwnershipTransferInitiated(address indexed previousOwner, address indexed newOwner);
-  event OwnershipTransferConfirmed(address indexed previousOwner, address indexed newOwner);
-
-  constructor() {
+  /**
+   * @dev The Ownable constructor sets the original `owner` of the contract to the sender
+   * account.
+   */
+  constructor() public {
     owner = msg.sender;
-    emit OwnershipTransferConfirmed(address(0), owner);
   }
 
+  /**
+   * @dev Throws if called by any account other than the owner.
+   */
   modifier onlyOwner() {
-    require(isOwner(), "Ownable: caller is not the owner");
+    require(msg.sender == owner);
     _;
   }
 
-  function isOwner() public view returns (bool) {
-    return msg.sender == owner;
+  /**
+   * @dev Allows the current owner to relinquish control of the contract.
+   * @notice Renouncing to ownership will leave the contract without an owner.
+   * It will not be possible to call the functions with the `onlyOwner`
+   * modifier anymore.
+   */
+  function renounceOwnership() public onlyOwner {
+    emit OwnershipRenounced(owner);
+    owner = address(0);
   }
 
-  function transferOwnership(address _newOwner) external onlyOwner {
-    require(_newOwner != address(0), "Ownable: new owner is the zero address");
-    emit OwnershipTransferInitiated(owner, _newOwner);
-    pendingOwner = _newOwner;
+  /**
+   * @dev Allows the current owner to transfer control of the contract to a newOwner.
+   * @param _newOwner The address to transfer ownership to.
+   */
+  function transferOwnership(address _newOwner) public onlyOwner {
+    _transferOwnership(_newOwner);
   }
 
-  function acceptOwnership() external {
-    require(msg.sender == pendingOwner, "Ownable: caller is not pending owner");
-    emit OwnershipTransferConfirmed(owner, pendingOwner);
-    owner = pendingOwner;
-    pendingOwner = address(0);
+  /**
+   * @dev Transfers control of the contract to a newOwner.
+   * @param _newOwner The address to transfer ownership to.
+   */
+  function _transferOwnership(address _newOwner) internal {
+    require(_newOwner != address(0));
+    emit OwnershipTransferred(owner, _newOwner);
+    owner = _newOwner;
   }
 }
 
-contract UniswapV3Oracle is Ownable {
+contract ERC20 {
+    uint256 public totalSupply;
+    
+    function balanceOf(address tokenOwner) public view returns (uint256 balance);
+    function allowance(address tokenOwner, address spender) public view returns (uint256 remaining);
+    function transfer(address to, uint256 tokens) public returns (bool success);
+    function approve(address spender, uint256 tokens) public returns (bool success);
+    function transferFrom(address from, address to, uint256 tokens) public returns (bool success);
 
-  IUniswapV3Factory public constant uniFactory    = IUniswapV3Factory(0x1F98431c8aD98523631AE4a59f267346ea31F984);
-  ILinkOracle       public constant wethOracle    = ILinkOracle(0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419);
-  address           public constant WETH          = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-  uint24            public constant WETH_POOL_FEE = 3000;
+    event Transfer(address indexed from, address indexed to, uint256 tokens);
+    event Approval(address indexed tokenOwner, address indexed spender, uint256 tokens);
+}
 
-  struct Pool {
-    address pairToken;
-    uint24  poolFee;
-  }
+library SafeERC20 {
+    function safeTransfer(ERC20 token, address to, uint256 value) internal {
+        require(token.transfer(to, value));
+    }
 
-  uint32 public twapPeriod;
-  uint16 public minObservations;
+    function safeTransferFrom(
+        ERC20 token,
+        address from,
+        address to,
+        uint256 value
+    )
+        internal
+    {
+        require(token.transferFrom(from, to, value));
+    }
 
-  IUniswapPriceConverter public uniPriceConverter;
+    function safeApprove(ERC20 token, address spender, uint256 value) internal {
+        require(token.approve(spender, value));
+    }
+}
 
-  mapping(address => Pool) public pools;
+contract TokenVesting is Ownable {
+    using SafeMath for uint256;
+    using SafeERC20 for ERC20;
 
-  event PoolAdded(address indexed token);
-  event PoolRemoved(address indexed token);
-  event NewTwapPeriod(uint32 value);
-  event NewMinObservations(uint16 value);
-  event NewUniPriceConverter(IUniswapPriceConverter value);
+    event Released(uint256 amount);
+    event Revoked();
 
-  constructor(
-    IUniswapPriceConverter _uniPriceConverter,
-    uint32       _twapPeriod,
-    uint16       _minObservations
-  ) {
-    uniPriceConverter = _uniPriceConverter;
-    twapPeriod        = _twapPeriod;
-    minObservations   = _minObservations;
-  }
+    // beneficiary of tokens after they are released
+    address public beneficiary;
 
-  function addPool(
-    address _token,
-    address _pairToken,
-    uint24  _poolFee
-  ) external onlyOwner {
+    uint256 public cliff;
+    uint256 public start;
+    uint256 public duration;
 
-    _validatePool(_token, _pairToken, _poolFee);
+    bool public revocable;
 
-    pools[_token] = Pool({
-      pairToken: _pairToken,
-      poolFee: _poolFee
-    });
+    mapping (address => uint256) public released;
+    mapping (address => bool) public revoked;
 
-    emit PoolAdded(_token);
-  }
+    /**
+     * @dev Creates a vesting contract that vests its balance of any ERC20 token to the
+     * _beneficiary, gradually in a linear fashion until _start + _duration. By then all
+     * of the balance will have vested.
+     * @param _beneficiary address of the beneficiary to whom vested tokens are transferred
+     * @param _cliff duration in seconds of the cliff in which tokens will begin to vest
+     * @param _start the time (as Unix time) at which point vesting starts 
+     * @param _duration duration in seconds of the period in which the tokens will vest
+     * @param _revocable whether the vesting is revocable or not
+     */
+    constructor(
+        address _beneficiary,
+        uint256 _start,
+        uint256 _cliff,
+        uint256 _duration,
+        bool _revocable
+    )
+        public
+    {
+        require(_beneficiary != address(0));
+        require(_cliff <= _duration);
 
-  function removePool(address _token) external onlyOwner {
-    pools[_token] = Pool(address(0), 0);
-    emit PoolRemoved(_token);
-  }
+        beneficiary = _beneficiary;
+        revocable = _revocable;
+        duration = _duration;
+        cliff = _start.add(_cliff);
+        start = _start;
+    }
 
-  function setUniPriceConverter(IUniswapPriceConverter _value) external onlyOwner {
-    uniPriceConverter = _value;
-    emit NewUniPriceConverter(_value);
-  }
+    /**
+     * @notice Transfers vested tokens to beneficiary.
+     * @param token ERC20 token which is being vested
+     */
+    function release(ERC20 token) public {
+        uint256 unreleased = releasableAmount(token);
 
-  function setTwapPeriod(uint32 _value) external onlyOwner {
-    twapPeriod = _value;
-    emit NewTwapPeriod(_value);
-  }
+        require(unreleased > 0);
 
-  function setMinObservations(uint16 _value) external onlyOwner {
-    minObservations = _value;
-    emit NewMinObservations(_value);
-  }
+        released[token] = released[token].add(unreleased);
 
-  function tokenPrice(address _token) external view returns(uint) {
-    require(pools[_token].pairToken != address(0), "UniswapV3Oracle: token not supported");
-    _validatePool(_token, pools[_token].pairToken, pools[_token].poolFee);
+        token.safeTransfer(beneficiary, unreleased);
 
-    uint ethValue = uniPriceConverter.assetToAssetThruRoute(
-      _token,
-      10 ** IERC20(_token).decimals(),
-      WETH,
-      twapPeriod,
-      pools[_token].pairToken,
-      [pools[_token].poolFee, WETH_POOL_FEE]
-    );
+        emit Released(unreleased);
+    }
 
-    return ethValue * ethPrice() / 1e18;
-  }
+    /**
+     * @notice Allows the owner to revoke the vesting. Tokens already vested
+     * remain in the contract, the rest are returned to the owner.
+     * @param token ERC20 token which is being vested
+     */
+    function revoke(ERC20 token) public onlyOwner {
+        require(revocable);
+        require(!revoked[token]);
 
-  function ethPrice() public view returns(uint) {
-    uint latestAnswer = wethOracle.latestAnswer();
-    require(latestAnswer > 1, "LinkPriceOracle: invalid oracle value");
-    return latestAnswer * 1e10;
-  }
+        uint256 balance = token.balanceOf(this);
 
-  function isPoolValid(address _token, address _pairToken, uint24 _poolFee) public view returns(bool) {
-    address poolAddress = uniFactory.getPool(_token, _pairToken, _poolFee);
-    if (poolAddress == address(0)) { return false; }
+        uint256 unreleased = releasableAmount(token);
+        uint256 refund = balance.sub(unreleased);
 
-    (, , , , uint16 observationSlots, ,) = IUniswapV3Pool(poolAddress).slot0();
-    return observationSlots >= minObservations;
-  }
+        revoked[token] = true;
 
-  function tokenSupported(address _token) external view returns(bool) {
-    return pools[_token].pairToken != address(0);
-  }
+        token.safeTransfer(owner, refund);
 
-  function _validatePool(address _token, address _pairToken, uint24 _poolFee) internal view {
-    require(isPoolValid(_token, _pairToken, _poolFee), "UniswapV3Oracle: invalid pool");
-  }
+        emit Revoked();
+    }
+
+    /**
+     * @dev Calculates the amount that has already vested but hasn&#39;t been released yet.
+     * @param token ERC20 token which is being vested
+     */
+    function releasableAmount(ERC20 token) public view returns (uint256) {
+        return vestedAmount(token).sub(released[token]);
+    }
+
+    /**
+     * @dev Calculates the amount that has already vested.
+     * @param token ERC20 token which is being vested
+     */
+    function vestedAmount(ERC20 token) public view returns (uint256) {
+        uint256 currentBalance = token.balanceOf(this);
+        uint256 totalBalance = currentBalance.add(released[token]);
+
+        if (block.timestamp < cliff) {
+          return 0;
+        } else if (block.timestamp >= start.add(duration) || revoked[token]) {
+          return totalBalance;
+        } else {
+          uint256 gap = 3600;
+          uint256 start_gap = block.timestamp.sub(start).div(gap).mul(gap);
+          return totalBalance.mul(start_gap).div(duration);
+        }
+    }
+
+    /**
+     * Don&#39;t accept ETH
+     */
+    function () public payable {
+        revert();
+    }
 }

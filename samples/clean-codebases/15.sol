@@ -1,354 +1,35 @@
-pragma solidity 0.5.12;
+pragma solidity 0.6.12;
+pragma experimental ABIEncoderV2;
 
-contract BColor {
+library SafeMath {
 
-    function getColor()
+    /**
 
-        external view
+     * @dev Returns the addition of two unsigned integers, reverting on
 
-        returns (bytes32);
+     * overflow.
 
-}
+     *
 
-contract BBronze is BColor {
+     * Counterpart to Solidity's `+` operator.
 
-    function getColor()
+     *
 
-        external view
+     * Requirements:
 
-        returns (bytes32) {
+     *
 
-            return bytes32("BRONZE");
+     * - Addition cannot overflow.
 
-        }
+     */
 
-}
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
 
-contract BConst is BBronze {
+        uint256 c = a + b;
 
-    uint public constant BONE              = 10**18;
+        require(c >= a, "SafeMath: addition overflow");
 
 
-
-    uint public constant MIN_BOUND_TOKENS  = 2;
-
-    uint public constant MAX_BOUND_TOKENS  = 8;
-
-
-
-    uint public constant MIN_FEE           = BONE / 10**6;
-
-    uint public constant MAX_FEE           = BONE / 10;
-
-    uint public constant EXIT_FEE          = 0;
-
-    uint public constant DEFAULT_RESERVES_RATIO = BONE / 5;
-
-
-
-    uint public constant MIN_WEIGHT        = BONE;
-
-    uint public constant MAX_WEIGHT        = BONE * 50;
-
-    uint public constant MAX_TOTAL_WEIGHT  = BONE * 50;
-
-    uint public constant MIN_BALANCE       = BONE / 10**12;
-
-
-
-    uint public constant INIT_POOL_SUPPLY  = BONE * 100;
-
-
-
-    uint public constant MIN_BPOW_BASE     = 1 wei;
-
-    uint public constant MAX_BPOW_BASE     = (2 * BONE) - 1 wei;
-
-    uint public constant BPOW_PRECISION    = BONE / 10**10;
-
-
-
-    uint public constant MAX_IN_RATIO      = BONE / 2;
-
-    uint public constant MAX_OUT_RATIO     = (BONE / 3) + 1 wei;
-
-}
-
-contract BFactory is BBronze {
-
-    event LOG_NEW_POOL(
-
-        address indexed caller,
-
-        address indexed pool
-
-    );
-
-
-
-    event LOG_BLABS(
-
-        address indexed caller,
-
-        address indexed blabs
-
-    );
-
-
-
-    event LOG_RESERVES_ADDRESS(
-
-        address indexed caller,
-
-        address indexed reservesAddress
-
-    );
-
-
-
-    event LOG_ALLOW_NON_ADMIN_POOL(
-
-        address indexed caller,
-
-        bool allow
-
-    );
-
-
-
-    mapping(address=>bool) private _isBPool;
-
-
-
-    function isBPool(address b)
-
-        external view returns (bool)
-
-    {
-
-        return _isBPool[b];
-
-    }
-
-
-
-    function newBPool()
-
-        external
-
-        returns (BPool)
-
-    {
-
-        if (!_allowNonAdminPool) {
-
-            require(msg.sender == _blabs);
-
-        }
-
-        BPool bpool = new BPool();
-
-        _isBPool[address(bpool)] = true;
-
-        emit LOG_NEW_POOL(msg.sender, address(bpool));
-
-        bpool.setController(msg.sender);
-
-        return bpool;
-
-    }
-
-
-
-    address private _blabs;
-
-    address private _reservesAddress;
-
-
-
-    bool private _allowNonAdminPool;
-
-
-
-    constructor() public {
-
-        _blabs = msg.sender;
-
-        _reservesAddress = msg.sender;
-
-        _allowNonAdminPool = false;
-
-    }
-
-
-
-    function getAllowNonAdminPool()
-
-        external view
-
-        returns (bool)
-
-    {
-
-        return _allowNonAdminPool;
-
-    }
-
-
-
-    function setAllowNonAdminPool(bool b)
-
-        external
-
-    {
-
-        require(msg.sender == _blabs, "ERR_NOT_BLABS");
-
-        emit LOG_ALLOW_NON_ADMIN_POOL(msg.sender, b);
-
-        _allowNonAdminPool = b;
-
-    }
-
-
-
-    function getBLabs()
-
-        external view
-
-        returns (address)
-
-    {
-
-        return _blabs;
-
-    }
-
-
-
-    function setBLabs(address b)
-
-        external
-
-    {
-
-        require(msg.sender == _blabs);
-
-        emit LOG_BLABS(msg.sender, b);
-
-        _blabs = b;
-
-    }
-
-
-
-    function getReservesAddress()
-
-        external view
-
-        returns (address)
-
-    {
-
-        return _reservesAddress;
-
-    }
-
-
-
-    function setReservesAddress(address a)
-
-        external
-
-    {
-
-        require(msg.sender == _blabs);
-
-        emit LOG_RESERVES_ADDRESS(msg.sender, a);
-
-        _reservesAddress = a;
-
-    }
-
-
-
-    function collect(BPool pool)
-
-        external 
-
-    {
-
-        require(msg.sender == _blabs);
-
-        uint collected = IERC20(pool).balanceOf(address(this));
-
-        bool xfer = pool.transfer(_blabs, collected);
-
-        require(xfer);
-
-    }
-
-
-
-    function collectTokenReserves(BPool pool)
-
-        external
-
-    {
-
-        require(msg.sender == _blabs);
-
-        require(_isBPool[address(pool)]);
-
-        pool.drainTotalReserves(_reservesAddress);
-
-    }
-
-}
-
-contract BNum is BConst {
-
-
-
-    function btoi(uint a)
-
-        internal pure 
-
-        returns (uint)
-
-    {
-
-        return a / BONE;
-
-    }
-
-
-
-    function bfloor(uint a)
-
-        internal pure
-
-        returns (uint)
-
-    {
-
-        return btoi(a) * BONE;
-
-    }
-
-
-
-    function badd(uint a, uint b)
-
-        internal pure
-
-        returns (uint)
-
-    {
-
-        uint c = a + b;
-
-        require(c >= a);
 
         return c;
 
@@ -356,17 +37,61 @@ contract BNum is BConst {
 
 
 
-    function bsub(uint a, uint b)
+    /**
 
-        internal pure
+     * @dev Returns the subtraction of two unsigned integers, reverting on
 
-        returns (uint)
+     * overflow (when the result is negative).
 
-    {
+     *
 
-        (uint c, bool flag) = bsubSign(a, b);
+     * Counterpart to Solidity's `-` operator.
 
-        require(!flag);
+     *
+
+     * Requirements:
+
+     *
+
+     * - Subtraction cannot overflow.
+
+     */
+
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+
+        return sub(a, b, "SafeMath: subtraction overflow");
+
+    }
+
+
+
+    /**
+
+     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
+
+     * overflow (when the result is negative).
+
+     *
+
+     * Counterpart to Solidity's `-` operator.
+
+     *
+
+     * Requirements:
+
+     *
+
+     * - Subtraction cannot overflow.
+
+     */
+
+    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+
+        require(b <= a, errorMessage);
+
+        uint256 c = a - b;
+
+
 
         return c;
 
@@ -374,1625 +99,1703 @@ contract BNum is BConst {
 
 
 
-    function bsubSign(uint a, uint b)
+    /**
 
-        internal pure
+     * @dev Returns the multiplication of two unsigned integers, reverting on
 
-        returns (uint, bool)
+     * overflow.
 
-    {
+     *
 
-        if (a >= b) {
+     * Counterpart to Solidity's `*` operator.
 
-            return (a - b, false);
+     *
 
-        } else {
+     * Requirements:
 
-            return (b - a, true);
+     *
 
-        }
+     * - Multiplication cannot overflow.
 
-    }
+     */
 
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
 
+        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
 
-    function bmul(uint a, uint b)
+        // benefit is lost if 'b' is also tested.
 
-        internal pure
+        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
 
-        returns (uint)
+        if (a == 0) {
 
-    {
-
-        uint c0 = a * b;
-
-        require(a == 0 || c0 / a == b);
-
-        uint c1 = c0 + (BONE / 2);
-
-        require(c1 >= c0);
-
-        uint c2 = c1 / BONE;
-
-        return c2;
-
-    }
-
-
-
-    function bdiv(uint a, uint b)
-
-        internal pure
-
-        returns (uint)
-
-    {
-
-        require(b != 0);
-
-        uint c0 = a * BONE;
-
-        require(a == 0 || c0 / a == BONE); // bmul overflow
-
-        uint c1 = c0 + (b / 2);
-
-        require(c1 >= c0); //  badd require
-
-        uint c2 = c1 / b;
-
-        return c2;
-
-    }
-
-
-
-    // DSMath.wpow
-
-    function bpowi(uint a, uint n)
-
-        internal pure
-
-        returns (uint)
-
-    {
-
-        uint z = n % 2 != 0 ? a : BONE;
-
-
-
-        for (n /= 2; n != 0; n /= 2) {
-
-            a = bmul(a, a);
-
-
-
-            if (n % 2 != 0) {
-
-                z = bmul(z, a);
-
-            }
+            return 0;
 
         }
 
-        return z;
+
+
+        uint256 c = a * b;
+
+        require(c / a == b, "SafeMath: multiplication overflow");
+
+
+
+        return c;
 
     }
 
 
 
-    // Compute b^(e.w) by splitting it into (b^e)*(b^0.w).
+    /**
 
-    // Use `bpowi` for `b^e` and `bpowK` for k iterations
+     * @dev Returns the integer division of two unsigned integers. Reverts on
 
-    // of approximation of b^0.w
+     * division by zero. The result is rounded towards zero.
 
-    function bpow(uint base, uint exp)
+     *
 
-        internal pure
+     * Counterpart to Solidity's `/` operator. Note: this function uses a
 
-        returns (uint)
+     * `revert` opcode (which leaves remaining gas untouched) while Solidity
 
-    {
+     * uses an invalid opcode to revert (consuming all remaining gas).
 
-        require(base >= MIN_BPOW_BASE);
+     *
 
-        require(base <= MAX_BPOW_BASE);
+     * Requirements:
 
+     *
 
+     * - The divisor cannot be zero.
 
-        uint whole  = bfloor(exp);   
+     */
 
-        uint remain = bsub(exp, whole);
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
 
-
-
-        uint wholePow = bpowi(base, btoi(whole));
-
-
-
-        if (remain == 0) {
-
-            return wholePow;
-
-        }
-
-
-
-        uint partialResult = bpowApprox(base, remain, BPOW_PRECISION);
-
-        return bmul(wholePow, partialResult);
+        return div(a, b, "SafeMath: division by zero");
 
     }
 
 
 
-    function bpowApprox(uint base, uint exp, uint precision)
+    /**
 
-        internal pure
+     * @dev Returns the integer division of two unsigned integers. Reverts with custom message on
 
-        returns (uint)
+     * division by zero. The result is rounded towards zero.
 
-    {
+     *
 
-        // term 0:
+     * Counterpart to Solidity's `/` operator. Note: this function uses a
 
-        uint a     = exp;
+     * `revert` opcode (which leaves remaining gas untouched) while Solidity
 
-        (uint x, bool xneg)  = bsubSign(base, BONE);
+     * uses an invalid opcode to revert (consuming all remaining gas).
 
-        uint term = BONE;
+     *
 
-        uint sum   = term;
+     * Requirements:
 
-        bool negative = false;
+     *
 
+     * - The divisor cannot be zero.
 
+     */
 
+    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
 
+        require(b > 0, errorMessage);
 
-        // term(k) = numer / denom 
+        uint256 c = a / b;
 
-        //         = (product(a - i - 1, i=1-->k) * x^k) / (k!)
-
-        // each iteration, multiply previous term by (a-(k-1)) * x / k
-
-        // continue until term is less than precision
-
-        for (uint i = 1; term >= precision; i++) {
-
-            uint bigK = i * BONE;
-
-            (uint c, bool cneg) = bsubSign(a, bsub(bigK, BONE));
-
-            term = bmul(term, bmul(c, x));
-
-            term = bdiv(term, bigK);
-
-            if (term == 0) break;
+        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
 
 
 
-            if (xneg) negative = !negative;
-
-            if (cneg) negative = !negative;
-
-            if (negative) {
-
-                sum = bsub(sum, term);
-
-            } else {
-
-                sum = badd(sum, term);
-
-            }
-
-        }
-
-
-
-        return sum;
+        return c;
 
     }
 
 
+
+    /**
+
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+
+     * Reverts when dividing by zero.
+
+     *
+
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+
+     * invalid opcode to revert (consuming all remaining gas).
+
+     *
+
+     * Requirements:
+
+     *
+
+     * - The divisor cannot be zero.
+
+     */
+
+    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+
+        return mod(a, b, "SafeMath: modulo by zero");
+
+    }
+
+
+
+    /**
+
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+
+     * Reverts with custom message when dividing by zero.
+
+     *
+
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+
+     * invalid opcode to revert (consuming all remaining gas).
+
+     *
+
+     * Requirements:
+
+     *
+
+     * - The divisor cannot be zero.
+
+     */
+
+    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+
+        require(b != 0, errorMessage);
+
+        return a % b;
+
+    }
 
 }
 
 interface IERC20 {
 
-    event Approval(address indexed src, address indexed dst, uint amt);
+    /**
 
-    event Transfer(address indexed src, address indexed dst, uint amt);
+     * @dev Returns the amount of tokens in existence.
 
+     */
 
-
-    function totalSupply() external view returns (uint);
-
-    function balanceOf(address whom) external view returns (uint);
-
-    function allowance(address src, address dst) external view returns (uint);
+    function totalSupply() external view returns (uint256);
 
 
 
-    function approve(address dst, uint amt) external returns (bool);
+    /**
 
-    function transfer(address dst, uint amt) external returns (bool);
+     * @dev Returns the amount of tokens owned by `account`.
 
-    function transferFrom(
+     */
 
-        address src, address dst, uint amt
+    function balanceOf(address account) external view returns (uint256);
 
-    ) external returns (bool);
+
+
+    /**
+
+     * @dev Moves `amount` tokens from the caller's account to `recipient`.
+
+     *
+
+     * Returns a boolean value indicating whether the operation succeeded.
+
+     *
+
+     * Emits a {Transfer} event.
+
+     */
+
+    function transfer(address recipient, uint256 amount) external returns (bool);
+
+
+
+    /**
+
+     * @dev Returns the remaining number of tokens that `spender` will be
+
+     * allowed to spend on behalf of `owner` through {transferFrom}. This is
+
+     * zero by default.
+
+     *
+
+     * This value changes when {approve} or {transferFrom} are called.
+
+     */
+
+    function allowance(address owner, address spender) external view returns (uint256);
+
+
+
+    /**
+
+     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
+
+     *
+
+     * Returns a boolean value indicating whether the operation succeeded.
+
+     *
+
+     * IMPORTANT: Beware that changing an allowance with this method brings the risk
+
+     * that someone may use both the old and the new allowance by unfortunate
+
+     * transaction ordering. One possible solution to mitigate this race
+
+     * condition is to first reduce the spender's allowance to 0 and set the
+
+     * desired value afterwards:
+
+     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+
+     *
+
+     * Emits an {Approval} event.
+
+     */
+
+    function approve(address spender, uint256 amount) external returns (bool);
+
+
+
+    /**
+
+     * @dev Moves `amount` tokens from `sender` to `recipient` using the
+
+     * allowance mechanism. `amount` is then deducted from the caller's
+
+     * allowance.
+
+     *
+
+     * Returns a boolean value indicating whether the operation succeeded.
+
+     *
+
+     * Emits a {Transfer} event.
+
+     */
+
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+
+
+
+    /**
+
+     * @dev Emitted when `value` tokens are moved from one account (`from`) to
+
+     * another (`to`).
+
+     *
+
+     * Note that `value` may be zero.
+
+     */
+
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+
+
+    /**
+
+     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
+
+     * a call to {approve}. `value` is the new allowance.
+
+     */
+
+    event Approval(address indexed owner, address indexed spender, uint256 value);
 
 }
 
-contract BTokenBase is BNum {
+library Constants {
+
+    address constant CDP_MANAGER = 0x5ef30b9986345249bc32d8928B7ee64DE9435E39;
+
+    address constant PROXY_ACTIONS = 0x82ecD135Dce65Fbc6DbdD0e4237E0AF93FFD5038;
+
+    address constant MCD_JOIN_ETH_A = 0x2F0b23f53734252Bda2277357e97e1517d6B042A;
+
+    address constant MCD_JOIN_USDC_A = 0xA191e578a6736167326d05c119CE0c90849E84B7;
+
+    address constant MCD_JOIN_DAI = 0x9759A6Ac90977b93B58547b4A71c78317f391A28;
+
+    address constant MCD_JUG = 0x19c0976f590D67707E62397C87829d896Dc0f1F1;
+
+    address constant MCD_END = 0xaB14d3CE3F733CACB76eC2AbE7d2fcb00c99F3d5;
 
 
 
-    mapping(address => uint)                   internal _balance;
+    address constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
 
-    mapping(address => mapping(address=>uint)) internal _allowance;
+    address constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
 
-    uint internal _totalSupply;
-
-
-
-    event Approval(address indexed src, address indexed dst, uint amt);
-
-    event Transfer(address indexed src, address indexed dst, uint amt);
+    address constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
 
 
-    function _mint(uint amt) internal {
-
-        _balance[address(this)] = badd(_balance[address(this)], amt);
-
-        _totalSupply = badd(_totalSupply, amt);
-
-        emit Transfer(address(0), address(this), amt);
-
-    }
+    address constant UNISWAPV2_ROUTER2 = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
 
 
 
-    function _burn(uint amt) internal {
+    bytes32 constant USDC_A_ILK = bytes32("USDC-A");
 
-        require(_balance[address(this)] >= amt);
+    bytes32 constant ETH_A_ILK = bytes32("ETH-A");
 
-        _balance[address(this)] = bsub(_balance[address(this)], amt);
+}
 
-        _totalSupply = bsub(_totalSupply, amt);
+contract Migrations {
 
-        emit Transfer(address(this), address(0), amt);
+  address public owner;
 
-    }
+  uint public last_completed_migration;
 
 
 
-    function _move(address src, address dst, uint amt) internal {
+  constructor() public {
 
-        require(_balance[src] >= amt);
-
-        _balance[src] = bsub(_balance[src], amt);
-
-        _balance[dst] = badd(_balance[dst], amt);
-
-        emit Transfer(src, dst, amt);
+      owner = msg.sender;
 
     }
 
 
 
-    function _push(address to, uint amt) internal {
+  modifier restricted() {
 
-        _move(address(this), to, amt);
+      if (msg.sender == owner) _;
 
     }
 
 
 
-    function _pull(address from, uint amt) internal {
+  function setCompleted(uint completed) public restricted {
 
-        _move(from, address(this), amt);
+      last_completed_migration = completed;
 
     }
 
 }
 
-contract BToken is BTokenBase, IERC20 {
+contract ShortDAIActions {
+
+    using SafeMath for uint256;
 
 
 
-    string  private _name     = "Cream Pool Token";
+    function _openUSDCACdp() internal returns (uint256) {
 
-    string  private _symbol   = "CRPT";
+        return
 
-    uint8   private _decimals = 18;
+            IDssCdpManager(Constants.CDP_MANAGER).open(
 
+                bytes32("USDC-A"),
 
+                address(this)
 
-    function name() public view returns (string memory) {
-
-        return _name;
-
-    }
-
-
-
-    function symbol() public view returns (string memory) {
-
-        return _symbol;
+            );
 
     }
 
 
 
-    function decimals() public view returns(uint8) {
+    // Entry point for proxy contracts
 
-        return _decimals;
+    function flashloanAndOpen(
 
-    }
+        address _osd,
 
+        address _solo,
 
+        address _curvePool,
 
-    function allowance(address src, address dst) external view returns (uint) {
+        uint256 _cdpId, // Set 0 for new vault
 
-        return _allowance[src][dst];
+        uint256 _initialMarginUSDC, // Initial USDC margin
 
-    }
+        uint256 _mintAmountDAI, // Amount of DAI to mint
 
+        uint256 _flashloanAmountWETH, // Amount of WETH to flashloan
 
+        address _vaultStats,
 
-    function balanceOf(address whom) external view returns (uint) {
+        uint256 _daiUsdcRatio6
 
-        return _balance[whom];
+    ) external payable {
 
-    }
-
-
-
-    function totalSupply() public view returns (uint) {
-
-        return _totalSupply;
-
-    }
+        require(msg.value == 2, "!fee");
 
 
 
-    function approve(address dst, uint amt) external returns (bool) {
+        // Tries and get USDC from msg.sender to proxy
 
-        _allowance[msg.sender][dst] = amt;
+        require(
 
-        emit Approval(msg.sender, dst, amt);
+            IERC20(Constants.USDC).transferFrom(
 
-        return true;
+                msg.sender,
 
-    }
+                address(this),
 
+                _initialMarginUSDC
 
+            ),
 
-    function increaseApproval(address dst, uint amt) external returns (bool) {
+            "initial-margin-transferFrom-failed"
 
-        _allowance[msg.sender][dst] = badd(_allowance[msg.sender][dst], amt);
-
-        emit Approval(msg.sender, dst, _allowance[msg.sender][dst]);
-
-        return true;
-
-    }
+        );
 
 
 
-    function decreaseApproval(address dst, uint amt) external returns (bool) {
+        uint256 cdpId = _cdpId;
 
-        uint oldValue = _allowance[msg.sender][dst];
 
-        if (amt > oldValue) {
 
-            _allowance[msg.sender][dst] = 0;
+        // Opens a new USDC vault for the user if unspecified
 
-        } else {
+        if (cdpId == 0) {
 
-            _allowance[msg.sender][dst] = bsub(oldValue, amt);
+            cdpId = _openUSDCACdp();
 
         }
 
-        emit Approval(msg.sender, dst, _allowance[msg.sender][dst]);
 
-        return true;
+
+        // Allows LSD contract to manage vault on behalf of user
+
+        IDssCdpManager(Constants.CDP_MANAGER).cdpAllow(cdpId, _osd, 1);
+
+
+
+        // Approve OpenShortDAI Contract to use USDC funds
+
+        require(
+
+            IERC20(Constants.USDC).approve(_osd, _initialMarginUSDC),
+
+            "initial-margin-approve-failed"
+
+        );
+
+        // Flashloan and shorts DAI
+
+        OpenShortDAI(_osd).flashloanAndOpen{value: msg.value}(
+
+            msg.sender,
+
+            _solo,
+
+            _curvePool,
+
+            cdpId,
+
+            _initialMarginUSDC,
+
+            _mintAmountDAI,
+
+            _flashloanAmountWETH
+
+        );
+
+
+
+        // Forbids LSD contract to manage vault on behalf of user
+
+        IDssCdpManager(Constants.CDP_MANAGER).cdpAllow(cdpId, _osd, 0);
+
+
+
+        // Save stats
+
+        VaultStats(_vaultStats).setDaiUsdcRatio6(cdpId, _daiUsdcRatio6);
 
     }
 
 
 
-    function transfer(address dst, uint amt) external returns (bool) {
+    function flashloanAndClose(
 
-        _move(msg.sender, dst, amt);
+        address _csd,
 
-        return true;
+        address _solo,
+
+        address _curvePool,
+
+        uint256 _cdpId,
+
+        uint256 _ethUsdRatio18
+
+    ) external payable {
+
+        require(msg.value == 2, "!fee");
+
+
+
+        IDssCdpManager(Constants.CDP_MANAGER).cdpAllow(_cdpId, _csd, 1);
+
+
+
+        CloseShortDAI(_csd).flashloanAndClose{value: msg.value}(
+
+            msg.sender,
+
+            _solo,
+
+            _curvePool,
+
+            _cdpId,
+
+            _ethUsdRatio18
+
+        );
+
+
+
+        IDssCdpManager(Constants.CDP_MANAGER).cdpAllow(_cdpId, _csd, 0);
+
+        IDssCdpManager(Constants.CDP_MANAGER).give(_cdpId, address(1));
 
     }
 
 
 
-    function transferFrom(address src, address dst, uint amt) external returns (bool) {
+    function cdpAllow(
 
-        require(msg.sender == src || amt <= _allowance[src][msg.sender]);
+        uint256 cdp,
 
-        _move(src, dst, amt);
+        address usr,
 
-        if (msg.sender != src && _allowance[src][msg.sender] != uint256(-1)) {
+        uint256 ok
 
-            _allowance[src][msg.sender] = bsub(_allowance[src][msg.sender], amt);
+    ) public {
 
-            emit Approval(msg.sender, dst, _allowance[src][msg.sender]);
-
-        }
-
-        return true;
+        IDssCdpManager(Constants.CDP_MANAGER).cdpAllow(cdp, usr, ok);
 
     }
 
 }
 
-contract BMath is BBronze, BConst, BNum {
+contract VaultStats {
 
-    /**********************************************************************************************
-
-    // calcSpotPrice                                                                             //
-
-    // sP = spotPrice                                                                            //
-
-    // bI = tokenBalanceIn                ( bI / wI )         1                                  //
-
-    // bO = tokenBalanceOut         sP =  -----------  *  ----------                             //
-
-    // wI = tokenWeightIn                 ( bO / wO )     ( 1 - sF )                             //
-
-    // wO = tokenWeightOut                                                                       //
-
-    // sF = swapFee                                                                              //
-
-    **********************************************************************************************/
-
-    function calcSpotPrice(
-
-        uint tokenBalanceIn,
-
-        uint tokenWeightIn,
-
-        uint tokenBalanceOut,
-
-        uint tokenWeightOut,
-
-        uint swapFee
-
-    )
-
-        public pure
-
-        returns (uint spotPrice)
-
-    {
-
-        uint numer = bdiv(tokenBalanceIn, tokenWeightIn);
-
-        uint denom = bdiv(tokenBalanceOut, tokenWeightOut);
-
-        uint ratio = bdiv(numer, denom);
-
-        uint scale = bdiv(BONE, bsub(BONE, swapFee));
-
-        return  (spotPrice = bmul(ratio, scale));
-
-    }
+    uint256 constant RAY = 10**27;
 
 
 
-    /**********************************************************************************************
+    using SafeMath for uint256;
 
-    // calcOutGivenIn                                                                            //
 
-    // aO = tokenAmountOut                                                                       //
 
-    // bO = tokenBalanceOut                                                                      //
+    // CDP ID => DAI/USDC Ratio in 6 decimals
 
-    // bI = tokenBalanceIn              /      /            bI             \    (wI / wO) \      //
+    // i.e. What was DAI/USDC ratio when CDP was opened
 
-    // aI = tokenAmountIn    aO = bO * |  1 - | --------------------------  | ^            |     //
+    mapping(uint256 => uint256) public daiUsdcRatio6;
 
-    // wI = tokenWeightIn               \      \ ( bI + ( aI * ( 1 - sF )) /              /      //
 
-    // wO = tokenWeightOut                                                                       //
 
-    // sF = swapFee                                                                              //
+    //** View functions for stats ** //
 
-    **********************************************************************************************/
 
-    function calcOutGivenIn(
 
-        uint tokenBalanceIn,
+    function _getCdpSuppliedAndBorrowed(
 
-        uint tokenWeightIn,
+        address vat,
 
-        uint tokenBalanceOut,
+        address usr,
 
-        uint tokenWeightOut,
+        address urn,
 
-        uint tokenAmountIn,
+        bytes32 ilk
 
-        uint swapFee
+    ) internal view returns (uint256, uint256) {
 
-    )
+        // Gets actual rate from the vat
 
-        public pure
+        (, uint256 rate, , , ) = VatLike(vat).ilks(ilk);
 
-        returns (uint tokenAmountOut)
+        // Gets actual art value of the urn
 
-    {
+        (uint256 supplied, uint256 art) = VatLike(vat).urns(ilk, urn);
 
-        uint weightRatio = bdiv(tokenWeightIn, tokenWeightOut);
+        // Gets actual dai amount in the urn
 
-        uint adjustedIn = bsub(BONE, swapFee);
+        uint256 dai = VatLike(vat).dai(usr);
 
-        adjustedIn = bmul(tokenAmountIn, adjustedIn);
 
-        uint y = bdiv(tokenBalanceIn, badd(tokenBalanceIn, adjustedIn));
 
-        uint foo = bpow(y, weightRatio);
+        uint256 rad = art.mul(rate).sub(dai);
 
-        uint bar = bsub(BONE, foo);
+        uint256 wad = rad / RAY;
 
-        tokenAmountOut = bmul(tokenBalanceOut, bar);
 
-        return tokenAmountOut;
+
+        // If the rad precision has some dust, it will need to request for 1 extra wad wei
+
+        uint256 borrowed = wad.mul(RAY) < rad ? wad + 1 : wad;
+
+
+
+        // Note that supplied is in 18 decimals, so you'll need to convert it back
+
+        // i.e. supplied = supplied / 10 ** (18 - decimals)
+
+
+
+        return (supplied, borrowed);
 
     }
 
 
 
-    /**********************************************************************************************
+    // Get DAI borrow / supply stats
 
-    // calcInGivenOut                                                                            //
-
-    // aI = tokenAmountIn                                                                        //
-
-    // bO = tokenBalanceOut               /  /     bO      \    (wO / wI)      \                 //
-
-    // bI = tokenBalanceIn          bI * |  | ------------  | ^            - 1  |                //
-
-    // aO = tokenAmountOut    aI =        \  \ ( bO - aO ) /                   /                 //
-
-    // wI = tokenWeightIn           --------------------------------------------                 //
-
-    // wO = tokenWeightOut                          ( 1 - sF )                                   //
-
-    // sF = swapFee                                                                              //
-
-    **********************************************************************************************/
-
-    function calcInGivenOut(
-
-        uint tokenBalanceIn,
-
-        uint tokenWeightIn,
-
-        uint tokenBalanceOut,
-
-        uint tokenWeightOut,
-
-        uint tokenAmountOut,
-
-        uint swapFee
-
-    )
-
-        public pure
-
-        returns (uint tokenAmountIn)
-
-    {
-
-        uint weightRatio = bdiv(tokenWeightOut, tokenWeightIn);
-
-        uint diff = bsub(tokenBalanceOut, tokenAmountOut);
-
-        uint y = bdiv(tokenBalanceOut, diff);
-
-        uint foo = bpow(y, weightRatio);
-
-        foo = bsub(foo, BONE);
-
-        tokenAmountIn = bsub(BONE, swapFee);
-
-        tokenAmountIn = bdiv(bmul(tokenBalanceIn, foo), tokenAmountIn);
-
-        return tokenAmountIn;
-
-    }
-
-
-
-    /**********************************************************************************************
-
-    // calcPoolOutGivenSingleIn                                                                  //
-
-    // pAo = poolAmountOut         /                                              \              //
-
-    // tAi = tokenAmountIn        ///      /     //    wI \      \\       \     wI \             //
-
-    // wI = tokenWeightIn        //| tAi *| 1 - || 1 - --  | * sF || + tBi \    --  \            //
-
-    // tW = totalWeight     pAo=||  \      \     \\    tW /      //         | ^ tW   | * pS - pS //
-
-    // tBi = tokenBalanceIn      \\  ------------------------------------- /        /            //
-
-    // pS = poolSupply            \\                    tBi               /        /             //
-
-    // sF = swapFee                \                                              /              //
-
-    **********************************************************************************************/
-
-    function calcPoolOutGivenSingleIn(
-
-        uint tokenBalanceIn,
-
-        uint tokenWeightIn,
-
-        uint poolSupply,
-
-        uint totalWeight,
-
-        uint tokenAmountIn,
-
-        uint swapFee,
-
-        uint reservesRatio
-
-    )
-
-        public pure
-
-        returns (uint poolAmountOut, uint reserves)
-
-    {
-
-        // Charge the trading fee for the proportion of tokenAi
-
-        ///  which is implicitly traded to the other pool tokens.
-
-        // That proportion is (1- weightTokenIn)
-
-        // tokenAiAfterFee = tAi * (1 - (1-weightTi) * poolFee);
-
-        uint normalizedWeight = bdiv(tokenWeightIn, totalWeight);
-
-        // Exact fee portion of `tokenAmountIn`, i.e. (1- Wt)
-
-        uint zaz = bmul(bsub(BONE, normalizedWeight), swapFee);
-
-        uint tokenAmountInAfterFee = bmul(tokenAmountIn, bsub(BONE, zaz));
-
-
-
-        reserves = calcReserves(tokenAmountIn, tokenAmountInAfterFee, reservesRatio);
-
-        uint newTokenBalanceIn = badd(tokenBalanceIn, tokenAmountInAfterFee);
-
-        uint tokenInRatio = bdiv(newTokenBalanceIn, tokenBalanceIn);
-
-
-
-        // uint newPoolSupply = (ratioTi ^ weightTi) * poolSupply;
-
-        uint poolRatio = bpow(tokenInRatio, normalizedWeight);
-
-        uint newPoolSupply = bmul(poolRatio, poolSupply);
-
-        poolAmountOut = bsub(newPoolSupply, poolSupply);
-
-        return (poolAmountOut, reserves);
-
-    }
-
-
-
-    /**********************************************************************************************
-
-    // calcSingleInGivenPoolOut                                                                  //
-
-    // tAi = tokenAmountIn              //(pS + pAo)\     /    1    \\                           //
-
-    // pS = poolSupply                 || ---------  | ^ | --------- || * bI - bI                //
-
-    // pAo = poolAmountOut              \\    pS    /     \(wI / tW)//                           //
-
-    // bI = balanceIn          tAi =  --------------------------------------------               //
-
-    // wI = weightIn                              /      wI  \                                   //
-
-    // tW = totalWeight                          |  1 - ----  |  * sF                            //
-
-    // sF = swapFee                               \      tW  /                                   //
-
-    **********************************************************************************************/
-
-    function calcSingleInGivenPoolOut(
-
-        uint tokenBalanceIn,
-
-        uint tokenWeightIn,
-
-        uint poolSupply,
-
-        uint totalWeight,
-
-        uint poolAmountOut,
-
-        uint swapFee
-
-    )
-
-        public pure
-
-        returns (uint tokenAmountIn)
-
-    {
-
-        uint normalizedWeight = bdiv(tokenWeightIn, totalWeight);
-
-        uint newPoolSupply = badd(poolSupply, poolAmountOut);
-
-        uint poolRatio = bdiv(newPoolSupply, poolSupply);
-
-      
-
-        //uint newBalTi = poolRatio^(1/weightTi) * balTi;
-
-        uint boo = bdiv(BONE, normalizedWeight); 
-
-        uint tokenInRatio = bpow(poolRatio, boo);
-
-        uint newTokenBalanceIn = bmul(tokenInRatio, tokenBalanceIn);
-
-        uint tokenAmountInAfterFee = bsub(newTokenBalanceIn, tokenBalanceIn);
-
-        // Do reverse order of fees charged in joinswap_ExternAmountIn, this way 
-
-        //     ``` pAo == joinswap_ExternAmountIn(Ti, joinswap_PoolAmountOut(pAo, Ti)) ```
-
-        //uint tAi = tAiAfterFee / (1 - (1-weightTi) * swapFee) ;
-
-        uint zar = bmul(bsub(BONE, normalizedWeight), swapFee);
-
-        tokenAmountIn = bdiv(tokenAmountInAfterFee, bsub(BONE, zar));
-
-        return tokenAmountIn;
-
-    }
-
-
-
-    /**********************************************************************************************
-
-    // calcSingleOutGivenPoolIn                                                                  //
-
-    // tAo = tokenAmountOut            /      /                                             \\   //
-
-    // bO = tokenBalanceOut           /      // pS - (pAi * (1 - eF)) \     /    1    \      \\  //
-
-    // pAi = poolAmountIn            | bO - || ----------------------- | ^ | --------- | * b0 || //
-
-    // ps = poolSupply                \      \\          pS           /     \(wO / tW)/      //  //
-
-    // wI = tokenWeightIn      tAo =   \      \                                             //   //
-
-    // tW = totalWeight                    /     /      wO \       \                             //
-
-    // sF = swapFee                    *  | 1 - |  1 - ---- | * sF  |                            //
-
-    // eF = exitFee                        \     \      tW /       /                             //
-
-    **********************************************************************************************/
-
-    function calcSingleOutGivenPoolIn(
-
-        uint tokenBalanceOut,
-
-        uint tokenWeightOut,
-
-        uint poolSupply,
-
-        uint totalWeight,
-
-        uint poolAmountIn,
-
-        uint swapFee
-
-    )
-
-        public pure
-
-        returns (uint tokenAmountOut)
-
-    {
-
-        uint normalizedWeight = bdiv(tokenWeightOut, totalWeight);
-
-        // charge exit fee on the pool token side
-
-        // pAiAfterExitFee = pAi*(1-exitFee)
-
-        uint poolAmountInAfterExitFee = bmul(poolAmountIn, bsub(BONE, EXIT_FEE));
-
-        uint newPoolSupply = bsub(poolSupply, poolAmountInAfterExitFee);
-
-        uint poolRatio = bdiv(newPoolSupply, poolSupply);
-
-     
-
-        // newBalTo = poolRatio^(1/weightTo) * balTo;
-
-        uint tokenOutRatio = bpow(poolRatio, bdiv(BONE, normalizedWeight));
-
-        uint newTokenBalanceOut = bmul(tokenOutRatio, tokenBalanceOut);
-
-
-
-        uint tokenAmountOutBeforeSwapFee = bsub(tokenBalanceOut, newTokenBalanceOut);
-
-
-
-        // charge swap fee on the output token side 
-
-        //uint tAo = tAoBeforeSwapFee * (1 - (1-weightTo) * swapFee)
-
-        uint zaz = bmul(bsub(BONE, normalizedWeight), swapFee); 
-
-        tokenAmountOut = bmul(tokenAmountOutBeforeSwapFee, bsub(BONE, zaz));
-
-        return tokenAmountOut;
-
-    }
-
-
-
-    /**********************************************************************************************
-
-    // calcPoolInGivenSingleOut                                                                  //
-
-    // pAi = poolAmountIn               // /               tAo             \\     / wO \     \   //
-
-    // bO = tokenBalanceOut            // | bO - -------------------------- |\   | ---- |     \  //
-
-    // tAo = tokenAmountOut      pS - ||   \     1 - ((1 - (tO / tW)) * sF)/  | ^ \ tW /  * pS | //
-
-    // ps = poolSupply                 \\ -----------------------------------/                /  //
-
-    // wO = tokenWeightOut  pAi =       \\               bO                 /                /   //
-
-    // tW = totalWeight           -------------------------------------------------------------  //
-
-    // sF = swapFee                                        ( 1 - eF )                            //
-
-    // eF = exitFee                                                                              //
-
-    **********************************************************************************************/
-
-    function calcPoolInGivenSingleOut(
-
-        uint tokenBalanceOut,
-
-        uint tokenWeightOut,
-
-        uint poolSupply,
-
-        uint totalWeight,
-
-        uint tokenAmountOut,
-
-        uint swapFee,
-
-        uint reservesRatio
-
-    )
-
-        public pure
-
-        returns (uint poolAmountIn, uint reserves)
-
-    {
-
-
-
-        // charge swap fee on the output token side
-
-        uint normalizedWeight = bdiv(tokenWeightOut, totalWeight);
-
-        uint zar = bmul(bsub(BONE, normalizedWeight), swapFee);
-
-        uint tokenAmountOutBeforeSwapFee = bdiv(tokenAmountOut, bsub(BONE, zar));
-
-        reserves = calcReserves(tokenAmountOutBeforeSwapFee, tokenAmountOut, reservesRatio);
-
-
-
-        uint newTokenBalanceOut = bsub(tokenBalanceOut, tokenAmountOutBeforeSwapFee);
-
-        uint tokenOutRatio = bdiv(newTokenBalanceOut, tokenBalanceOut);
-
-
-
-        //uint newPoolSupply = (ratioTo ^ weightTo) * poolSupply;
-
-        uint poolRatio = bpow(tokenOutRatio, normalizedWeight);
-
-        uint newPoolSupply = bmul(poolRatio, poolSupply);
-
-        uint poolAmountInAfterExitFee = bsub(poolSupply, newPoolSupply);
-
-
-
-        // charge exit fee on the pool token side
-
-        // pAi = pAiAfterExitFee/(1-exitFee)
-
-        poolAmountIn = bdiv(poolAmountInAfterExitFee, bsub(BONE, EXIT_FEE));
-
-        return (poolAmountIn, reserves);
-
-    }
-
-
-
-    // `swapFeeAndReserves = amountWithFee - amountWithoutFee` is the swap fee in balancer.
-
-    // We divide `swapFeeAndReserves` into halves, `actualSwapFee` and `reserves`.
-
-    // `reserves` goes to the admin and `actualSwapFee` still goes to the liquidity
-
-    // providers.
-
-    function calcReserves(uint amountWithFee, uint amountWithoutFee, uint reservesRatio)
-
-        internal pure
-
-        returns (uint reserves)
-
-    {
-
-        require(amountWithFee >= amountWithoutFee);
-
-        require(reservesRatio <= BONE);
-
-        uint swapFeeAndReserves = bsub(amountWithFee, amountWithoutFee);
-
-        reserves = bmul(swapFeeAndReserves, reservesRatio);
-
-        require(swapFeeAndReserves >= reserves);
-
-    }
-
-
-
-}
-
-contract BPool is BBronze, BToken, BMath {
-
-
-
-    struct Record {
-
-        bool bound;   // is token bound to pool
-
-        uint index;   // private
-
-        uint denorm;  // denormalized weight
-
-        uint balance;
-
-    }
-
-
-
-    event LOG_SWAP(
-
-        address indexed caller,
-
-        address indexed tokenIn,
-
-        address indexed tokenOut,
-
-        uint256         tokenAmountIn,
-
-        uint256         tokenAmountOut
-
-    );
-
-
-
-    event LOG_JOIN(
-
-        address indexed caller,
-
-        address indexed tokenIn,
-
-        uint256         tokenAmountIn
-
-    );
-
-
-
-    event LOG_EXIT(
-
-        address indexed caller,
-
-        address indexed tokenOut,
-
-        uint256         tokenAmountOut
-
-    );
-
-
-
-    event LOG_DRAIN_RESERVES(
-
-        address indexed caller,
-
-        address indexed tokenOut,
-
-        uint256         tokenAmountOut
-
-    );
-
-
-
-    event LOG_CALL(
-
-        bytes4  indexed sig,
-
-        address indexed caller,
-
-        bytes           data
-
-    ) anonymous;
-
-
-
-    modifier _logs_() {
-
-        emit LOG_CALL(msg.sig, msg.sender, msg.data);
-
-        _;
-
-    }
-
-
-
-    modifier _lock_() {
-
-        require(!_mutex);
-
-        _mutex = true;
-
-        _;
-
-        _mutex = false;
-
-    }
-
-
-
-    modifier _viewlock_() {
-
-        require(!_mutex);
-
-        _;
-
-    }
-
-
-
-    bool private _mutex;
-
-
-
-    address private _factory;    // BFactory address to push token exitFee to
-
-    address private _controller; // has CONTROL role
-
-    bool private _publicSwap; // true if PUBLIC can call SWAP functions
-
-
-
-    // `setSwapFee` and `finalize` require CONTROL
-
-    // `finalize` sets `PUBLIC can SWAP`, `PUBLIC can JOIN`
-
-    uint private _swapFee;
-
-    uint private _reservesRatio;
-
-    bool private _finalized;
-
-
-
-    address[] private _tokens;
-
-    mapping(address=>Record) private  _records;
-
-    mapping(address=>uint) public totalReserves;
-
-
-
-    uint private _totalWeight;
-
-
-
-    constructor() public {
-
-        _controller = msg.sender;
-
-        _factory = msg.sender;
-
-        _swapFee = MIN_FEE;
-
-        _reservesRatio = DEFAULT_RESERVES_RATIO;
-
-        _publicSwap = false;
-
-        _finalized = false;
-
-    }
-
-
-
-    function isPublicSwap()
-
-        external view
-
-        returns (bool)
-
-    {
-
-        return _publicSwap;
-
-    }
-
-
-
-    function isFinalized()
-
-        external view
-
-        returns (bool)
-
-    {
-
-        return _finalized;
-
-    }
-
-
-
-    function isBound(address t)
-
-        external view
-
-        returns (bool)
-
-    {
-
-        return _records[t].bound;
-
-    }
-
-
-
-    function getNumTokens()
-
-        external view
-
-        returns (uint) 
-
-    {
-
-        return _tokens.length;
-
-    }
-
-
-
-    function getCurrentTokens()
-
-        external view _viewlock_
-
-        returns (address[] memory tokens)
-
-    {
-
-        return _tokens;
-
-    }
-
-
-
-    function getFinalTokens()
-
-        external view
-
-        _viewlock_
-
-        returns (address[] memory tokens)
-
-    {
-
-        require(_finalized);
-
-        return _tokens;
-
-    }
-
-
-
-    function getDenormalizedWeight(address token)
-
-        external view
-
-        _viewlock_
-
-        returns (uint)
-
-    {
-
-
-
-        require(_records[token].bound);
-
-        return _records[token].denorm;
-
-    }
-
-
-
-    function getTotalDenormalizedWeight()
-
-        external view
-
-        _viewlock_
-
-        returns (uint)
-
-    {
-
-        return _totalWeight;
-
-    }
-
-
-
-    function getNormalizedWeight(address token)
-
-        external view
-
-        _viewlock_
-
-        returns (uint)
-
-    {
-
-
-
-        require(_records[token].bound);
-
-        uint denorm = _records[token].denorm;
-
-        return bdiv(denorm, _totalWeight);
-
-    }
-
-
-
-    function getBalance(address token)
-
-        external view
-
-        _viewlock_
-
-        returns (uint)
-
-    {
-
-
-
-        require(_records[token].bound);
-
-        return _records[token].balance;
-
-    }
-
-
-
-    function getSwapFee()
-
-        external view
-
-        _viewlock_
-
-        returns (uint)
-
-    {
-
-        return _swapFee;
-
-    }
-
-
-
-    function getReservesRatio()
-
-        external view
-
-        _viewlock_
-
-        returns (uint)
-
-    {
-
-        return _reservesRatio;
-
-    }
-
-
-
-    function getController()
-
-        external view
-
-        _viewlock_
-
-        returns (address)
-
-    {
-
-        return _controller;
-
-    }
-
-
-
-    function setSwapFee(uint swapFee)
-
-        external
-
-        _logs_
-
-        _lock_
-
-    { 
-
-        require(!_finalized);
-
-        require(msg.sender == _controller);
-
-        require(swapFee >= MIN_FEE);
-
-        require(swapFee <= MAX_FEE);
-
-        _swapFee = swapFee;
-
-    }
-
-
-
-
-
-    function setReservesRatio(uint reservesRatio)
-
-        external
-
-        _logs_
-
-        _lock_
-
-    {
-
-        require(!_finalized);
-
-        require(msg.sender == _controller);
-
-        require(reservesRatio <= BONE);
-
-        _reservesRatio = reservesRatio;
-
-    }
-
-
-
-    function setController(address manager)
-
-        external
-
-        _logs_
-
-        _lock_
-
-    {
-
-        require(msg.sender == _controller);
-
-        _controller = manager;
-
-    }
-
-
-
-    function setPublicSwap(bool public_)
-
-        external
-
-        _logs_
-
-        _lock_
-
-    {
-
-        require(!_finalized);
-
-        require(msg.sender == _controller);
-
-        _publicSwap = public_;
-
-    }
-
-
-
-    function finalize()
-
-        external
-
-        _logs_
-
-        _lock_
-
-    {
-
-        require(msg.sender == _controller);
-
-        require(!_finalized);
-
-        require(_tokens.length >= MIN_BOUND_TOKENS);
-
-
-
-        _finalized = true;
-
-        _publicSwap = true;
-
-
-
-        _mintPoolShare(INIT_POOL_SUPPLY);
-
-        _pushPoolShare(msg.sender, INIT_POOL_SUPPLY);
-
-    }
-
-
-
-
-
-    function bind(address token, uint balance, uint denorm)
-
-        external
-
-        _logs_
-
-        // _lock_  Bind does not lock because it jumps to `rebind`, which does
-
-    {
-
-        require(msg.sender == _controller);
-
-        require(!_records[token].bound);
-
-        require(!_finalized);
-
-
-
-        require(_tokens.length < MAX_BOUND_TOKENS);
-
-
-
-        _records[token] = Record({
-
-            bound: true,
-
-            index: _tokens.length,
-
-            denorm: 0,    // balance and denorm will be validated
-
-            balance: 0   // and set by `rebind`
-
-        });
-
-        _tokens.push(token);
-
-        rebind(token, balance, denorm);
-
-    }
-
-
-
-    function rebind(address token, uint balance, uint denorm)
+    function getCdpStats(uint256 cdp)
 
         public
 
-        _logs_
+        view
 
-        _lock_
+        returns (
+
+            uint256,
+
+            uint256,
+
+            uint256
+
+        )
 
     {
 
+        address vat = IDssCdpManager(Constants.CDP_MANAGER).vat();
 
+        address urn = IDssCdpManager(Constants.CDP_MANAGER).urns(cdp);
 
-        require(msg.sender == _controller);
+        bytes32 ilk = IDssCdpManager(Constants.CDP_MANAGER).ilks(cdp);
 
-        require(_records[token].bound);
-
-        require(!_finalized);
-
-
-
-        require(denorm >= MIN_WEIGHT);
-
-        require(denorm <= MAX_WEIGHT);
-
-        require(balance >= MIN_BALANCE);
+        address usr = IDssCdpManager(Constants.CDP_MANAGER).owns(cdp);
 
 
 
-        // Adjust the denorm and totalWeight
+        (uint256 supplied, uint256 borrowed) = _getCdpSuppliedAndBorrowed(
 
-        uint oldWeight = _records[token].denorm;
+            vat,
 
-        if (denorm > oldWeight) {
+            usr,
 
-            _totalWeight = badd(_totalWeight, bsub(denorm, oldWeight));
+            urn,
 
-            require(_totalWeight <= MAX_TOTAL_WEIGHT);
+            ilk
 
-        } else if (denorm < oldWeight) {
-
-            _totalWeight = bsub(_totalWeight, bsub(oldWeight, denorm));
-
-        }        
-
-        _records[token].denorm = denorm;
+        );
 
 
 
-        // Adjust the balance record and actual token balance
+        uint256 ratio = daiUsdcRatio6[cdp];
 
-        uint oldBalance = _records[token].balance;
 
-        _records[token].balance = balance;
 
-        if (balance > oldBalance) {
+        // Note that supplied and borrowed are in 18 decimals
 
-            _pullUnderlying(token, msg.sender, bsub(balance, oldBalance));
+        // while DAI USDC ratio is in 6 decimals
 
-        } else if (balance < oldBalance) {
+        return (supplied, borrowed, ratio);
 
-            // In this case liquidity is being withdrawn, so charge EXIT_FEE
+    }
 
-            uint tokenBalanceWithdrawn = bsub(oldBalance, balance);
 
-            uint tokenExitFee = bmul(tokenBalanceWithdrawn, EXIT_FEE);
 
-            _pushUnderlying(token, msg.sender, bsub(tokenBalanceWithdrawn, tokenExitFee));
+    function setDaiUsdcRatio6(uint256 _cdp, uint256 _daiUsdcRatio6) public {
 
-            _pushUnderlying(token, _factory, tokenExitFee);
+        IDssCdpManager manager = IDssCdpManager(Constants.CDP_MANAGER);
+
+        address owner = manager.owns(_cdp);
+
+
+
+        require(
+
+            owner == msg.sender || manager.cdpCan(owner, _cdp, msg.sender) == 1,
+
+            "cdp-not-allowed"
+
+        );
+
+
+
+        daiUsdcRatio6[_cdp] = _daiUsdcRatio6;
+
+    }
+
+}
+
+interface ICurveFiCurve {
+
+    function get_virtual_price() external view returns (uint256 out);
+
+
+
+    function add_liquidity(uint256[2] calldata amounts, uint256 deadline)
+
+        external;
+
+
+
+    function get_dy(
+
+        int128 i,
+
+        int128 j,
+
+        uint256 dx
+
+    ) external view returns (uint256 out);
+
+
+
+    function get_dy_underlying(
+
+        int128 i,
+
+        int128 j,
+
+        uint256 dx
+
+    ) external view returns (uint256 out);
+
+
+
+    function exchange(
+
+        int128 i,
+
+        int128 j,
+
+        uint256 dx,
+
+        uint256 min_dy
+
+    ) external;
+
+
+
+    function exchange(
+
+        int128 i,
+
+        int128 j,
+
+        uint256 dx,
+
+        uint256 min_dy,
+
+        uint256 deadline
+
+    ) external;
+
+
+
+    function exchange_underlying(
+
+        int128 i,
+
+        int128 j,
+
+        uint256 dx,
+
+        uint256 min_dy
+
+    ) external;
+
+
+
+    function exchange_underlying(
+
+        int128 i,
+
+        int128 j,
+
+        uint256 dx,
+
+        uint256 min_dy,
+
+        uint256 deadline
+
+    ) external;
+
+
+
+    function remove_liquidity(
+
+        uint256 _amount,
+
+        uint256 deadline,
+
+        uint256[2] calldata min_amounts
+
+    ) external;
+
+
+
+    function remove_liquidity_imbalance(
+
+        uint256[2] calldata amounts,
+
+        uint256 deadline
+
+    ) external;
+
+
+
+    function commit_new_parameters(
+
+        int128 amplification,
+
+        int128 new_fee,
+
+        int128 new_admin_fee
+
+    ) external;
+
+
+
+    function apply_new_parameters() external;
+
+
+
+    function revert_new_parameters() external;
+
+
+
+    function commit_transfer_ownership(address _owner) external;
+
+
+
+    function apply_transfer_ownership() external;
+
+
+
+    function revert_transfer_ownership() external;
+
+
+
+    function withdraw_admin_fees() external;
+
+
+
+    function coins(int128 arg0) external returns (address out);
+
+
+
+    function underlying_coins(int128 arg0) external returns (address out);
+
+
+
+    function balances(int128 arg0) external returns (uint256 out);
+
+
+
+    function A() external returns (int128 out);
+
+
+
+    function fee() external returns (int128 out);
+
+
+
+    function admin_fee() external returns (int128 out);
+
+
+
+    function owner() external returns (address out);
+
+
+
+    function admin_actions_deadline() external returns (uint256 out);
+
+
+
+    function transfer_ownership_deadline() external returns (uint256 out);
+
+
+
+    function future_A() external returns (int128 out);
+
+
+
+    function future_fee() external returns (int128 out);
+
+
+
+    function future_admin_fee() external returns (int128 out);
+
+
+
+    function future_owner() external returns (address out);
+
+}
+
+contract DydxFlashloanBase {
+
+    using SafeMath for uint256;
+
+
+
+    // -- Internal Helper functions -- //
+
+
+
+    function _getMarketIdFromTokenAddress(address _solo, address token)
+
+        internal
+
+        view
+
+        returns (uint256)
+
+    {
+
+        ISoloMargin solo = ISoloMargin(_solo);
+
+
+
+        uint256 numMarkets = solo.getNumMarkets();
+
+
+
+        address curToken;
+
+        for (uint256 i = 0; i < numMarkets; i++) {
+
+            curToken = solo.getMarketTokenAddress(i);
+
+
+
+            if (curToken == token) {
+
+                return i;
+
+            }
+
+        }
+
+
+
+        revert("No marketId found for provided token");
+
+    }
+
+
+
+    function _getRepaymentAmount() internal pure returns (uint256) {
+
+        // Needs to be overcollateralize
+
+        // Needs to provide +2 wei to be safe
+
+        return 2;
+
+    }
+
+
+
+    function _getAccountInfo() internal view returns (Account.Info memory) {
+
+        return Account.Info({owner: address(this), number: 1});
+
+    }
+
+
+
+    function _getWithdrawAction(uint256 marketId, uint256 amount)
+
+        internal
+
+        view
+
+        returns (Actions.ActionArgs memory)
+
+    {
+
+        return
+
+            Actions.ActionArgs({
+
+                actionType: Actions.ActionType.Withdraw,
+
+                accountId: 0,
+
+                amount: Types.AssetAmount({
+
+                    sign: false,
+
+                    denomination: Types.AssetDenomination.Wei,
+
+                    ref: Types.AssetReference.Delta,
+
+                    value: amount
+
+                }),
+
+                primaryMarketId: marketId,
+
+                secondaryMarketId: 0,
+
+                otherAddress: address(this),
+
+                otherAccountId: 0,
+
+                data: ""
+
+            });
+
+    }
+
+
+
+    function _getCallAction(bytes memory data)
+
+        internal
+
+        view
+
+        returns (Actions.ActionArgs memory)
+
+    {
+
+        return
+
+            Actions.ActionArgs({
+
+                actionType: Actions.ActionType.Call,
+
+                accountId: 0,
+
+                amount: Types.AssetAmount({
+
+                    sign: false,
+
+                    denomination: Types.AssetDenomination.Wei,
+
+                    ref: Types.AssetReference.Delta,
+
+                    value: 0
+
+                }),
+
+                primaryMarketId: 0,
+
+                secondaryMarketId: 0,
+
+                otherAddress: address(this),
+
+                otherAccountId: 0,
+
+                data: data
+
+            });
+
+    }
+
+
+
+    function _getDepositAction(uint256 marketId, uint256 amount)
+
+        internal
+
+        view
+
+        returns (Actions.ActionArgs memory)
+
+    {
+
+        return
+
+            Actions.ActionArgs({
+
+                actionType: Actions.ActionType.Deposit,
+
+                accountId: 0,
+
+                amount: Types.AssetAmount({
+
+                    sign: true,
+
+                    denomination: Types.AssetDenomination.Wei,
+
+                    ref: Types.AssetReference.Delta,
+
+                    value: amount
+
+                }),
+
+                primaryMarketId: marketId,
+
+                secondaryMarketId: 0,
+
+                otherAddress: address(this),
+
+                otherAccountId: 0,
+
+                data: ""
+
+            });
+
+    }
+
+}
+
+library Account {
+
+    enum Status {Normal, Liquid, Vapor}
+
+    struct Info {
+
+        address owner; // The address that owns the account
+
+        uint256 number; // A nonce that allows a single address to control many accounts
+
+    }
+
+    struct Storage {
+
+        mapping(uint256 => Types.Par) balances; // Mapping from marketId to principal
+
+        Status status;
+
+    }
+
+}
+
+library Actions {
+
+    enum ActionType {
+
+        Deposit, // supply tokens
+
+        Withdraw, // borrow tokens
+
+        Transfer, // transfer balance between accounts
+
+        Buy, // buy an amount of some token (externally)
+
+        Sell, // sell an amount of some token (externally)
+
+        Trade, // trade tokens against another account
+
+        Liquidate, // liquidate an undercollateralized or expiring account
+
+        Vaporize, // use excess tokens to zero-out a completely negative account
+
+        Call // send arbitrary data to an address
+
+    }
+
+
+
+    struct ActionArgs {
+
+        ActionType actionType;
+
+        uint256 accountId;
+
+        Types.AssetAmount amount;
+
+        uint256 primaryMarketId;
+
+        uint256 secondaryMarketId;
+
+        address otherAddress;
+
+        uint256 otherAccountId;
+
+        bytes data;
+
+    }
+
+
+
+    struct DepositArgs {
+
+        Types.AssetAmount amount;
+
+        Account.Info account;
+
+        uint256 market;
+
+        address from;
+
+    }
+
+
+
+    struct WithdrawArgs {
+
+        Types.AssetAmount amount;
+
+        Account.Info account;
+
+        uint256 market;
+
+        address to;
+
+    }
+
+
+
+    struct CallArgs {
+
+        Account.Info account;
+
+        address callee;
+
+        bytes data;
+
+    }
+
+}
+
+library Decimal {
+
+    struct D256 {
+
+        uint256 value;
+
+    }
+
+}
+
+library Types {
+
+    enum AssetDenomination {
+
+        Wei, // the amount is denominated in wei
+
+        Par // the amount is denominated in par
+
+    }
+
+
+
+    enum AssetReference {
+
+        Delta, // the amount is given as a delta from the current value
+
+        Target // the amount is given as an exact number to end up at
+
+    }
+
+
+
+    struct AssetAmount {
+
+        bool sign; // true if positive
+
+        AssetDenomination denomination;
+
+        AssetReference ref;
+
+        uint256 value;
+
+    }
+
+
+
+    struct TotalPar {
+
+        uint128 borrow;
+
+        uint128 supply;
+
+    }
+
+
+
+    struct Par {
+
+        bool sign; // true if positive
+
+        uint128 value;
+
+    }
+
+
+
+    struct Wei {
+
+        bool sign; // true if positive
+
+        uint256 value;
+
+    }
+
+}
+
+interface ISoloMargin {
+
+    function getMarketTokenAddress(uint256 marketId)
+
+        external
+
+        view
+
+        returns (address);
+
+
+
+    function getNumMarkets() external view returns (uint256);
+
+
+
+    function operate(
+
+        Account.Info[] calldata accounts,
+
+        Actions.ActionArgs[] calldata actions
+
+    ) external;
+
+}
+
+interface ICallee {
+
+    // ============ external Functions ============
+
+
+
+    /**
+
+     * Allows users to send this contract arbitrary data.
+
+     *
+
+     * @param  sender       The msg.sender to Solo
+
+     * @param  accountInfo  The account from which the data is being sent
+
+     * @param  data         Arbitrary data given by the sender
+
+     */
+
+    function callFunction(
+
+        address sender,
+
+        Account.Info calldata accountInfo,
+
+        bytes calldata data
+
+    ) external;
+
+}
+
+interface GemLike {
+
+    function approve(address, uint256) external;
+
+
+
+    function transfer(address, uint256) external;
+
+
+
+    function transferFrom(
+
+        address,
+
+        address,
+
+        uint256
+
+    ) external;
+
+
+
+    function deposit() external payable;
+
+
+
+    function withdraw(uint256) external;
+
+}
+
+interface GemJoinLike {
+
+    function dec() external returns (uint256);
+
+
+
+    function gem() external returns (address);
+
+
+
+    function join(address, uint256) external payable;
+
+
+
+    function exit(address, uint256) external;
+
+}
+
+interface VatLike {
+
+    function can(address, address) external view returns (uint256);
+
+
+
+    function ilks(bytes32)
+
+        external
+
+        view
+
+        returns (
+
+            uint256,
+
+            uint256,
+
+            uint256,
+
+            uint256,
+
+            uint256
+
+        );
+
+
+
+    function dai(address) external view returns (uint256);
+
+
+
+    function urns(bytes32, address) external view returns (uint256, uint256);
+
+
+
+    function frob(
+
+        bytes32,
+
+        address,
+
+        address,
+
+        address,
+
+        int256,
+
+        int256
+
+    ) external;
+
+
+
+    function hope(address) external;
+
+
+
+    function move(
+
+        address,
+
+        address,
+
+        uint256
+
+    ) external;
+
+}
+
+interface JugLike {
+
+    function drip(bytes32) external returns (uint256);
+
+
+
+    function ilks(bytes32) external view returns (uint256, uint256);
+
+}
+
+interface DaiJoinLike {
+
+    function vat() external returns (VatLike);
+
+
+
+    function dai() external returns (GemLike);
+
+
+
+    function join(address, uint256) external payable;
+
+
+
+    function exit(address, uint256) external;
+
+}
+
+contract DssActionsBase {
+
+    uint256 constant RAY = 10**27;
+
+
+
+    using SafeMath for uint256;
+
+
+
+    function _convertTo18(address gemJoin, uint256 amt)
+
+        internal
+
+        returns (uint256 wad)
+
+    {
+
+        // For those collaterals that have less than 18 decimals precision we need to do the conversion before passing to frob function
+
+        // Adapters will automatically handle the difference of precision
+
+        wad = amt.mul(10**(18 - GemJoinLike(gemJoin).dec()));
+
+    }
+
+
+
+    function _toInt(uint256 x) internal pure returns (int256 y) {
+
+        y = int256(x);
+
+        require(y >= 0, "int-overflow");
+
+    }
+
+
+
+    function _toRad(uint256 wad) internal pure returns (uint256 rad) {
+
+        rad = wad.mul(10**27);
+
+    }
+
+
+
+    function _gemJoin_join(
+
+        address apt,
+
+        address urn,
+
+        uint256 wad,
+
+        bool transferFrom
+
+    ) internal {
+
+        // Only executes for tokens that have approval/transferFrom implementation
+
+        if (transferFrom) {
+
+            // Tokens already in address(this)
+
+            // GemLike(GemJoinLike(apt).gem()).transferFrom(msg.sender, address(this), wad);
+
+            // Approves adapter to take the token amount
+
+            GemLike(GemJoinLike(apt).gem()).approve(apt, wad);
+
+        }
+
+        // Joins token collateral into the vat
+
+        GemJoinLike(apt).join(urn, wad);
+
+    }
+
+
+
+    function _daiJoin_join(
+
+        address apt,
+
+        address urn,
+
+        uint256 wad
+
+    ) internal {
+
+        // Contract already has tokens
+
+        // Gets DAI from the user's wallet
+
+        // DaiJoinLike(apt).dai().transferFrom(msg.sender, address(this), wad);
+
+        // Approves adapter to take the DAI amount
+
+        DaiJoinLike(apt).dai().approve(apt, wad);
+
+        // Joins DAI into the vat
+
+        DaiJoinLike(apt).join(urn, wad);
+
+    }
+
+
+
+    function _getDrawDart(
+
+        address vat,
+
+        address jug,
+
+        address urn,
+
+        bytes32 ilk,
+
+        uint256 wad
+
+    ) internal returns (int256 dart) {
+
+        // Updates stability fee rate
+
+        uint256 rate = JugLike(jug).drip(ilk);
+
+
+
+        // Gets DAI balance of the urn in the vat
+
+        uint256 dai = VatLike(vat).dai(urn);
+
+
+
+        // If there was already enough DAI in the vat balance, just exits it without adding more debt
+
+        if (dai < wad.mul(RAY)) {
+
+            // Calculates the needed dart so together with the existing dai in the vat is enough to exit wad amount of DAI tokens
+
+            dart = _toInt(wad.mul(RAY).sub(dai) / rate);
+
+            // This is neeeded due lack of precision. It might need to sum an extra dart wei (for the given DAI wad amount)
+
+            dart = uint256(dart).mul(rate) < wad.mul(RAY) ? dart + 1 : dart;
 
         }
 
@@ -2000,1088 +1803,1798 @@ contract BPool is BBronze, BToken, BMath {
 
 
 
-    function unbind(address token)
+    function _getWipeDart(
 
-        external
+        address vat,
 
-        _logs_
+        uint256 dai,
 
-        _lock_
+        address urn,
 
-    {
+        bytes32 ilk
 
+    ) internal view returns (int256 dart) {
 
+        // Gets actual rate from the vat
 
-        require(msg.sender == _controller);
+        (, uint256 rate, , , ) = VatLike(vat).ilks(ilk);
 
-        require(_records[token].bound);
+        // Gets actual art value of the urn
 
-        require(!_finalized);
-
-
-
-        uint tokenBalance = _records[token].balance;
-
-        uint tokenExitFee = bmul(tokenBalance, EXIT_FEE);
+        (, uint256 art) = VatLike(vat).urns(ilk, urn);
 
 
 
-        _totalWeight = bsub(_totalWeight, _records[token].denorm);
+        // Uses the whole dai balance in the vat to reduce the debt
 
+        dart = _toInt(dai / rate);
 
+        // Checks the calculated dart is not higher than urn.art (total debt), otherwise uses its value
 
-        // Swap the token-to-unbind with the last token,
-
-        // then delete the last token
-
-        uint index = _records[token].index;
-
-        uint last = _tokens.length - 1;
-
-        _tokens[index] = _tokens[last];
-
-        _records[_tokens[index]].index = index;
-
-        _tokens.pop();
-
-        _records[token] = Record({
-
-            bound: false,
-
-            index: 0,
-
-            denorm: 0,
-
-            balance: 0
-
-        });
-
-
-
-        _pushUnderlying(token, msg.sender, bsub(tokenBalance, tokenExitFee));
-
-        _pushUnderlying(token, _factory, tokenExitFee);
+        dart = uint256(dart) <= art ? -dart : -_toInt(art);
 
     }
 
 
 
-    // Absorb any tokens that have been sent to this contract into the pool
+    function _getWipeAllWad(
 
-    function gulp(address token)
+        address vat,
 
-        external
+        address usr,
 
-        _logs_
+        address urn,
 
-        _lock_
+        bytes32 ilk
 
-    {
+    ) internal view returns (uint256 wad) {
 
-        require(_records[token].bound);
+        // Gets actual rate from the vat
 
-        _records[token].balance = IERC20(token).balanceOf(address(this));
+        (, uint256 rate, , , ) = VatLike(vat).ilks(ilk);
 
-    }
+        // Gets actual art value of the urn
 
+        (, uint256 art) = VatLike(vat).urns(ilk, urn);
 
+        // Gets actual dai amount in the urn
 
-    function seize(address token, uint amount)
-
-        external
-
-        _logs_
-
-        _lock_
-
-    {
-
-        require(msg.sender == _controller);
-
-        require(!_records[token].bound);
+        uint256 dai = VatLike(vat).dai(usr);
 
 
 
-        uint bal = IERC20(token).balanceOf(address(this));
+        uint256 rad = art.mul(rate).sub(dai);
 
-        require(amount <= bal);
+        wad = rad / RAY;
 
 
 
-        _pushUnderlying(token, msg.sender, amount);
+        // If the rad precision has some dust, it will need to request for 1 extra wad wei
+
+        wad = wad.mul(RAY) < rad ? wad + 1 : wad;
 
     }
 
 
 
-    function getSpotPrice(address tokenIn, address tokenOut)
+    function _getSuppliedAndBorrow(address gemJoin, uint256 cdp)
 
-        external view
+        internal
 
-        _viewlock_
-
-        returns (uint spotPrice)
+        returns (uint256, uint256)
 
     {
 
-        require(_records[tokenIn].bound);
+        IDssCdpManager manager = IDssCdpManager(Constants.CDP_MANAGER);
 
-        require(_records[tokenOut].bound);
 
-        Record storage inRecord = _records[tokenIn];
 
-        Record storage outRecord = _records[tokenOut];
+        address vat = manager.vat();
 
-        return calcSpotPrice(inRecord.balance, inRecord.denorm, outRecord.balance, outRecord.denorm, _swapFee);
+        bytes32 ilk = manager.ilks(cdp);
+
+
+
+        // Gets actual rate from the vat
+
+        (, uint256 rate, , , ) = VatLike(vat).ilks(ilk);
+
+        // Gets actual art value of the urn
+
+        (uint256 supplied, uint256 art) = VatLike(vat).urns(
+
+            ilk,
+
+            manager.urns(cdp)
+
+        );
+
+        // Gets actual dai amount in the urn
+
+        uint256 dai = VatLike(vat).dai(manager.owns(cdp));
+
+
+
+        uint256 rad = art.mul(rate).sub(dai);
+
+        uint256 wad = rad / RAY;
+
+
+
+        // If the rad precision has some dust, it will need to request for 1 extra wad wei
+
+        uint256 borrowed = wad.mul(RAY) < rad ? wad + 1 : wad;
+
+
+
+        // Convert back to native units
+
+        supplied = supplied.div(10**(18 - GemJoinLike(gemJoin).dec()));
+
+
+
+        return (supplied, borrowed);
 
     }
 
 
 
-    function getSpotPriceSansFee(address tokenIn, address tokenOut)
+    function _lockGemAndDraw(
 
-        external view
+        address gemJoin,
 
-        _viewlock_
+        uint256 cdp,
 
-        returns (uint spotPrice)
+        uint256 wadC,
 
-    {
+        uint256 wadD
 
-        require(_records[tokenIn].bound);
+    ) internal {
 
-        require(_records[tokenOut].bound);
-
-        Record storage inRecord = _records[tokenIn];
-
-        Record storage outRecord = _records[tokenOut];
-
-        return calcSpotPrice(inRecord.balance, inRecord.denorm, outRecord.balance, outRecord.denorm, 0);
-
-    }
+        IDssCdpManager manager = IDssCdpManager(Constants.CDP_MANAGER);
 
 
 
-    function joinPool(uint poolAmountOut, uint[] calldata maxAmountsIn)
+        address urn = manager.urns(cdp);
 
-        external
+        address vat = manager.vat();
 
-        _logs_
-
-        _lock_
-
-    {
-
-        require(_finalized);
+        bytes32 ilk = manager.ilks(cdp);
 
 
 
-        uint poolTotal = totalSupply();
+        // Receives ETH amount, converts it to WETH and joins it into the vat
 
-        uint ratio = bdiv(poolAmountOut, poolTotal);
-
-        require(ratio != 0);
+        _gemJoin_join(gemJoin, urn, wadC, true);
 
 
 
-        for (uint i = 0; i < _tokens.length; i++) {
+        // Locks GEM amount into the CDP and generates debt
 
-            address t = _tokens[i];
+        manager.frob(
 
-            uint bal = _records[t].balance;
+            cdp,
 
-            uint tokenAmountIn = bmul(ratio, bal);
+            _toInt(_convertTo18(gemJoin, wadC)),
 
-            require(tokenAmountIn != 0);
+            _getDrawDart(vat, Constants.MCD_JUG, urn, ilk, wadD)
 
-            require(tokenAmountIn <= maxAmountsIn[i]);
+        );
 
-            _records[t].balance = badd(_records[t].balance, tokenAmountIn);
 
-            emit LOG_JOIN(msg.sender, t, tokenAmountIn);
 
-            _pullUnderlying(t, msg.sender, tokenAmountIn);
+        // Moves the DAI amount (balance in the vat in rad) to proxy's address
+
+        manager.move(cdp, address(this), _toRad(wadD));
+
+
+
+        // Allows adapter to access to proxy's DAI balance in the vat
+
+        if (
+
+            VatLike(vat).can(address(this), address(Constants.MCD_JOIN_DAI)) ==
+
+            0
+
+        ) {
+
+            VatLike(vat).hope(Constants.MCD_JOIN_DAI);
 
         }
 
-        _mintPoolShare(poolAmountOut);
+        // Exits DAI to the user's wallet as a token
 
-        _pushPoolShare(msg.sender, poolAmountOut);
+        DaiJoinLike(Constants.MCD_JOIN_DAI).exit(address(this), wadD);
 
     }
 
 
 
-    function exitPool(uint poolAmountIn, uint[] calldata minAmountsOut)
+    function _wipeAllAndFreeGem(
+
+        address gemJoin,
+
+        uint256 cdp,
+
+        uint256 amtC
+
+    ) internal {
+
+        IDssCdpManager manager = IDssCdpManager(Constants.CDP_MANAGER);
+
+
+
+        address vat = manager.vat();
+
+        address urn = manager.urns(cdp);
+
+        bytes32 ilk = manager.ilks(cdp);
+
+        (, uint256 art) = VatLike(vat).urns(ilk, urn);
+
+
+
+        // Joins DAI amount into the vat
+
+        _daiJoin_join(
+
+            Constants.MCD_JOIN_DAI,
+
+            urn,
+
+            _getWipeAllWad(vat, urn, urn, ilk)
+
+        );
+
+        uint256 wadC = _convertTo18(gemJoin, amtC);
+
+        // Paybacks debt to the CDP and unlocks token amount from it
+
+        manager.frob(cdp, -_toInt(wadC), -int256(art));
+
+        // Moves the amount from the CDP urn to proxy's address
+
+        manager.flux(cdp, address(this), wadC);
+
+        // Exits token amount to the user's wallet as a token
+
+        GemJoinLike(gemJoin).exit(address(this), amtC);
+
+    }
+
+
+
+    function _openLockGemAndDraw(
+
+        address gemJoin,
+
+        bytes32 ilk,
+
+        uint256 amtC,
+
+        uint256 wadD
+
+    ) internal returns (uint256 cdp) {
+
+        cdp = IDssCdpManager(Constants.CDP_MANAGER).open(ilk, address(this));
+
+        _lockGemAndDraw(gemJoin, cdp, amtC, wadD);
+
+    }
+
+}
+
+interface IDSProxy {
+
+    function authority() external view returns (address);
+
+
+
+    function cache() external view returns (address);
+
+
+
+    function execute(address _target, bytes calldata _data)
 
         external
 
-        _logs_
+        payable
 
-        _lock_
-
-    {
-
-        require(_finalized);
+        returns (bytes memory response);
 
 
 
-        uint poolTotal = totalSupply();
+    function execute(bytes calldata _code, bytes calldata _data)
 
-        uint exitFee = bmul(poolAmountIn, EXIT_FEE);
+        external
 
-        uint pAiAfterExitFee = bsub(poolAmountIn, exitFee);
+        payable
 
-        uint ratio = bdiv(pAiAfterExitFee, poolTotal);
-
-        require(ratio != 0);
+        returns (address target, bytes memory response);
 
 
 
-        _pullPoolShare(msg.sender, poolAmountIn);
-
-        _pushPoolShare(_factory, exitFee);
-
-        _burnPoolShare(pAiAfterExitFee);
+    function owner() external view returns (address);
 
 
 
-        for (uint i = 0; i < _tokens.length; i++) {
-
-            address t = _tokens[i];
-
-            uint bal = _records[t].balance;
-
-            uint tokenAmountOut = bmul(ratio, bal);
-
-            require(tokenAmountOut != 0);
-
-            require(tokenAmountOut >= minAmountsOut[i]);
-
-            _records[t].balance = bsub(_records[t].balance, tokenAmountOut);
-
-            emit LOG_EXIT(msg.sender, t, tokenAmountOut);
-
-            _pushUnderlying(t, msg.sender, tokenAmountOut);
-
-        }
+    function setAuthority(address authority_) external;
 
 
 
-    }
+    function setCache(address _cacheAddr) external returns (bool);
 
 
 
+    function setOwner(address owner_) external;
+
+}
+
+interface IDssCdpManager {
+
+    function cdpAllow(
+
+        uint256 cdp,
+
+        address usr,
+
+        uint256 ok
+
+    ) external;
 
 
-    function swapExactAmountIn(
 
-        address tokenIn,
+    function cdpCan(
 
-        uint tokenAmountIn,
+        address,
 
-        address tokenOut,
+        uint256,
 
-        uint minAmountOut,
+        address
 
-        uint maxPrice
+    ) external view returns (uint256);
+
+
+
+    function cdpi() external view returns (uint256);
+
+
+
+    function count(address) external view returns (uint256);
+
+
+
+    function enter(address src, uint256 cdp) external;
+
+
+
+    function first(address) external view returns (uint256);
+
+
+
+    function flux(
+
+        bytes32 ilk,
+
+        uint256 cdp,
+
+        address dst,
+
+        uint256 wad
+
+    ) external;
+
+
+
+    function flux(
+
+        uint256 cdp,
+
+        address dst,
+
+        uint256 wad
+
+    ) external;
+
+
+
+    function frob(
+
+        uint256 cdp,
+
+        int256 dink,
+
+        int256 dart
+
+    ) external;
+
+
+
+    function give(uint256 cdp, address dst) external;
+
+
+
+    function ilks(uint256) external view returns (bytes32);
+
+
+
+    function last(address) external view returns (uint256);
+
+
+
+    function list(uint256) external view returns (uint256 prev, uint256 next);
+
+
+
+    function move(
+
+        uint256 cdp,
+
+        address dst,
+
+        uint256 rad
+
+    ) external;
+
+
+
+    function open(bytes32 ilk, address usr) external returns (uint256);
+
+
+
+    function owns(uint256) external view returns (address);
+
+
+
+    function quit(uint256 cdp, address dst) external;
+
+
+
+    function shift(uint256 cdpSrc, uint256 cdpDst) external;
+
+
+
+    function urnAllow(address usr, uint256 ok) external;
+
+
+
+    function urnCan(address, address) external view returns (uint256);
+
+
+
+    function urns(uint256) external view returns (address);
+
+
+
+    function vat() external view returns (address);
+
+}
+
+interface IDssProxyActions {
+
+    function cdpAllow(
+
+        address manager,
+
+        uint256 cdp,
+
+        address usr,
+
+        uint256 ok
+
+    ) external;
+
+
+
+    function daiJoin_join(
+
+        address apt,
+
+        address urn,
+
+        uint256 wad
+
+    ) external;
+
+
+
+    function draw(
+
+        address manager,
+
+        address jug,
+
+        address daiJoin,
+
+        uint256 cdp,
+
+        uint256 wad
+
+    ) external;
+
+
+
+    function enter(
+
+        address manager,
+
+        address src,
+
+        uint256 cdp
+
+    ) external;
+
+
+
+    function ethJoin_join(address apt, address urn) external payable;
+
+
+
+    function exitETH(
+
+        address manager,
+
+        address ethJoin,
+
+        uint256 cdp,
+
+        uint256 wad
+
+    ) external;
+
+
+
+    function exitGem(
+
+        address manager,
+
+        address gemJoin,
+
+        uint256 cdp,
+
+        uint256 amt
+
+    ) external;
+
+
+
+    function flux(
+
+        address manager,
+
+        uint256 cdp,
+
+        address dst,
+
+        uint256 wad
+
+    ) external;
+
+
+
+    function freeETH(
+
+        address manager,
+
+        address ethJoin,
+
+        uint256 cdp,
+
+        uint256 wad
+
+    ) external;
+
+
+
+    function freeGem(
+
+        address manager,
+
+        address gemJoin,
+
+        uint256 cdp,
+
+        uint256 amt
+
+    ) external;
+
+
+
+    function frob(
+
+        address manager,
+
+        uint256 cdp,
+
+        int256 dink,
+
+        int256 dart
+
+    ) external;
+
+
+
+    function gemJoin_join(
+
+        address apt,
+
+        address urn,
+
+        uint256 amt,
+
+        bool transferFrom
+
+    ) external;
+
+
+
+    function give(
+
+        address manager,
+
+        uint256 cdp,
+
+        address usr
+
+    ) external;
+
+
+
+    function giveToProxy(
+
+        address proxyRegistry,
+
+        address manager,
+
+        uint256 cdp,
+
+        address dst
+
+    ) external;
+
+
+
+    function hope(address obj, address usr) external;
+
+
+
+    function lockETH(
+
+        address manager,
+
+        address ethJoin,
+
+        uint256 cdp
+
+    ) external payable;
+
+
+
+    function lockETHAndDraw(
+
+        address manager,
+
+        address jug,
+
+        address ethJoin,
+
+        address daiJoin,
+
+        uint256 cdp,
+
+        uint256 wadD
+
+    ) external payable;
+
+
+
+    function lockGem(
+
+        address manager,
+
+        address gemJoin,
+
+        uint256 cdp,
+
+        uint256 amt,
+
+        bool transferFrom
+
+    ) external;
+
+
+
+    function lockGemAndDraw(
+
+        address manager,
+
+        address jug,
+
+        address gemJoin,
+
+        address daiJoin,
+
+        uint256 cdp,
+
+        uint256 amtC,
+
+        uint256 wadD,
+
+        bool transferFrom
+
+    ) external;
+
+
+
+    function makeGemBag(address gemJoin) external returns (address bag);
+
+
+
+    function move(
+
+        address manager,
+
+        uint256 cdp,
+
+        address dst,
+
+        uint256 rad
+
+    ) external;
+
+
+
+    function nope(address obj, address usr) external;
+
+
+
+    function open(
+
+        address manager,
+
+        bytes32 ilk,
+
+        address usr
+
+    ) external returns (uint256 cdp);
+
+
+
+    function openLockETHAndDraw(
+
+        address manager,
+
+        address jug,
+
+        address ethJoin,
+
+        address daiJoin,
+
+        bytes32 ilk,
+
+        uint256 wadD
+
+    ) external payable returns (uint256 cdp);
+
+
+
+    function openLockGNTAndDraw(
+
+        address manager,
+
+        address jug,
+
+        address gntJoin,
+
+        address daiJoin,
+
+        bytes32 ilk,
+
+        uint256 amtC,
+
+        uint256 wadD
+
+    ) external returns (address bag, uint256 cdp);
+
+
+
+    function openLockGemAndDraw(
+
+        address manager,
+
+        address jug,
+
+        address gemJoin,
+
+        address daiJoin,
+
+        bytes32 ilk,
+
+        uint256 amtC,
+
+        uint256 wadD,
+
+        bool transferFrom
+
+    ) external returns (uint256 cdp);
+
+
+
+    function quit(
+
+        address manager,
+
+        uint256 cdp,
+
+        address dst
+
+    ) external;
+
+
+
+    function safeLockETH(
+
+        address manager,
+
+        address ethJoin,
+
+        uint256 cdp,
+
+        address owner
+
+    ) external payable;
+
+
+
+    function safeLockGem(
+
+        address manager,
+
+        address gemJoin,
+
+        uint256 cdp,
+
+        uint256 amt,
+
+        bool transferFrom,
+
+        address owner
+
+    ) external;
+
+
+
+    function safeWipe(
+
+        address manager,
+
+        address daiJoin,
+
+        uint256 cdp,
+
+        uint256 wad,
+
+        address owner
+
+    ) external;
+
+
+
+    function safeWipeAll(
+
+        address manager,
+
+        address daiJoin,
+
+        uint256 cdp,
+
+        address owner
+
+    ) external;
+
+
+
+    function shift(
+
+        address manager,
+
+        uint256 cdpSrc,
+
+        uint256 cdpOrg
+
+    ) external;
+
+
+
+    function transfer(
+
+        address gem,
+
+        address dst,
+
+        uint256 amt
+
+    ) external;
+
+
+
+    function urnAllow(
+
+        address manager,
+
+        address usr,
+
+        uint256 ok
+
+    ) external;
+
+
+
+    function wipe(
+
+        address manager,
+
+        address daiJoin,
+
+        uint256 cdp,
+
+        uint256 wad
+
+    ) external;
+
+
+
+    function wipeAll(
+
+        address manager,
+
+        address daiJoin,
+
+        uint256 cdp
+
+    ) external;
+
+
+
+    function wipeAllAndFreeETH(
+
+        address manager,
+
+        address ethJoin,
+
+        address daiJoin,
+
+        uint256 cdp,
+
+        uint256 wadC
+
+    ) external;
+
+
+
+    function wipeAllAndFreeGem(
+
+        address manager,
+
+        address gemJoin,
+
+        address daiJoin,
+
+        uint256 cdp,
+
+        uint256 amtC
+
+    ) external;
+
+
+
+    function wipeAndFreeETH(
+
+        address manager,
+
+        address ethJoin,
+
+        address daiJoin,
+
+        uint256 cdp,
+
+        uint256 wadC,
+
+        uint256 wadD
+
+    ) external;
+
+
+
+    function wipeAndFreeGem(
+
+        address manager,
+
+        address gemJoin,
+
+        address daiJoin,
+
+        uint256 cdp,
+
+        uint256 amtC,
+
+        uint256 wadD
+
+    ) external;
+
+}
+
+interface IGetCdps {
+
+    function getCdpsAsc(address manager, address guy)
+
+        external
+
+        view
+
+        returns (
+
+            uint256[] memory ids,
+
+            address[] memory urns,
+
+            bytes32[] memory ilks
+
+        );
+
+
+
+    function getCdpsDesc(address manager, address guy)
+
+        external
+
+        view
+
+        returns (
+
+            uint256[] memory ids,
+
+            address[] memory urns,
+
+            bytes32[] memory ilks
+
+        );
+
+}
+
+interface IProxyRegistry {
+
+    function build() external returns (address proxy);
+
+
+
+    function proxies(address) external view returns (address);
+
+
+
+    function build(address owner) external returns (address proxy);
+
+}
+
+interface IOneSplit {
+
+    function getExpectedReturn(
+
+        address fromToken,
+
+        address destToken,
+
+        uint256 amount,
+
+        uint256 parts,
+
+        uint256 flags // See constants in IOneSplit.sol
 
     )
 
         external
 
-        _logs_
+        view
 
-        _lock_
+        returns (uint256 returnAmount, uint256[] memory distribution);
 
-        returns (uint tokenAmountOut, uint spotPriceAfter)
 
-    {
 
+    function swap(
 
+        address fromToken,
 
-        require(_records[tokenIn].bound);
+        address destToken,
 
-        require(_records[tokenOut].bound);
+        uint256 amount,
 
-        require(_publicSwap);
+        uint256 minReturn,
 
+        uint256[] calldata distribution,
 
+        uint256 flags
 
-        Record storage inRecord = _records[address(tokenIn)];
+    ) external payable returns (uint256 returnAmount);
 
-        Record storage outRecord = _records[address(tokenOut)];
+}
 
+interface UniswapRouterV2 {
 
+    function swapExactTokensForTokens(
 
-        require(tokenAmountIn <= bmul(inRecord.balance, MAX_IN_RATIO));
+        uint256 amountIn,
 
+        uint256 amountOutMin,
 
+        address[] calldata path,
 
-        uint spotPriceBefore = calcSpotPrice(
+        address to,
 
-                                    inRecord.balance,
+        uint256 deadline
 
-                                    inRecord.denorm,
+    ) external returns (uint256[] memory amounts);
 
-                                    outRecord.balance,
 
-                                    outRecord.denorm,
 
-                                    _swapFee
+    function addLiquidity(
 
-                                );
+        address tokenA,
 
-        require(spotPriceBefore <= maxPrice);
+        address tokenB,
 
+        uint256 amountADesired,
 
+        uint256 amountBDesired,
 
-        tokenAmountOut = calcOutGivenIn(
+        uint256 amountAMin,
 
-                            inRecord.balance,
+        uint256 amountBMin,
 
-                            inRecord.denorm,
+        address to,
 
-                            outRecord.balance,
-
-                            outRecord.denorm,
-
-                            tokenAmountIn,
-
-                            _swapFee
-
-                        );
-
-        require(tokenAmountOut >= minAmountOut);
-
-
-
-        uint tokenAmountOutZeroFee = calcOutGivenIn(
-
-                            inRecord.balance,
-
-                            inRecord.denorm,
-
-                            outRecord.balance,
-
-                            outRecord.denorm,
-
-                            tokenAmountIn,
-
-                            0
-
-                        );
-
-        uint reserves = calcReserves(
-
-            tokenAmountOutZeroFee,
-
-            tokenAmountOut,
-
-            _reservesRatio
-
-        );
-
-
-
-        inRecord.balance = badd(inRecord.balance, tokenAmountIn);
-
-        // Subtract `reserves`.
-
-        outRecord.balance = bsub(bsub(outRecord.balance, tokenAmountOut), reserves);
-
-
-
-        spotPriceAfter = calcSpotPrice(
-
-                                inRecord.balance,
-
-                                inRecord.denorm,
-
-                                outRecord.balance,
-
-                                outRecord.denorm,
-
-                                _swapFee
-
-                            );
-
-        require(spotPriceAfter >= spotPriceBefore);     
-
-        require(spotPriceAfter <= maxPrice);
-
-        require(spotPriceBefore <= bdiv(tokenAmountIn, tokenAmountOut));
-
-
-
-        emit LOG_SWAP(msg.sender, tokenIn, tokenOut, tokenAmountIn, tokenAmountOut);
-
-
-
-        totalReserves[address(tokenOut)] = badd(totalReserves[address(tokenOut)], reserves);
-
-
-
-        _pullUnderlying(tokenIn, msg.sender, tokenAmountIn);
-
-        _pushUnderlying(tokenOut, msg.sender, tokenAmountOut);
-
-
-
-        return (tokenAmountOut, spotPriceAfter);
-
-    }
-
-
-
-    function swapExactAmountOut(
-
-        address tokenIn,
-
-        uint maxAmountIn,
-
-        address tokenOut,
-
-        uint tokenAmountOut,
-
-        uint maxPrice
+        uint256 deadline
 
     )
 
         external
 
-        _logs_
+        returns (
 
-        _lock_ 
+            uint256 amountA,
 
-        returns (uint tokenAmountIn, uint spotPriceAfter)
+            uint256 amountB,
 
-    {
-
-        require(_records[tokenIn].bound);
-
-        require(_records[tokenOut].bound);
-
-        require(_publicSwap);
-
-
-
-        Record storage inRecord = _records[address(tokenIn)];
-
-        Record storage outRecord = _records[address(tokenOut)];
-
-
-
-        require(tokenAmountOut <= bmul(outRecord.balance, MAX_OUT_RATIO));
-
-
-
-        uint spotPriceBefore = calcSpotPrice(
-
-                                    inRecord.balance,
-
-                                    inRecord.denorm,
-
-                                    outRecord.balance,
-
-                                    outRecord.denorm,
-
-                                    _swapFee
-
-                                );
-
-        require(spotPriceBefore <= maxPrice);
-
-
-
-        tokenAmountIn = calcInGivenOut(
-
-                            inRecord.balance,
-
-                            inRecord.denorm,
-
-                            outRecord.balance,
-
-                            outRecord.denorm,
-
-                            tokenAmountOut,
-
-                            _swapFee
-
-                        );
-
-        require(tokenAmountIn <= maxAmountIn);
-
-
-
-        uint tokenAmountInZeroFee = calcInGivenOut(
-
-                            inRecord.balance,
-
-                            inRecord.denorm,
-
-                            outRecord.balance,
-
-                            outRecord.denorm,
-
-                            tokenAmountOut,
-
-                            0
-
-                        );
-
-        uint reserves = calcReserves(
-
-            tokenAmountIn,
-
-            tokenAmountInZeroFee,
-
-            _reservesRatio
+            uint256 liquidity
 
         );
 
 
 
-        // Subtract `reserves` which is reserved for admin.
+    function removeLiquidity(
 
-        inRecord.balance = bsub(badd(inRecord.balance, tokenAmountIn), reserves);
+        address tokenA,
 
-        outRecord.balance = bsub(outRecord.balance, tokenAmountOut);
+        address tokenB,
 
+        uint256 liquidity,
 
+        uint256 amountAMin,
 
-        spotPriceAfter = calcSpotPrice(
+        uint256 amountBMin,
 
-                                inRecord.balance,
+        address to,
 
-                                inRecord.denorm,
+        uint256 deadline
 
-                                outRecord.balance,
-
-                                outRecord.denorm,
-
-                                _swapFee
-
-                            );
-
-        require(spotPriceAfter >= spotPriceBefore);
-
-        require(spotPriceAfter <= maxPrice);
-
-        require(spotPriceBefore <= bdiv(tokenAmountIn, tokenAmountOut));
+    ) external returns (uint256 amountA, uint256 amountB);
 
 
 
-        emit LOG_SWAP(msg.sender, tokenIn, tokenOut, tokenAmountIn, tokenAmountOut);
+    function getAmountsOut(uint256 amountIn, address[] calldata path)
+
+        external
+
+        view
+
+        returns (uint256[] memory amounts);
 
 
 
-        totalReserves[address(tokenIn)] = badd(totalReserves[address(tokenIn)], reserves);
+    function getAmountsIn(uint256 amountOut, address[] calldata path)
+
+        external
+
+        view
+
+        returns (uint256[] memory amounts);
 
 
 
-        _pullUnderlying(tokenIn, msg.sender, tokenAmountIn);
+    function swapETHForExactTokens(
 
-        _pushUnderlying(tokenOut, msg.sender, tokenAmountOut);
+        uint256 amountOut,
+
+        address[] calldata path,
+
+        address to,
+
+        uint256 deadline
+
+    ) external payable returns (uint256[] memory amounts);
+
+}
+
+interface UniswapPair {
+
+    function getReserves()
+
+        external
+
+        view
+
+        returns (
+
+            uint112 reserve0,
+
+            uint112 reserve1,
+
+            uint32 blockTimestamp
+
+        );
+
+}
+
+interface WETH {
+
+    function deposit() external payable;
 
 
 
-        return (tokenAmountIn, spotPriceAfter);
+    function withdraw(uint256 wad) external;
+
+
+
+    function approve(address guy, uint256 wad) external returns (bool);
+
+
+
+    function transfer(address dst, uint256 wad) external returns (bool);
+
+}
+
+contract CloseShortDAI is ICallee, DydxFlashloanBase, DssActionsBase {
+
+    struct CSDParams {
+
+        uint256 cdpId; // CdpId to close
+
+        address curvePool; // Which curve pool to use
+
+        uint256 mintAmountDAI; // Amount of DAI to mint
+
+        uint256 withdrawAmountUSDC; // Amount of USDC to withdraw from vault
+
+        uint256 flashloanAmountWETH; // Amount of WETH flashloaned
 
     }
 
 
 
+    function callFunction(
 
+        address sender,
 
-    function joinswapExternAmountIn(address tokenIn, uint tokenAmountIn, uint minPoolAmountOut)
+        Account.Info memory account,
 
-        external
+        bytes memory data
 
-        _logs_
+    ) public override {
 
-        _lock_
-
-        returns (uint poolAmountOut)
-
-
-
-    {        
-
-        require(_finalized);
-
-        require(_records[tokenIn].bound);
-
-        require(tokenAmountIn <= bmul(_records[tokenIn].balance, MAX_IN_RATIO));
+        CSDParams memory csdp = abi.decode(data, (CSDParams));
 
 
 
-        Record storage inRecord = _records[tokenIn];
+        // Step 1. Have Flashloaned WETH
+
+        // Open WETH CDP in Maker, then Mint out some DAI
+
+        uint256 wethCdp = _openLockGemAndDraw(
+
+            Constants.MCD_JOIN_ETH_A,
+
+            Constants.ETH_A_ILK,
+
+            csdp.flashloanAmountWETH,
+
+            csdp.mintAmountDAI
+
+        );
 
 
 
-        uint reserves;
+        // Step 2.
 
-        (poolAmountOut, reserves) = calcPoolOutGivenSingleIn(
+        // Use flashloaned DAI to repay entire vault and withdraw USDC
 
-                            inRecord.balance,
+        _wipeAllAndFreeGem(
 
-                            inRecord.denorm,
+            Constants.MCD_JOIN_USDC_A,
 
-                            _totalSupply,
+            csdp.cdpId,
 
-                            _totalWeight,
+            csdp.withdrawAmountUSDC
 
-                            tokenAmountIn,
-
-                            _swapFee,
-
-                            _reservesRatio
-
-                        );
+        );
 
 
 
-        require(poolAmountOut >= minPoolAmountOut);
+        // Step 3.
+
+        // Converts USDC to DAI on CurveFi (To repay loan)
+
+        // DAI = 0 index, USDC = 1 index
+
+        ICurveFiCurve curve = ICurveFiCurve(csdp.curvePool);
+
+        // Calculate amount of USDC needed to exchange to repay flashloaned DAI
+
+        // Allow max of 5% slippage (otherwise no profits lmao)
+
+        uint256 usdcBal = IERC20(Constants.USDC).balanceOf(address(this));
+
+        require(
+
+            IERC20(Constants.USDC).approve(address(curve), usdcBal),
+
+            "erc20-approve-curvepool-failed"
+
+        );
+
+        curve.exchange_underlying(int128(1), int128(0), usdcBal, 0);
 
 
 
-        inRecord.balance = bsub(badd(inRecord.balance, tokenAmountIn), reserves);
+        // Step 4.
 
+        // Repay DAI loan back to WETH CDP and FREE WETH
 
+        _wipeAllAndFreeGem(
 
-        emit LOG_JOIN(msg.sender, tokenIn, tokenAmountIn);
+            Constants.MCD_JOIN_ETH_A,
 
+            wethCdp,
 
+            csdp.flashloanAmountWETH
 
-        totalReserves[address(tokenIn)] = badd(totalReserves[address(tokenIn)], reserves);
-
-
-
-        _mintPoolShare(poolAmountOut);
-
-        _pushPoolShare(msg.sender, poolAmountOut);
-
-        _pullUnderlying(tokenIn, msg.sender, tokenAmountIn);
-
-
-
-        return poolAmountOut;
+        );
 
     }
 
 
 
-    function joinswapPoolAmountOut(address tokenIn, uint poolAmountOut, uint maxAmountIn)
+    function flashloanAndClose(
 
-        external
+        address _sender,
 
-        _logs_
+        address _solo,
 
-        _lock_
+        address _curvePool,
 
-        returns (uint tokenAmountIn)
+        uint256 _cdpId,
 
-    {
+        uint256 _ethUsdRatio18 // 1 ETH = <X> DAI?
 
-        require(_finalized);
+    ) external payable {
 
-        require(_records[tokenIn].bound);
-
-
-
-        Record storage inRecord = _records[tokenIn];
+        require(msg.value == 2, "!fee");
 
 
 
-        tokenAmountIn = calcSingleInGivenPoolOut(
-
-                            inRecord.balance,
-
-                            inRecord.denorm,
-
-                            _totalSupply,
-
-                            _totalWeight,
-
-                            poolAmountOut,
-
-                            _swapFee
-
-                        );
+        ISoloMargin solo = ISoloMargin(_solo);
 
 
 
-        require(tokenAmountIn != 0);
-
-        require(tokenAmountIn <= maxAmountIn);
-
-        
-
-        require(tokenAmountIn <= bmul(_records[tokenIn].balance, MAX_IN_RATIO));
+        uint256 marketId = _getMarketIdFromTokenAddress(_solo, Constants.WETH);
 
 
 
-        uint tokenAmountInZeroFee = calcSingleInGivenPoolOut(
+        // Supplied = How much we want to withdraw
 
-            inRecord.balance,
+        // Borrowed = How much we want to loan
 
-            inRecord.denorm,
+        (
 
-            _totalSupply,
+            uint256 withdrawAmountUSDC,
 
-            _totalWeight,
+            uint256 mintAmountDAI
 
-            poolAmountOut,
+        ) = _getSuppliedAndBorrow(Constants.MCD_JOIN_USDC_A, _cdpId);
+
+
+
+        // Given, ETH price, calculate how much WETH we need to flashloan
+
+        // Dividing by 2 to gives us 200% col ratio
+
+        uint256 flashloanAmountWETH = mintAmountDAI.mul(1 ether).div(
+
+            _ethUsdRatio18.div(2)
+
+        );
+
+
+
+        require(
+
+            IERC20(Constants.WETH).balanceOf(_solo) >= flashloanAmountWETH,
+
+            "!weth-supply"
+
+        );
+
+
+
+        // Wrap ETH into WETH
+
+        WETH(Constants.WETH).deposit{value: msg.value}();
+
+        WETH(Constants.WETH).approve(_solo, flashloanAmountWETH.add(msg.value));
+
+
+
+        Actions.ActionArgs[] memory operations = new Actions.ActionArgs[](3);
+
+
+
+        operations[0] = _getWithdrawAction(marketId, flashloanAmountWETH);
+
+        operations[1] = _getCallAction(
+
+            abi.encode(
+
+                CSDParams({
+
+                    mintAmountDAI: mintAmountDAI,
+
+                    withdrawAmountUSDC: withdrawAmountUSDC,
+
+                    flashloanAmountWETH: flashloanAmountWETH,
+
+                    cdpId: _cdpId,
+
+                    curvePool: _curvePool
+
+                })
+
+            )
+
+        );
+
+        operations[2] = _getDepositAction(
+
+            marketId,
+
+            flashloanAmountWETH.add(msg.value)
+
+        );
+
+
+
+        Account.Info[] memory accountInfos = new Account.Info[](1);
+
+        accountInfos[0] = _getAccountInfo();
+
+
+
+        solo.operate(accountInfos, operations);
+
+
+
+        // Convert DAI leftovers to USDC
+
+        uint256 daiBal = IERC20(Constants.DAI).balanceOf(address(this));
+
+        require(
+
+            IERC20(Constants.DAI).approve(_curvePool, daiBal),
+
+            "erc20-approve-curvepool-failed"
+
+        );
+
+        ICurveFiCurve(_curvePool).exchange_underlying(
+
+            int128(0),
+
+            int128(1),
+
+            daiBal,
 
             0
 
         );
 
-        uint reserves = calcReserves(
 
-            tokenAmountIn,
 
-            tokenAmountInZeroFee,
+        // Refund leftovers
 
-            _reservesRatio
+        IERC20(Constants.USDC).transfer(
+
+            _sender,
+
+            IERC20(Constants.USDC).balanceOf(address(this))
 
         );
 
+    }
 
+}
 
-        inRecord.balance = bsub(badd(inRecord.balance, tokenAmountIn), reserves);
+contract OpenShortDAI is ICallee, DydxFlashloanBase, DssActionsBase {
 
+    // LeveragedShortDAI Params
 
+    struct OSDParams {
 
-        emit LOG_JOIN(msg.sender, tokenIn, tokenAmountIn);
+        uint256 cdpId; // CDP Id to leverage
 
+        uint256 mintAmountDAI; // Amount of DAI to mint
 
+        uint256 flashloanAmountWETH; // Amount of WETH flashloaned
 
-        totalReserves[address(tokenIn)] = badd(totalReserves[address(tokenIn)], reserves);
-
-
-
-        _mintPoolShare(poolAmountOut);
-
-        _pushPoolShare(msg.sender, poolAmountOut);
-
-        _pullUnderlying(tokenIn, msg.sender, tokenAmountIn);
-
-
-
-        return tokenAmountIn;
+        address curvePool;
 
     }
 
 
 
-    function exitswapPoolAmountIn(address tokenOut, uint poolAmountIn, uint minAmountOut)
+    function callFunction(
 
-        external
+        address sender,
 
-        _logs_
+        Account.Info memory account,
 
-        _lock_
+        bytes memory data
 
-        returns (uint tokenAmountOut)
+    ) public override {
 
-    {
-
-        require(_finalized);
-
-        require(_records[tokenOut].bound);
+        OSDParams memory osdp = abi.decode(data, (OSDParams));
 
 
 
-        Record storage outRecord = _records[tokenOut];
+        // Step 1. Have Flashloaned WETH
+
+        // Open WETH CDP in Maker, then Mint out some DAI
+
+        uint256 wethCdp = _openLockGemAndDraw(
+
+            Constants.MCD_JOIN_ETH_A,
+
+            Constants.ETH_A_ILK,
+
+            osdp.flashloanAmountWETH,
+
+            osdp.mintAmountDAI
+
+        );
 
 
 
-        tokenAmountOut = calcSingleOutGivenPoolIn(
+        // Step 2.
 
-                            outRecord.balance,
+        // Converts Flashloaned DAI to USDC on CurveFi
 
-                            outRecord.denorm,
+        // DAI = 0 index, USDC = 1 index
 
-                            _totalSupply,
+        require(
 
-                            _totalWeight,
+            IERC20(Constants.DAI).approve(osdp.curvePool, osdp.mintAmountDAI),
 
-                            poolAmountIn,
+            "!curvepool-approved"
 
-                            _swapFee
+        );
 
-                        );
+        ICurveFiCurve(osdp.curvePool).exchange_underlying(
 
+            int128(0),
 
+            int128(1),
 
-        require(tokenAmountOut >= minAmountOut);
-
-        
-
-        require(tokenAmountOut <= bmul(_records[tokenOut].balance, MAX_OUT_RATIO));
-
-
-
-        uint tokenAmountOutZeroFee = calcSingleOutGivenPoolIn(
-
-            outRecord.balance,
-
-            outRecord.denorm,
-
-            _totalSupply,
-
-            _totalWeight,
-
-            poolAmountIn,
+            osdp.mintAmountDAI,
 
             0
 
         );
 
-        uint reserves = calcReserves(
 
-            tokenAmountOutZeroFee,
 
-            tokenAmountOut,
+        // Step 3.
 
-            _reservesRatio
+        // Locks up USDC and borrow just enough DAI to repay WETH CDP
+
+        uint256 supplyAmount = IERC20(Constants.USDC).balanceOf(address(this));
+
+        _lockGemAndDraw(
+
+            Constants.MCD_JOIN_USDC_A,
+
+            osdp.cdpId,
+
+            supplyAmount,
+
+            osdp.mintAmountDAI
 
         );
 
 
 
-        outRecord.balance = bsub(bsub(outRecord.balance, tokenAmountOut), reserves);
+        // Step 4.
 
+        // Repay DAI loan back to WETH CDP and FREE WETH
 
+        _wipeAllAndFreeGem(
 
-        uint exitFee = bmul(poolAmountIn, EXIT_FEE);
+            Constants.MCD_JOIN_ETH_A,
 
+            wethCdp,
 
+            osdp.flashloanAmountWETH
 
-        emit LOG_EXIT(msg.sender, tokenOut, tokenAmountOut);
-
-
-
-        totalReserves[address(tokenOut)] = badd(totalReserves[address(tokenOut)], reserves);
-
-
-
-        _pullPoolShare(msg.sender, poolAmountIn);
-
-        _burnPoolShare(bsub(poolAmountIn, exitFee));
-
-        _pushPoolShare(_factory, exitFee);
-
-        _pushUnderlying(tokenOut, msg.sender, tokenAmountOut);
-
-
-
-        return tokenAmountOut;
+        );
 
     }
 
 
 
-    function exitswapExternAmountOut(address tokenOut, uint tokenAmountOut, uint maxPoolAmountIn)
+    function flashloanAndOpen(
 
-        external
+        address _sender,
 
-        _logs_
+        address _solo,
 
-        _lock_
+        address _curvePool,
 
-        returns (uint poolAmountIn)
+        uint256 _cdpId,
 
-    {
+        uint256 _initialMarginUSDC,
 
-        require(_finalized);
+        uint256 _mintAmountDAI,
 
-        require(_records[tokenOut].bound);
+        uint256 _flashloanAmountWETH
 
-        require(tokenAmountOut <= bmul(_records[tokenOut].balance, MAX_OUT_RATIO));
+    ) external payable {
 
-
-
-        Record storage outRecord = _records[tokenOut];
+        require(msg.value == 2, "!fee");
 
 
 
-        uint reserves;
+        require(
 
-        (poolAmountIn, reserves) = calcPoolInGivenSingleOut(
+            IERC20(Constants.WETH).balanceOf(_solo) >= _flashloanAmountWETH,
 
-                            outRecord.balance,
+            "!weth-supply"
 
-                            outRecord.denorm,
-
-                            _totalSupply,
-
-                            _totalWeight,
-
-                            tokenAmountOut,
-
-                            _swapFee,
-
-                            _reservesRatio
-
-                        );
+        );
 
 
 
-        require(poolAmountIn != 0);
+        // Gets USDC
 
-        require(poolAmountIn <= maxPoolAmountIn);
+        require(
 
+            IERC20(Constants.USDC).transferFrom(
 
+                msg.sender,
 
-        outRecord.balance = bsub(bsub(outRecord.balance, tokenAmountOut), reserves);
+                address(this),
 
+                _initialMarginUSDC
 
+            ),
 
-        uint exitFee = bmul(poolAmountIn, EXIT_FEE);
+            "initial-margin-transferFrom-failed"
 
-
-
-        emit LOG_EXIT(msg.sender, tokenOut, tokenAmountOut);
-
-
-
-        totalReserves[address(tokenOut)] = badd(totalReserves[address(tokenOut)], reserves);
+        );
 
 
 
-        _pullPoolShare(msg.sender, poolAmountIn);
-
-        _burnPoolShare(bsub(poolAmountIn, exitFee));
-
-        _pushPoolShare(_factory, exitFee);
-
-        _pushUnderlying(tokenOut, msg.sender, tokenAmountOut);        
+        ISoloMargin solo = ISoloMargin(_solo);
 
 
 
-        return poolAmountIn;
+        // Get marketId from token address
+
+        uint256 marketId = _getMarketIdFromTokenAddress(_solo, Constants.WETH);
+
+
+
+        // Wrap ETH into WETH
+
+        WETH(Constants.WETH).deposit{value: msg.value}();
+
+        WETH(Constants.WETH).approve(
+
+            _solo,
+
+            _flashloanAmountWETH.add(msg.value)
+
+        );
+
+
+
+        // 1. Withdraw $
+
+        // 2. Call callFunction(...)
+
+        // 3. Deposit back $
+
+        Actions.ActionArgs[] memory operations = new Actions.ActionArgs[](3);
+
+
+
+        operations[0] = _getWithdrawAction(marketId, _flashloanAmountWETH);
+
+        operations[1] = _getCallAction(
+
+            // Encode OSDParams for callFunction
+
+            abi.encode(
+
+                OSDParams({
+
+                    mintAmountDAI: _mintAmountDAI,
+
+                    flashloanAmountWETH: _flashloanAmountWETH,
+
+                    cdpId: _cdpId,
+
+                    curvePool: _curvePool
+
+                })
+
+            )
+
+        );
+
+        operations[2] = _getDepositAction(
+
+            marketId,
+
+            _flashloanAmountWETH.add(msg.value)
+
+        );
+
+
+
+        Account.Info[] memory accountInfos = new Account.Info[](1);
+
+        accountInfos[0] = _getAccountInfo();
+
+
+
+        solo.operate(accountInfos, operations);
+
+
+
+        // Refund user any ERC20 leftover
+
+        IERC20(Constants.DAI).transfer(
+
+            _sender,
+
+            IERC20(Constants.DAI).balanceOf(address(this))
+
+        );
+
+        IERC20(Constants.USDC).transfer(
+
+            _sender,
+
+            IERC20(Constants.USDC).balanceOf(address(this))
+
+        );
 
     }
-
-
-
-    function drainTotalReserves(address reservesAddress)
-
-        external
-
-        _logs_
-
-        _lock_
-
-    {
-
-        require(msg.sender == _factory);
-
-
-
-        for (uint i = 0; i < _tokens.length; i++) {
-
-            address t = _tokens[i];
-
-            uint tokenAmountOut = totalReserves[t];
-
-            totalReserves[t] = 0;
-
-            emit LOG_DRAIN_RESERVES(reservesAddress, t, tokenAmountOut);
-
-            _pushUnderlying(t, reservesAddress, tokenAmountOut);
-
-        }
-
-    }
-
-
-
-    // ==
-
-    // 'Underlying' token-manipulation functions make external calls but are NOT locked
-
-    // You must `_lock_` or otherwise ensure reentry-safety
-
-
-
-    function _pullUnderlying(address erc20, address from, uint amount)
-
-        internal
-
-    {
-
-        bool xfer = IERC20(erc20).transferFrom(from, address(this), amount);
-
-        require(xfer);
-
-    }
-
-
-
-    function _pushUnderlying(address erc20, address to, uint amount)
-
-        internal
-
-    {
-
-        bool xfer = IERC20(erc20).transfer(to, amount);
-
-        require(xfer);
-
-    }
-
-
-
-    function _pullPoolShare(address from, uint amount)
-
-        internal
-
-    {
-
-        _pull(from, amount);
-
-    }
-
-
-
-    function _pushPoolShare(address to, uint amount)
-
-        internal
-
-    {
-
-        _push(to, amount);
-
-    }
-
-
-
-    function _mintPoolShare(uint amount)
-
-        internal
-
-    {
-
-        _mint(amount);
-
-    }
-
-
-
-    function _burnPoolShare(uint amount)
-
-        internal
-
-    {
-
-        _burn(amount);
-
-    }
-
-
 
 }

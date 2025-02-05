@@ -1,138 +1,150 @@
-pragma solidity ^0.4.24;
-
 /**
- * @title SafeMath
- * @dev Math operations with safety checks that throw on error
- */
+ *Submitted for verification at Etherscan.io on 2021-02-17
+*/
+
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.6.7;
+
 library SafeMath {
-  function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-    uint256 c = a * b;
-    assert(a == 0 || c / a == b);
-    return c;
-  }
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a, "SafeMath: addition overflow");
 
-  function div(uint256 a, uint256 b) internal pure returns (uint256) {
-    // assert(b > 0); // Solidity automatically throws when dividing by 0
-    uint256 c = a / b;
-    // assert(a == b * c + a % b); // There is no case in which this doesn&#39;t hold
-    return c;
-  }
+        return c;
+    }
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        return sub(a, b, "SafeMath: subtraction overflow");
+    }
+    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b <= a, errorMessage);
+        uint256 c = a - b;
 
-  function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-    assert(b <= a);
-    return a - b;
-  }
+        return c;
+    }
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+        // benefit is lost if 'b' is also tested.
+        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
+        if (a == 0) {
+            return 0;
+        }
 
-  function add(uint256 a, uint256 b) internal pure returns (uint256) {
-    uint256 c = a + b;
-    assert(c >= a);
-    return c;
-  }
+        uint256 c = a * b;
+        require(c / a == b, "SafeMath: multiplication overflow");
+
+        return c;
+    }
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        return div(a, b, "SafeMath: division by zero");
+    }
+    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        // Solidity only automatically asserts when dividing by 0
+        require(b > 0, errorMessage);
+        uint256 c = a / b;
+        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+
+        return c;
+    }
+    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+        return mod(a, b, "SafeMath: modulo by zero");
+    }
+    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b != 0, errorMessage);
+        return a % b;
+    }
 }
 
-/**
- * @title ERC20 interface
- * @dev see https://github.com/ethereum/EIPs/issues/20
- */
-contract ERC20 {
-  uint256 public totalSupply;
-  function balanceOf(address who) public view returns (uint256);
-  function transfer(address to, uint256 value) public returns (bool);
-  function allowance(address owner, address spender) public view returns (uint256);
-  function transferFrom(address from, address to, uint256 value) public returns (bool);
-  function approve(address spender, uint256 value) public returns (bool);
-  event Transfer(address indexed from, address indexed to, uint256 value);
-  event Approval(address indexed owner, address indexed spender, uint256 value);
+interface IERC1155 {
+    function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes calldata _data) external;
 }
 
-/**
- * @title Standard ERC20 token
- *
- * @dev Implementation of the basic standard token.
- * @dev https://github.com/ethereum/EIPs/issues/20
- * @dev Based on code by FirstBlood: https://github.com/Firstbloodio/token/blob/master/smart_contract/FirstBloodToken.sol
- */
-contract StandardToken is ERC20 {
-  using SafeMath for uint256;
+contract EnglishAuction {
+    using SafeMath for uint256;
 
-  mapping(address => uint256) balances;
-  mapping (address => mapping (address => uint256)) allowed;
+    // System settings
+    uint256 public id;
+    address public token;
+    bool public ended = false;
+    uint256 public startBidTime;
+    address payable public haus;
+    address payable public seller;
+    uint256 public bidLength = 24 hours;
+    uint256 public auctionLength = 24 hours;
 
-  /**
-   * @dev Gets the balance of the specified address.
-   * @param _owner The address to query the the balance of.
-   * @return An uint256 representing the amount owned by the passed address.
-   */
-  function balanceOf(address _owner) public view returns (uint256 balance) {
-    return balances[_owner];
-  }
+    // Current winning bid
+    uint256 public lastBid;
+    uint256 public lastBidTime;
+    address payable public winning;
 
-  /**
-   * @dev transfer token for a specified address
-   * @param _to The address to transfer to.
-   * @param _value The amount to be transferred.
-   */
-  function transfer(address _to, uint256 _value) public returns (bool) {
-    require(_to != address(0));
+    event Bid(address who, uint256 amount);
+    event Won(address who, uint256 amount);
 
-    // SafeMath.sub will throw if there is not enough balance.
-    balances[msg.sender] = balances[msg.sender].sub(_value);
-    balances[_to] = balances[_to].add(_value);
-    emit Transfer(msg.sender, _to, _value);
-    return true;
-  }
+    constructor(uint256 _start, address payable _seller, address payable _haus) public {
+        token = address(0x13bAb10a88fc5F6c77b87878d71c9F1707D2688A);
+        id = 31;
+        startBidTime = _start;
+        lastBid = 0.55 ether;
+        seller = _seller;
+        haus = _haus;
+    }
 
-  /**
-   * @dev Transfer tokens from one address to another
-   * @param _from address The address which you want to send tokens from
-   * @param _to address The address which you want to transfer to
-   * @param _value uint256 the amount of tokens to be transferred
-   */
-  function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-    uint256 _allowance = allowed[_from][msg.sender];
-    require(_to != address(0));
-    require (_value <= _allowance);
-    balances[_from] = balances[_from].sub(_value);
-    balances[_to] = balances[_to].add(_value);
-    allowed[_from][msg.sender] = _allowance.sub(_value);
-    emit Transfer(_from, _to, _value);
-    return true;
-  }
+    function bid() public payable {
+        require(msg.sender == tx.origin, "no contracts");
+        require(block.timestamp >= startBidTime, "Auction not started");
+        require(block.timestamp < startBidTime.add(auctionLength), "Auction ended");
+        require(msg.value >= lastBid.mul(105).div(100), "Bid too small");
 
-  /**
-   * @dev Approve the passed address to spend the specified amount of tokens on behalf of msg.sender.
-   * @param _spender The address which will spend the funds.
-   * @param _value The amount of tokens to be spent.
-   */
-  function approve(address _spender, uint256 _value) public returns (bool) {
-    // To change the approve amount you first have to reduce the addresses`
-    //  allowance to zero by calling `approve(_spender, 0)` if it is not
-    //  already 0 to mitigate the race condition described here:
-    //  https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-    require((_value == 0) || (allowed[msg.sender][_spender] == 0));
-    allowed[msg.sender][_spender] = _value;
-    emit Approval(msg.sender, _spender, _value);
-    return true;
-  }
+        // Give back the last bidders money
+        if (lastBidTime != 0) {
+            require(block.timestamp < lastBidTime.add(bidLength), "Auction ended");
+            winning.transfer(lastBid);
+        }
 
-  /**
-   * @dev Function to check the amount of tokens that an owner allowed to a spender.
-   * @param _owner address The address which owns the funds.
-   * @param _spender address The address which will spend the funds.
-   * @return A uint256 specifying the amount of tokens still available for the spender.
-   */
-  function allowance(address _owner, address _spender) public view returns (uint256 remaining) {
-    return allowed[_owner][_spender];
-  }
-}
+        lastBid = msg.value;
+        winning = msg.sender;
+        lastBidTime = block.timestamp;
 
-contract CatToken is StandardToken {
-  string public constant name = "Cat Token";
-  string public constant symbol = "CATT";
-  uint8 public constant decimals = 18;
+        emit Bid(msg.sender, msg.value);
+    }
 
-  constructor() public {
-    totalSupply = 250000000000000000000000000;
-    balances[msg.sender] = totalSupply;
-  }
+    function end() public {
+        require(!ended, "end already called");
+        require(lastBidTime != 0, "no bids");
+        require(block.timestamp >= lastBidTime.add(bidLength) || block.timestamp >= startBidTime.add(auctionLength), "Auction live");
+
+        // transfer erc1155 to winner
+        IERC1155(token).safeTransferFrom(address(this), winning, id, 1, new bytes(0x0));
+
+        uint256 balance = address(this).balance;
+        uint256 hausFee = balance.div(20).mul(3);
+        haus.transfer(hausFee);
+        seller.transfer(address(this).balance);
+
+        ended = true;
+
+        emit Won(winning, lastBid);
+    }
+
+    function pull() public {
+        require(!ended, "end already called");
+        require(lastBidTime == 0, "There were bids");
+        require(block.timestamp >= startBidTime.add(auctionLength), "Auction live");
+
+        // transfer erc1155 to seller
+        IERC1155(token).safeTransferFrom(address(this), seller, id, 1, new bytes(0x0));
+
+        ended = true;
+    }
+
+    function live() external view returns(bool) {
+        if (block.timestamp < lastBidTime.add(bidLength) && block.timestamp < startBidTime.add(auctionLength)) {
+            return true;
+        }
+        return false;
+    }
+
+    function onERC1155Received(address, address, uint256, uint256, bytes calldata) external pure returns(bytes4) {
+        return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
+    }
+
 }

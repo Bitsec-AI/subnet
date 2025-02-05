@@ -1,6 +1,9 @@
 # Not sure where this is created, but don't need it in the repo
 .wallets_setup
 
+# Store PIDs of running processes
+*.pid
+
 # Mac
 .DS_Store
 

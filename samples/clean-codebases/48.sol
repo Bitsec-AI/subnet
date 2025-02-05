@@ -1,252 +1,1006 @@
-/**
- * @title Ownable
- * @dev The Ownable contract has an owner address, and provides basic authorization control
- * functions, this simplifies the implementation of "user permissions".
- */
-contract Ownable {
-    
-  address public owner;
+pragma solidity 0.7.0;
+
+interface IOwnershipTransferrable {
+
+
+  function transferOwnership(address owner) external;
+
 
   event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
 
-  /**
-   * @dev The Ownable constructor sets the original `owner` of the contract to the sender
-   * account.
-   */
-  function Ownable() public {
-    owner = msg.sender;
-  }
-
-  /**
-   * @dev Throws if called by any account other than the owner.
-   */
-  modifier onlyOwner() {
-    require(msg.sender == owner);
-    _;
-  }
-
-  /**
-   * @dev Allows the current owner to transfer control of the contract to a newOwner.
-   * @param newOwner The address to transfer ownership to.
-   */
-  function transferOwnership(address newOwner) public onlyOwner {
-    require(newOwner != address(0));
-    OwnershipTransferred(owner, newOwner);
-    owner = newOwner;
-  }
-
-}pragma solidity ^0.4.18;
-
-/**
- * @title SafeMath
- * @dev Math operations with safety checks that throw on error
- */
-library SafeMath {
-
-  /**
-  * @dev Multiplies two numbers, throws on overflow.
-  */
-  function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-    if (a == 0) {
-      return 0;
-    }
-    uint256 c = a * b;
-    assert(c / a == b);
-    return c;
-  }
-
-  /**
-  * @dev Integer division of two numbers, truncating the quotient.
-  */
-  function div(uint256 a, uint256 b) internal pure returns (uint256) {
-    // assert(b > 0); // Solidity automatically throws when dividing by 0
-    uint256 c = a / b;
-    // assert(a == b * c + a % b); // There is no case in which this doesn&#39;t hold
-    return c;
-  }
-
-  /**
-  * @dev Substracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
-  */
-  function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-    assert(b <= a);
-    return a - b;
-  }
-
-  /**
-  * @dev Adds two numbers, throws on overflow.
-  */
-  function add(uint256 a, uint256 b) internal pure returns (uint256) {
-    uint256 c = a + b;
-    assert(c >= a);
-    return c;
-  }
 }
 
-/**
- * @title Ownable
- * @dev The Ownable contract has an owner address, and provides basic authorization control
- * functions, this simplifies the implementation of "user permissions".
- */
+abstract contract Ownable is IOwnershipTransferrable {
 
 
-contract GemsToken is Ownable{
-  
-  using SafeMath for uint256;
-  
-  mapping(address => uint256) public balances;
-  mapping (address => mapping (address => uint256)) internal allowed;
-  
-  event Approval(address indexed owner, address indexed spender, uint256 value);
-  event Transfer(address indexed from, address indexed to, uint256 value);
-  
-  string public name = "Gems Of Power";
-  string public symbol = "GOP";
-  uint8 public decimals = 18;
-  uint256 public totalSupply = 200000000 * 10 ** uint(decimals);
-  address crowdsaleContract = address(0x0);
-  bool flag = false;
+  address private _owner;
 
-  function GemsToken () public {
-      balances[this] = totalSupply;
-  }
-  /**
-  * @dev total number of tokens in existence
-  */
-  function totalSupply() public view returns (uint256) {
-    return totalSupply;
-  }
-  
-  /**
-  * @dev getdecimals
-  */
-  function getdecimals() public view returns (uint8) {
-      return decimals;
-  }
-  /**
-  * @dev Gets the balance of the specified address.
-  * @param _owner The address to query the the balance of.
-  * @return An uint256 representing the amount owned by the passed address.
-  */
-  function balanceOf(address _owner) public view returns (uint256 balance) {
-    return balances[_owner];
-  }
-  
-  /**
-  * @dev transfer token for a specified address
-  * @param _to The address to transfer to.
-  * @param _value The amount to be transferred.
-  */
-  function transfer(address _to, uint256 _value) public returns (bool) {
-    require(_to != address(0));
-    require(_value <= balances[msg.sender]);
 
-    // SafeMath.sub will throw if there is not enough balance.
-    balances[_to] = balances[_to].add(_value);
-    balances[msg.sender] = balances[msg.sender].sub(_value);
-    Transfer(msg.sender, _to, _value);
-    return true;
+
+
+
+  constructor(address owner) {
+
+
+    _owner = owner;
+
+
+    emit OwnershipTransferred(address(0), _owner);
+
+
   }
 
-  /**
-   * @dev Transfer tokens from one address to another
-   * @param _from address The address which you want to send tokens from
-   * @param _to address The address which you want to transfer to
-   * @param _value uint256 the amount of tokens to be transferred
-   */
-  function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-    require(_to != address(0));
-    require(_value <= balances[_from]);
-    require(_value <= allowed[_from][msg.sender]);
 
-    balances[_from] = balances[_from].sub(_value);
-    balances[_to] = balances[_to].add(_value);
-    allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
-    Transfer(_from, _to, _value);
-    return true;
+
+
+
+  function owner() public view returns (address) {
+
+
+    return _owner;
+
+
   }
-  /**
- * public transfer, only can be called by this contract
- */
-    function _transfer(address _from, address _to, uint256 _value) internal returns (bool) {
-        // Prevent transfer to 0x0 address. Use burn() instead
-        require(_to != 0x0);
-        // Check if the sender has enough
-        require(balances[_from] >= _value);
-        // Check for overflows
-        require(balances[_to] + _value > balances[_to]);
-        // Save this for an assertion in the future
-        uint previousBalances = balances[_from].add(balances[_to]);
-        // Subtract from the sender
-        balances[_from] = balances[_from].sub(_value);
-        // Add the same to the recipient
-        balances[_to] = balances[_to].add(_value);
-        Transfer(_from, _to, _value);
-        // Asserts are used to use static analysis to find bugs in your code. They should never fail
-        assert(balances[_from] + balances[_to] == previousBalances);
-        return true;
+
+
+
+
+
+  modifier onlyOwner() {
+
+
+    require(_owner == msg.sender, "Ownable: caller is not the owner");
+
+
+    _;
+
+
+  }
+
+
+
+
+
+  function transferOwnership(address newOwner) override external onlyOwner {
+
+
+    require(newOwner != address(0), "Ownable: new owner is the zero address");
+
+
+    emit OwnershipTransferred(_owner, newOwner);
+
+
+    _owner = newOwner;
+
+
+  }
+
+
+}
+
+library SafeMath {
+
+
+  function add(uint256 a, uint256 b) internal pure returns (uint256) {
+
+
+    uint256 c = a + b;
+
+
+    require(c >= a);
+
+
+    return c;
+
+
+  }
+
+
+
+
+
+  function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+
+
+    require(b <= a);
+
+
+    uint256 c = a - b;
+
+
+    return c;
+
+
+  }
+
+
+
+
+
+  function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+
+
+    if (a == 0) {
+
+
+      return 0;
+
+
     }
-  /**
-   * @dev Approve the passed address to spend the specified amount of tokens on behalf of msg.sender.
-   *
-   * Beware that changing an allowance with this method brings the risk that someone may use both the old
-   * and the new allowance by unfortunate transaction ordering. One possible solution to mitigate this
-   * race condition is to first reduce the spender&#39;s allowance to 0 and set the desired value afterwards:
-   * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-   * @param _spender The address which will spend the funds.
-   * @param _value The amount of tokens to be spent.
-   */
-  function approve(address _spender, uint256 _value) public returns (bool) {
-    allowed[msg.sender][_spender] = _value;
-    Approval(msg.sender, _spender, _value);
-    return true;
+
+
+    uint256 c = a * b;
+
+
+    require(c / a == b);
+
+
+    return c;
+
+
   }
 
-  /**
-   * @dev Function to check the amount of tokens that an owner allowed to a spender.
-   * @param _owner address The address which owns the funds.
-   * @param _spender address The address which will spend the funds.
-   * @return A uint256 specifying the amount of tokens still available for the spender.
-   */
-  function allowance(address _owner, address _spender) public view returns (uint256) {
-    return allowed[_owner][_spender];
+
+
+
+
+  function div(uint256 a, uint256 b) internal pure returns (uint256) {
+
+
+    require(b > 0);
+
+
+    uint256 c = a / b;
+
+
+    return c;
+
+
   }
-  
-  function sendCrowdsaleBalance (address _address, uint256 _value) public {
-      require (msg.sender == crowdsaleContract);
-      require (_value <= balances[this]);
-      totalSupply = totalSupply.sub(_value);
-      balances[this] = balances[this].sub(_value);
-      balances[_address] = balances[_address].add(_value);
-      Transfer(this, _address, _value);
+
+
+
+
+
+  function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+
+
+    require(b != 0);
+
+
+    return a % b;
+
+
   }
-  
-  function sendOwnerBalance(address _address, uint _value) public onlyOwner {
-     uint256 value = _value * 10 ** uint(decimals);
-     require (value <= balances[this]);
-     balances[this] = balances[this].sub(value);
-     balances[_address] = balances[_address].add(value);
-     Transfer(this, _address, value);
+
+
+}
+
+contract Seed is Ownable {
+
+
+  using SafeMath for uint256;
+
+
+
+
+
+  uint256 constant UINT256_MAX = ~uint256(0);
+
+
+
+
+
+  string private _name;
+
+
+  string private _symbol;
+
+
+  uint8 private _decimals;
+
+
+
+
+
+  uint256 private _totalSupply;
+
+
+  mapping(address => uint256) private _balances;
+
+
+  mapping(address => mapping(address => uint256)) private _allowances;
+
+
+
+
+
+  event Transfer(address indexed from, address indexed to, uint256 value);
+
+
+  event Approval(address indexed owner, address indexed spender, uint256 value);
+
+
+
+
+
+  constructor() Ownable(msg.sender) {
+
+
+    _totalSupply = 1000000 * 1e18;
+
+
+    _name = "Seed";
+
+
+    _symbol = "SEED";
+
+
+    _decimals = 18;
+
+
+
+
+
+    _balances[msg.sender] = _totalSupply;
+
+
+    emit Transfer(address(0), msg.sender, _totalSupply);
+
+
   }
-  
-  
-  function setCrowdsaleContract(address _address) public onlyOwner {
-     require(!flag);
-     crowdsaleContract = _address;
-     flag = true;
+
+
+
+
+
+  function name() external view returns (string memory) {
+
+
+    return _name;
+
+
   }
-  
-  function removeCrowdsaleContract(address _address) public onlyOwner {
-      require(flag);
-      if(crowdsaleContract == _address) {
-         crowdsaleContract = address(0x0);
-         flag = false;
-      }
+
+
+
+
+
+  function symbol() external view returns (string memory) {
+
+
+    return _symbol;
+
+
   }
-  
-  function GetcrowdsaleContract() public view returns(address) {
-      return crowdsaleContract;
+
+
+
+
+
+  function decimals() external view returns (uint8) {
+
+
+    return _decimals;
+
+
   }
+
+
+
+
+
+  function totalSupply() external view returns (uint256) {
+
+
+    return _totalSupply;
+
+
+  }
+
+
+
+
+
+  function balanceOf(address account) external view returns (uint256) {
+
+
+    return _balances[account];
+
+
+  }
+
+
+
+
+
+  function allowance(address owner, address spender) external view returns (uint256) {
+
+
+    return _allowances[owner][spender];
+
+
+  }
+
+
+
+
+
+  function transfer(address recipient, uint256 amount) external returns (bool) {
+
+
+    _transfer(msg.sender, recipient, amount);
+
+
+    return true;
+
+
+  }
+
+
+
+
+
+  function approve(address spender, uint256 amount) external returns (bool) {
+
+
+    _approve(msg.sender, spender, amount);
+
+
+    return true;
+
+
+  }
+
+
+
+
+
+  function transferFrom(address sender, address recipient, uint256 amount) external returns (bool) {
+
+
+    _transfer(sender, recipient, amount);
+
+
+    if (_allowances[msg.sender][sender] != UINT256_MAX) {
+
+
+      _approve(sender, msg.sender, _allowances[sender][msg.sender].sub(amount));
+
+
+    }
+
+
+    return true;
+
+
+  }
+
+
   
+
+
+  function _transfer(address sender, address recipient, uint256 amount) internal {
+
+
+    require(sender != address(0));
+
+
+    require(recipient != address(0));
+
+
+
+
+
+    _balances[sender] = _balances[sender].sub(amount);
+
+
+    _balances[recipient] = _balances[recipient].add(amount);
+
+
+    emit Transfer(sender, recipient, amount);
+
+
+  }
+
+
+  
+
+
+  function mint(address account, uint256 amount) external onlyOwner {
+
+
+    _totalSupply = _totalSupply.add(amount);
+
+
+    _balances[account] = _balances[account].add(amount);
+
+
+    emit Transfer(address(0), account, amount);
+
+
+  }  
+
+
+
+
+
+  function increaseAllowance(address spender, uint256 addedValue) external returns (bool) {
+
+
+    _approve(msg.sender, spender, _allowances[msg.sender][spender].add(addedValue));
+
+
+    return true;
+
+
+  }
+
+
+
+
+
+  function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool) {
+
+
+    _approve(msg.sender, spender, _allowances[msg.sender][spender].sub(subtractedValue));
+
+
+    return true;
+
+
+  }
+
+
+
+
+
+  function _approve(address owner, address spender, uint256 amount) internal {
+
+
+    require(owner != address(0));
+
+
+    require(spender != address(0));
+
+
+
+
+
+    _allowances[owner][spender] = amount;
+
+
+    emit Approval(owner, spender, amount);
+
+
+  }
+
+
+
+
+
+  function burn(uint256 amount) external returns (bool) {
+
+
+    _balances[msg.sender] = _balances[msg.sender].sub(amount);
+
+
+    _totalSupply = _totalSupply.sub(amount);
+
+
+    emit Transfer(msg.sender, address(0), amount);
+
+
+    return true;
+
+
+  }
+
+
+}
+
+abstract contract ReentrancyGuard {
+
+
+  bool private _entered;
+
+
+
+
+
+  modifier noReentrancy() {
+
+
+    require(!_entered);
+
+
+    _entered = true;
+
+
+    _;
+
+
+    _entered = false;
+
+
+  }
+
+
+}
+
+contract SeedStake is ReentrancyGuard, Ownable {
+
+
+  uint256 constant MONTH = 30 days;
+
+
+  
+
+
+  using SafeMath for uint256;
+
+
+  uint256 constant UINT256_MAX = ~uint256(0);
+
+
+
+
+
+  Seed private _SEED;
+
+
+  bool private _dated;
+
+
+  bool private _migrated;
+
+
+  uint256 _deployedAt;
+
+
+  uint256 _totalStaked;
+
+
+  
+
+
+  mapping (address => uint256) private _staked;
+
+
+  mapping (address => uint256) private _lastClaim;
+
+
+  address private _developerFund;
+
+
+
+
+
+  event StakeIncreased(address indexed staker, uint256 amount);
+
+
+  event StakeDecreased(address indexed staker, uint256 amount);
+
+
+  event Rewards(address indexed staker, uint256 mintage, uint256 developerFund);
+
+
+  event MelodyAdded(address indexed melody);
+
+
+  event MelodyRemoved(address indexed melody);
+
+
+
+
+
+  constructor(address seed) Ownable(msg.sender) {
+
+
+    _SEED = Seed(seed);
+
+
+    _developerFund = msg.sender;
+
+
+    _deployedAt = block.timestamp;
+
+
+  }
+
+
+
+
+
+  function upgradeDevelopmentFund(address fund) external onlyOwner {
+
+
+    _developerFund = fund;
+
+
+  }
+
+
+
+
+
+  function seed() external view returns (address) {
+
+
+    return address(_SEED);
+
+
+  }
+
+
+
+
+
+  function totalStaked() external view returns (uint256) {
+
+
+    return _totalStaked;
+
+
+  }
+
+
+
+
+
+  function migrate(address previous, address[] memory people, uint256[] memory lastClaims) external {
+
+
+    require(!_migrated);
+
+
+    require(people.length == lastClaims.length);
+
+
+    for (uint i = 0; i < people.length; i++) {
+
+
+      uint256 staked = SeedStake(previous).staked(people[i]);
+
+
+      _staked[people[i]] = staked;
+
+
+      _totalStaked = _totalStaked.add(staked);
+
+
+      _lastClaim[people[i]] = lastClaims[i];
+
+
+      emit StakeIncreased(people[i], staked);
+
+
+    }
+
+
+    require(_SEED.transferFrom(previous, address(this), _SEED.balanceOf(previous)));
+
+
+    _migrated = true;
+
+
+  }
+
+
+
+
+
+  function staked(address staker) external view returns (uint256) {
+
+
+    return _staked[staker];
+
+
+  }
+
+
+
+
+
+  function lastClaim(address staker) external view returns (uint256) {
+
+
+    return _lastClaim[staker];
+
+
+  }
+
+
+
+
+
+  function increaseStake(uint256 amount) external {
+
+
+    require(!_dated);
+
+
+
+
+
+    require(_SEED.transferFrom(msg.sender, address(this), amount));
+
+
+    _totalStaked = _totalStaked.add(amount);
+
+
+    _lastClaim[msg.sender] = block.timestamp;
+
+
+    _staked[msg.sender] = _staked[msg.sender].add(amount);
+
+
+    emit StakeIncreased(msg.sender, amount);
+
+
+  }
+
+
+
+
+
+  function decreaseStake(uint256 amount) external {
+
+
+    _staked[msg.sender] = _staked[msg.sender].sub(amount);
+
+
+    _totalStaked = _totalStaked.sub(amount);
+
+
+    require(_SEED.transfer(address(msg.sender), amount));
+
+
+    emit StakeDecreased(msg.sender, amount);
+
+
+  }
+
+
+
+
+
+  function calculateSupplyDivisor() public view returns (uint256) {
+
+
+    // base divisior for 5%
+
+
+    uint256 result = uint256(20)
+
+
+      .add(
+
+
+        // get how many months have passed since deployment
+
+
+        block.timestamp.sub(_deployedAt).div(MONTH)
+
+
+        // multiply by 5 which will be added, tapering from 20 to 50
+
+
+        .mul(5)
+
+
+      );
+
+
+
+
+
+    // set a cap of 50
+
+
+    if (result > 50) {
+
+
+      result = 50;
+
+
+    }
+
+
+    return result;
+
+
+  }
+
+
+
+
+
+  function _calculateMintage(address staker) private view returns (uint256) {
+
+
+    // total supply
+
+
+    uint256 share = _SEED.totalSupply()
+
+
+      // divided by the supply divisor
+
+
+      // initially 20 for 5%, increases to 50 over months for 2%
+
+
+      .div(calculateSupplyDivisor())
+
+
+      // divided again by their stake representation
+
+
+      .div(_totalStaked.div(_staked[staker]));
+
+
+
+
+
+    // this share is supposed to be issued monthly, so see how many months its been
+
+
+    uint256 timeElapsed = block.timestamp.sub(_lastClaim[staker]);
+
+
+    uint256 mintage = 0;
+
+
+    // handle whole months
+
+
+    if (timeElapsed > MONTH) {
+
+
+      mintage = share.mul(timeElapsed.div(MONTH));
+
+
+      timeElapsed = timeElapsed.mod(MONTH);
+
+
+    }
+
+
+    // handle partial months, if there are any
+
+
+    // this if check prevents a revert due to div by 0
+
+
+    if (timeElapsed != 0) {
+
+
+      mintage = mintage.add(share.div(MONTH.div(timeElapsed)));
+
+
+    }
+
+
+    return mintage;
+
+
+  }
+
+
+
+
+
+  function calculateRewards(address staker) public view returns (uint256) {
+
+
+    // removes the five percent for the dev fund
+
+
+    return _calculateMintage(staker).div(20).mul(19);
+
+
+  }
+
+
+
+
+
+  // noReentrancy shouldn't be needed due to the lack of external calls
+
+
+  // better safe than sorry
+
+
+  function claimRewards() external noReentrancy {
+
+
+    require(!_dated);
+
+
+
+
+
+    uint256 mintage = _calculateMintage(msg.sender);
+
+
+    uint256 mintagePiece = mintage.div(20);
+
+
+    require(mintagePiece > 0);
+
+
+
+
+
+    // update the last claim time
+
+
+    _lastClaim[msg.sender] = block.timestamp;
+
+
+    // mint out their staking rewards and the dev funds
+
+
+    _SEED.mint(msg.sender, mintage.sub(mintagePiece));
+
+
+    _SEED.mint(_developerFund, mintagePiece);
+
+
+
+
+
+    emit Rewards(msg.sender, mintage, mintagePiece);
+
+
+  }
+
+
+
+
+
+  function addMelody(address melody) external onlyOwner {
+
+
+    _SEED.approve(melody, UINT256_MAX);
+
+
+    emit MelodyAdded(melody);
+
+
+  }
+
+
+
+
+
+  function removeMelody(address melody) external onlyOwner {
+
+
+    _SEED.approve(melody, 0);
+
+
+    emit MelodyRemoved(melody);
+
+
+  }
+
+
+
+
+
+  function upgrade(address owned, address upgraded) external onlyOwner {
+
+
+    _dated = true;
+
+
+    IOwnershipTransferrable(owned).transferOwnership(upgraded);
+
+
+  }
+
+
 }

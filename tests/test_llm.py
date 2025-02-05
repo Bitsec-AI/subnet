@@ -4,7 +4,6 @@ import os
 from flaky import flaky
 from unittest.mock import patch, MagicMock
 from bitsec.utils.llm import chat_completion
-from bitsec.protocol import PredictionResponse, Vulnerability, LineRange
 import openai
 import bittensor as bt
 from bitsec.utils.data import create_challenge
@@ -26,45 +25,23 @@ def test_chat_completion_response_format():
         can_answer: bool
         city_name: str
     
-    prompt = "What is the capital of France?"
+    prompt = "What is the capital of France? Answer with an empty string if you don't know."
     result = chat_completion(prompt, response_format=TestResponse)
     assert isinstance(result, TestResponse)
     assert result.can_answer == True
     assert result.city_name == "Paris"
+
+    prompt = "What is the capital of the moon? Answer with an empty string if you don't know."
+    result = chat_completion(prompt, response_format=TestResponse)
+    assert isinstance(result, TestResponse)
+    assert result.can_answer == False
+    assert result.city_name == ""
 
 def test_chat_completion_basic(mock_openai_response):
     """Test basic text response from chat completion."""
     with patch('bitsec.utils.llm.client.beta.chat.completions.parse', return_value=mock_openai_response):
         result = chat_completion("Test prompt")
         assert result == TEST_RESPONSE
-
-def test_chat_completion_with_format(mock_openai_response):
-    """Test response with specific format type."""
-    expected_response = PredictionResponse.from_tuple([
-        True,
-        [Vulnerability(
-            line_ranges=[LineRange(start=2, end=5)],
-            short_description="Test Vulnerability",
-            detailed_description="Test Reason"
-        )]
-    ])
-    mock_openai_response.choices[0].message.parsed = expected_response
-    
-    with patch('bitsec.utils.llm.client.beta.chat.completions.parse', return_value=mock_openai_response):
-        result = chat_completion("Test prompt", response_format=PredictionResponse)
-        assert result == expected_response
-
-def test_chat_completion_with_format2(mock_openai_response):
-    """Test response with another value."""
-    expected_response = PredictionResponse.from_tuple([
-        False,
-        []
-    ])
-    mock_openai_response.choices[0].message.parsed = expected_response
-    
-    with patch('bitsec.utils.llm.client.beta.chat.completions.parse', return_value=mock_openai_response):
-        result = chat_completion("Test prompt", response_format=PredictionResponse)
-        assert result == expected_response
 
 def test_chat_completion_empty_response():
     """Test handling of empty response."""

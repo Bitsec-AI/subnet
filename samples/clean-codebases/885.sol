@@ -1,353 +1,54 @@
-// File: contracts/spec_interfaces/IStakingContractHandler.sol
-
-// SPDX-License-Identifier: MIT
-
-pragma solidity 0.6.12;
-
-/// @title Staking contract handler contract interface in addition to IStakeChangeNotifier
-interface IStakingContractHandler {
-    event StakeChangeNotificationSkipped(address indexed stakeOwner);
-    event StakeChangeBatchNotificationSkipped(address[] stakeOwners);
-    event StakeMigrationNotificationSkipped(address indexed stakeOwner);
-
-    /*
-    * External functions
-    */
-
-    /// Returns the stake of the specified stake owner (excluding unstaked tokens).
-    /// @param stakeOwner address The address to check.
-    /// @return uint256 The total stake.
-    function getStakeBalanceOf(address stakeOwner) external view returns (uint256);
-
-    /// Returns the total amount staked tokens (excluding unstaked tokens).
-    /// @return uint256 is the total staked tokens of all stake owners.
-    function getTotalStakedTokens() external view returns (uint256);
-
-    /*
-    * Governance functions
-    */
-
-    event NotifyDelegationsChanged(bool notifyDelegations);
-
-    /// Sets notifications to the delegation contract
-    /// @dev staking while notifications are disabled may lead to a discrepancy in the delegation data  
-    /// @dev governance function called only by the migration manager
-    /// @param notifyDelegations is a bool indicating whether to notify the delegation contract
-    function setNotifyDelegations(bool notifyDelegations) external; /* onlyMigrationManager */
-
-    /// Returns the notifications to the delegation contract status
-    /// @return notifyDelegations is a bool indicating whether notifications are enabled
-    function getNotifyDelegations() external view returns (bool);
-}
-
-// File: contracts/IStakeChangeNotifier.sol
-
-pragma solidity 0.6.12;
-
-/// @title An interface for notifying of stake change events (e.g., stake, unstake, partial unstake, restate, etc.).
-interface IStakeChangeNotifier {
-    /// @dev Notifies of stake change event.
-    /// @param _stakeOwner address The address of the subject stake owner.
-    /// @param _amount uint256 The difference in the total staked amount.
-    /// @param _sign bool The sign of the added (true) or subtracted (false) amount.
-    /// @param _updatedStake uint256 The updated total staked amount.
-    function stakeChange(address _stakeOwner, uint256 _amount, bool _sign, uint256 _updatedStake) external;
-
-    /// @dev Notifies of multiple stake change events.
-    /// @param _stakeOwners address[] The addresses of subject stake owners.
-    /// @param _amounts uint256[] The differences in total staked amounts.
-    /// @param _signs bool[] The signs of the added (true) or subtracted (false) amounts.
-    /// @param _updatedStakes uint256[] The updated total staked amounts.
-    function stakeChangeBatch(address[] calldata _stakeOwners, uint256[] calldata _amounts, bool[] calldata _signs,
-        uint256[] calldata _updatedStakes) external;
-
-    /// @dev Notifies of stake migration event.
-    /// @param _stakeOwner address The address of the subject stake owner.
-    /// @param _amount uint256 The migrated amount.
-    function stakeMigration(address _stakeOwner, uint256 _amount) external;
-}
-
-// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
-
-pragma solidity ^0.6.0;
+/**
+ *Submitted for verification at Etherscan.io on 2021-10-01
+*/
 
 /**
- * @dev Interface of the ERC20 standard as defined in the EIP.
- */
-interface IERC20 {
-    /**
-     * @dev Returns the amount of tokens in existence.
-     */
-    function totalSupply() external view returns (uint256);
+ *Submitted for verification at BscScan.com on 2021-09-04
+*/
 
-    /**
-     * @dev Returns the amount of tokens owned by `account`.
-     */
-    function balanceOf(address account) external view returns (uint256);
+/**
+ *Submitted for verification at Etherscan.io on 2021-07-26
+*/
 
-    /**
-     * @dev Moves `amount` tokens from the caller's account to `recipient`.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transfer(address recipient, uint256 amount) external returns (bool);
+/**
 
-    /**
-     * @dev Returns the remaining number of tokens that `spender` will be
-     * allowed to spend on behalf of `owner` through {transferFrom}. This is
-     * zero by default.
-     *
-     * This value changes when {approve} or {transferFrom} are called.
-     */
-    function allowance(address owner, address spender) external view returns (uint256);
+    
+$$$$$$$$\                                       $$$$$$\                      
+$$  _____|                                     $$  __$$\                     
+$$ |  $$\    $$\  $$$$$$\   $$$$$$\  $$\   $$\ $$ /  $$ | $$$$$$\   $$$$$$\  
+$$$$$\\$$\  $$  |$$  __$$\ $$  __$$\ $$ |  $$ |$$$$$$$$ |$$  __$$\ $$  __$$\ 
+$$  __|\$$\$$  / $$$$$$$$ |$$ |  \__|$$ |  $$ |$$  __$$ |$$ /  $$ |$$$$$$$$ |
+$$ |    \$$$  /  $$   ____|$$ |      $$ |  $$ |$$ |  $$ |$$ |  $$ |$$   ____|
+$$$$$$$$\\$  /   \$$$$$$$\ $$ |      \$$$$$$$ |$$ |  $$ |$$$$$$$  |\$$$$$$$\ 
+\________|\_/     \_______|\__|       \____$$ |\__|  \__|$$  ____/  \_______|
+                                     $$\   $$ |          $$ |                
+                                     \$$$$$$  |          $$ |                
+                                      \______/           \__|               
+                                                                                      
+                                                                                    
+                                                                      
+EveryApe is an innovator in BurnBack Tokenomics, increasing the stakers value through a Milestone 
+Burn and Buyback combination plan, Ultra-reflective Tokenomics, and Minimizing whale/bot manipulation. 
+A product of WatchTower Finance, a community built on honest, un-ruggable trading.
+    
+Main features are
+    
 
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * IMPORTANT: Beware that changing an allowance with this method brings the risk
-     * that someone may use both the old and the new allowance by unfortunate
-     * transaction ordering. One possible solution to mitigate this race
-     * condition is to first reduce the spender's allowance to 0 and set the
-     * desired value afterwards:
-     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-     *
-     * Emits an {Approval} event.
-     */
-    function approve(address spender, uint256 amount) external returns (bool);
+1) 500,000,000,000,000 (500 Trillion) max supply (we will hold some for milestone burns)
+2) 300,000,000,000 (300 bil) txn buy/sell limiter 
+3) 14% buyback and marketing tax is collected and 7% of it is sent for marketing fund and other 7% is used to buyback the tokens.
+4) Bot Whale protection
+5) Sniper liquidity event protection
+             
+*/
 
-    /**
-     * @dev Moves `amount` tokens from `sender` to `recipient` using the
-     * allowance mechanism. `amount` is then deducted from the caller's
-     * allowance.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+// SPDX-License-Identifier: Unlicensed
 
-    /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
-     *
-     * Note that `value` may be zero.
-     */
-    event Transfer(address indexed from, address indexed to, uint256 value);
+pragma solidity ^0.8.4;
 
-    /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to {approve}. `value` is the new allowance.
-     */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-}
-
-// File: contracts/IMigratableStakingContract.sol
-
-pragma solidity 0.6.12;
-
-
-/// @title An interface for staking contracts which support stake migration.
-interface IMigratableStakingContract {
-    /// @dev Returns the address of the underlying staked token.
-    /// @return IERC20 The address of the token.
-    function getToken() external view returns (IERC20);
-
-    /// @dev Stakes ORBS tokens on behalf of msg.sender. This method assumes that the user has already approved at least
-    /// the required amount using ERC20 approve.
-    /// @param _stakeOwner address The specified stake owner.
-    /// @param _amount uint256 The number of tokens to stake.
-    function acceptMigration(address _stakeOwner, uint256 _amount) external;
-
-    event AcceptedMigration(address indexed stakeOwner, uint256 amount, uint256 totalStakedAmount);
-}
-
-// File: contracts/IStakingContract.sol
-
-pragma solidity 0.6.12;
-
-
-/// @title An interface for staking contracts.
-interface IStakingContract {
-    /// @dev Stakes ORBS tokens on behalf of msg.sender. This method assumes that the user has already approved at least
-    /// the required amount using ERC20 approve.
-    /// @param _amount uint256 The amount of tokens to stake.
-    function stake(uint256 _amount) external;
-
-    /// @dev Unstakes ORBS tokens from msg.sender. If successful, this will start the cooldown period, after which
-    /// msg.sender would be able to withdraw all of his tokens.
-    /// @param _amount uint256 The amount of tokens to unstake.
-    function unstake(uint256 _amount) external;
-
-    /// @dev Requests to withdraw all of staked ORBS tokens back to msg.sender. Stake owners can withdraw their ORBS
-    /// tokens only after previously unstaking them and after the cooldown period has passed (unless the contract was
-    /// requested to release all stakes).
-    function withdraw() external;
-
-    /// @dev Restakes unstaked ORBS tokens (in or after cooldown) for msg.sender.
-    function restake() external;
-
-    /// @dev Distributes staking rewards to a list of addresses by directly adding rewards to their stakes. This method
-    /// assumes that the user has already approved at least the required amount using ERC20 approve. Since this is a
-    /// convenience method, we aren't concerned about reaching block gas limit by using large lists. We assume that
-    /// callers will be able to properly batch/paginate their requests.
-    /// @param _totalAmount uint256 The total amount of rewards to distribute.
-    /// @param _stakeOwners address[] The addresses of the stake owners.
-    /// @param _amounts uint256[] The amounts of the rewards.
-    function distributeRewards(uint256 _totalAmount, address[] calldata _stakeOwners, uint256[] calldata _amounts) external;
-
-    /// @dev Returns the stake of the specified stake owner (excluding unstaked tokens).
-    /// @param _stakeOwner address The address to check.
-    /// @return uint256 The total stake.
-    function getStakeBalanceOf(address _stakeOwner) external view returns (uint256);
-
-    /// @dev Returns the total amount staked tokens (excluding unstaked tokens).
-    /// @return uint256 The total staked tokens of all stake owners.
-    function getTotalStakedTokens() external view returns (uint256);
-
-    /// @dev Returns the time that the cooldown period ends (or ended) and the amount of tokens to be released.
-    /// @param _stakeOwner address The address to check.
-    /// @return cooldownAmount uint256 The total tokens in cooldown.
-    /// @return cooldownEndTime uint256 The time when the cooldown period ends (in seconds).
-    function getUnstakeStatus(address _stakeOwner) external view returns (uint256 cooldownAmount,
-        uint256 cooldownEndTime);
-
-    /// @dev Migrates the stake of msg.sender from this staking contract to a new approved staking contract.
-    /// @param _newStakingContract IMigratableStakingContract The new staking contract which supports stake migration.
-    /// @param _amount uint256 The amount of tokens to migrate.
-    function migrateStakedTokens(IMigratableStakingContract _newStakingContract, uint256 _amount) external;
-
-    event Staked(address indexed stakeOwner, uint256 amount, uint256 totalStakedAmount);
-    event Unstaked(address indexed stakeOwner, uint256 amount, uint256 totalStakedAmount);
-    event Withdrew(address indexed stakeOwner, uint256 amount, uint256 totalStakedAmount);
-    event Restaked(address indexed stakeOwner, uint256 amount, uint256 totalStakedAmount);
-    event MigratedStake(address indexed stakeOwner, uint256 amount, uint256 totalStakedAmount);
-}
-
-// File: contracts/spec_interfaces/IManagedContract.sol
-
-pragma solidity 0.6.12;
-
-/// @title managed contract interface, used by the contracts registry to notify the contract on updates
-interface IManagedContract /* is ILockable, IContractRegistryAccessor, Initializable */ {
-
-    /// Refreshes the address of the other contracts the contract interacts with
-    /// @dev called by the registry contract upon an update of a contract in the registry
-    function refreshContracts() external;
-
-}
-
-// File: contracts/spec_interfaces/IContractRegistry.sol
-
-pragma solidity 0.6.12;
-
-/// @title Contract registry contract interface
-/// @dev The contract registry holds Orbs PoS contracts and managers lists
-/// @dev The contract registry updates the managed contracts on changes in the contract list
-/// @dev Governance functions restricted to managers access the registry to retrieve the manager address 
-/// @dev The contract registry represents the source of truth for Orbs Ethereum contracts 
-/// @dev By tracking the registry events or query before interaction, one can access the up to date contracts 
-interface IContractRegistry {
-
-	event ContractAddressUpdated(string contractName, address addr, bool managedContract);
-	event ManagerChanged(string role, address newManager);
-	event ContractRegistryUpdated(address newContractRegistry);
-
-	/*
-	* External functions
-	*/
-
-    /// Updates the contracts address and emits a corresponding event
-    /// @dev governance function called only by the migrationManager or registryAdmin
-    /// @param contractName is the contract name, used to identify it
-    /// @param addr is the contract updated address
-    /// @param managedContract indicates whether the contract is managed by the registry and notified on changes
-	function setContract(string calldata contractName, address addr, bool managedContract) external /* onlyAdminOrMigrationManager */;
-
-    /// Returns the current address of the given contracts
-    /// @param contractName is the contract name, used to identify it
-    /// @return addr is the contract updated address
-	function getContract(string calldata contractName) external view returns (address);
-
-    /// Returns the list of contract addresses managed by the registry
-    /// @dev Managed contracts are updated on changes in the registry contracts addresses 
-    /// @return addrs is the list of managed contracts
-	function getManagedContracts() external view returns (address[] memory);
-
-    /// Locks all the managed contracts 
-    /// @dev governance function called only by the migrationManager or registryAdmin
-    /// @dev When set all onlyWhenActive functions will revert
-	function lockContracts() external /* onlyAdminOrMigrationManager */;
-
-    /// Unlocks all the managed contracts 
-    /// @dev governance function called only by the migrationManager or registryAdmin
-	function unlockContracts() external /* onlyAdminOrMigrationManager */;
-	
-    /// Updates a manager address and emits a corresponding event
-    /// @dev governance function called only by the registryAdmin
-    /// @dev the managers list is a flexible list of role to the manager's address
-    /// @param role is the managers' role name, for example "functionalManager"
-    /// @param manager is the manager updated address
-	function setManager(string calldata role, address manager) external /* onlyAdmin */;
-
-    /// Returns the current address of the given manager
-    /// @param role is the manager name, used to identify it
-    /// @return addr is the manager updated address
-	function getManager(string calldata role) external view returns (address);
-
-    /// Sets a new contract registry to migrate to
-    /// @dev governance function called only by the registryAdmin
-    /// @dev updates the registry address record in all the managed contracts
-    /// @dev by tracking the emitted ContractRegistryUpdated, tools can track the up to date contracts
-    /// @param newRegistry is the new registry contract 
-	function setNewContractRegistry(IContractRegistry newRegistry) external /* onlyAdmin */;
-
-    /// Returns the previous contract registry address 
-    /// @dev used when the setting the contract as a new registry to assure a valid registry
-    /// @return previousContractRegistry is the previous contract registry
-	function getPreviousContractRegistry() external view returns (address);
-}
-
-// File: contracts/spec_interfaces/IContractRegistryAccessor.sol
-
-pragma solidity 0.6.12;
-
-
-interface IContractRegistryAccessor {
-
-    /// Sets the contract registry address
-    /// @dev governance function called only by an admin
-    /// @param newRegistry is the new registry contract 
-    function setContractRegistry(IContractRegistry newRegistry) external /* onlyAdmin */;
-
-    /// Returns the contract registry address
-    /// @return contractRegistry is the contract registry address
-    function getContractRegistry() external view returns (IContractRegistry contractRegistry);
-
-    function setRegistryAdmin(address _registryAdmin) external /* onlyInitializationAdmin */;
-
-}
-
-// File: @openzeppelin/contracts/GSN/Context.sol
-
-pragma solidity ^0.6.0;
-
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with GSN meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
 abstract contract Context {
     function _msgSender() internal view virtual returns (address payable) {
-        return msg.sender;
+        return payable(msg.sender);
     }
 
     function _msgData() internal view virtual returns (bytes memory) {
@@ -356,518 +57,964 @@ abstract contract Context {
     }
 }
 
-// File: contracts/WithClaimableRegistryManagement.sol
 
-pragma solidity 0.6.12;
+interface IERC20 {
+
+    function totalSupply() external view returns (uint256);
+    function balanceOf(address account) external view returns (uint256);
+    function transfer(address recipient, uint256 amount) external returns (bool);
+    function allowance(address owner, address spender) external view returns (uint256);
+    function approve(address spender, uint256 amount) external returns (bool);
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    
+
+}
+
+library SafeMath {
+
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a, "SafeMath: addition overflow");
+
+        return c;
+    }
+
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        return sub(a, b, "SafeMath: subtraction overflow");
+    }
+
+    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b <= a, errorMessage);
+        uint256 c = a - b;
+
+        return c;
+    }
+
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        if (a == 0) {
+            return 0;
+        }
+
+        uint256 c = a * b;
+        require(c / a == b, "SafeMath: multiplication overflow");
+
+        return c;
+    }
 
 
-/**
- * @title Claimable
- * @dev Extension for the Ownable contract, where the ownership needs to be claimed.
- * This allows the new owner to accept the transfer.
- */
-contract WithClaimableRegistryManagement is Context {
-    address private _registryAdmin;
-    address private _pendingRegistryAdmin;
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        return div(a, b, "SafeMath: division by zero");
+    }
 
-    event RegistryManagementTransferred(address indexed previousRegistryAdmin, address indexed newRegistryAdmin);
+    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b > 0, errorMessage);
+        uint256 c = a / b;
+        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
 
-    /**
-     * @dev Initializes the contract setting the deployer as the initial registryRegistryAdmin.
-     */
-    constructor () internal {
+        return c;
+    }
+
+    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+        return mod(a, b, "SafeMath: modulo by zero");
+    }
+
+    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b != 0, errorMessage);
+        return a % b;
+    }
+}
+
+library Address {
+
+    function isContract(address account) internal view returns (bool) {
+        // According to EIP-1052, 0x0 is the value returned for not-yet created accounts
+        // and 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470 is returned
+        // for accounts without code, i.e. `keccak256('')`
+        bytes32 codehash;
+        bytes32 accountHash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
+        // solhint-disable-next-line no-inline-assembly
+        assembly { codehash := extcodehash(account) }
+        return (codehash != accountHash && codehash != 0x0);
+    }
+
+    function sendValue(address payable recipient, uint256 amount) internal {
+        require(address(this).balance >= amount, "Address: insufficient balance");
+
+        // solhint-disable-next-line avoid-low-level-calls, avoid-call-value
+        (bool success, ) = recipient.call{ value: amount }("");
+        require(success, "Address: unable to send value, recipient may have reverted");
+    }
+
+
+    function functionCall(address target, bytes memory data) internal returns (bytes memory) {
+      return functionCall(target, data, "Address: low-level call failed");
+    }
+
+    function functionCall(address target, bytes memory data, string memory errorMessage) internal returns (bytes memory) {
+        return _functionCallWithValue(target, data, 0, errorMessage);
+    }
+
+    function functionCallWithValue(address target, bytes memory data, uint256 value) internal returns (bytes memory) {
+        return functionCallWithValue(target, data, value, "Address: low-level call with value failed");
+    }
+
+    function functionCallWithValue(address target, bytes memory data, uint256 value, string memory errorMessage) internal returns (bytes memory) {
+        require(address(this).balance >= value, "Address: insufficient balance for call");
+        return _functionCallWithValue(target, data, value, errorMessage);
+    }
+
+    function _functionCallWithValue(address target, bytes memory data, uint256 weiValue, string memory errorMessage) private returns (bytes memory) {
+        require(isContract(target), "Address: call to non-contract");
+
+        (bool success, bytes memory returndata) = target.call{ value: weiValue }(data);
+        if (success) {
+            return returndata;
+        } else {
+            
+            if (returndata.length > 0) {
+                assembly {
+                    let returndata_size := mload(returndata)
+                    revert(add(32, returndata), returndata_size)
+                }
+            } else {
+                revert(errorMessage);
+            }
+        }
+    }
+}
+
+contract Ownable is Context {
+    address private _owner;
+    address private _previousOwner;
+    uint256 private _lockTime;
+
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    constructor () {
         address msgSender = _msgSender();
-        _registryAdmin = msgSender;
-        emit RegistryManagementTransferred(address(0), msgSender);
+        _owner = msgSender;
+        emit OwnershipTransferred(address(0), msgSender);
     }
 
-    /**
-     * @dev Returns the address of the current registryAdmin.
-     */
-    function registryAdmin() public view returns (address) {
-        return _registryAdmin;
-    }
-
-    /**
-     * @dev Throws if called by any account other than the registryAdmin.
-     */
-    modifier onlyRegistryAdmin() {
-        require(isRegistryAdmin(), "WithClaimableRegistryManagement: caller is not the registryAdmin");
+    function owner() public view returns (address) {
+        return _owner;
+    }   
+    
+    modifier onlyOwner() {
+        require(_owner == _msgSender(), "Ownable: caller is not the owner");
         _;
     }
-
-    /**
-     * @dev Returns true if the caller is the current registryAdmin.
-     */
-    function isRegistryAdmin() public view returns (bool) {
-        return _msgSender() == _registryAdmin;
+    
+    function renounceOwnership() public virtual onlyOwner {
+        emit OwnershipTransferred(_owner, address(0));
+        _owner = address(0);
     }
 
-    /**
-     * @dev Leaves the contract without registryAdmin. It will not be possible to call
-     * `onlyManager` functions anymore. Can only be called by the current registryAdmin.
-     *
-     * NOTE: Renouncing registryManagement will leave the contract without an registryAdmin,
-     * thereby removing any functionality that is only available to the registryAdmin.
-     */
-    function renounceRegistryManagement() public onlyRegistryAdmin {
-        emit RegistryManagementTransferred(_registryAdmin, address(0));
-        _registryAdmin = address(0);
+    function transferOwnership(address newOwner) public virtual onlyOwner {
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        emit OwnershipTransferred(_owner, newOwner);
+        _owner = newOwner;
     }
 
-    /**
-     * @dev Transfers registryManagement of the contract to a new account (`newManager`).
-     */
-    function _transferRegistryManagement(address newRegistryAdmin) internal {
-        require(newRegistryAdmin != address(0), "RegistryAdmin: new registryAdmin is the zero address");
-        emit RegistryManagementTransferred(_registryAdmin, newRegistryAdmin);
-        _registryAdmin = newRegistryAdmin;
+    function getUnlockTime() public view returns (uint256) {
+        return _lockTime;
+    }
+    
+    function getTime() public view returns (uint256) {
+        return block.timestamp;
     }
 
-    /**
-     * @dev Modifier throws if called by any account other than the pendingManager.
-     */
-    modifier onlyPendingRegistryAdmin() {
-        require(msg.sender == _pendingRegistryAdmin, "Caller is not the pending registryAdmin");
-        _;
+    function lock(uint256 time) public virtual onlyOwner {
+        _previousOwner = _owner;
+        _owner = address(0);
+        _lockTime = block.timestamp + time;
+        emit OwnershipTransferred(_owner, address(0));
     }
-    /**
-     * @dev Allows the current registryAdmin to set the pendingManager address.
-     * @param newRegistryAdmin The address to transfer registryManagement to.
-     */
-    function transferRegistryManagement(address newRegistryAdmin) public onlyRegistryAdmin {
-        _pendingRegistryAdmin = newRegistryAdmin;
-    }
-
-    /**
-     * @dev Allows the _pendingRegistryAdmin address to finalize the transfer.
-     */
-    function claimRegistryManagement() external onlyPendingRegistryAdmin {
-        _transferRegistryManagement(_pendingRegistryAdmin);
-        _pendingRegistryAdmin = address(0);
-    }
-
-    /**
-     * @dev Returns the current pendingRegistryAdmin
-    */
-    function pendingRegistryAdmin() public view returns (address) {
-       return _pendingRegistryAdmin;  
+    
+    function unlock() public virtual {
+        require(_previousOwner == msg.sender, "You don't have permission to unlock");
+        require(block.timestamp > _lockTime , "Contract is locked until 7 days");
+        emit OwnershipTransferred(_owner, _previousOwner);
+        _owner = _previousOwner;
     }
 }
 
-// File: contracts/Initializable.sol
+// pragma solidity >=0.5.0;
 
-pragma solidity 0.6.12;
+interface IUniswapV2Factory {
+    event PairCreated(address indexed token0, address indexed token1, address pair, uint);
 
-contract Initializable {
+    function feeTo() external view returns (address);
+    function feeToSetter() external view returns (address);
 
-    address private _initializationAdmin;
+    function getPair(address tokenA, address tokenB) external view returns (address pair);
+    function allPairs(uint) external view returns (address pair);
+    function allPairsLength() external view returns (uint);
 
-    event InitializationComplete();
+    function createPair(address tokenA, address tokenB) external returns (address pair);
 
-    /// Constructor
-    /// Sets the initializationAdmin to the contract deployer
-    /// The initialization admin may call any manager only function until initializationComplete
-    constructor() public{
-        _initializationAdmin = msg.sender;
-    }
-
-    modifier onlyInitializationAdmin() {
-        require(msg.sender == initializationAdmin(), "sender is not the initialization admin");
-
-        _;
-    }
-
-    /*
-    * External functions
-    */
-
-    /// Returns the initializationAdmin address
-    function initializationAdmin() public view returns (address) {
-        return _initializationAdmin;
-    }
-
-    /// Finalizes the initialization and revokes the initializationAdmin role 
-    function initializationComplete() external onlyInitializationAdmin {
-        _initializationAdmin = address(0);
-        emit InitializationComplete();
-    }
-
-    /// Checks if the initialization was completed
-    function isInitializationComplete() public view returns (bool) {
-        return _initializationAdmin == address(0);
-    }
-
+    function setFeeTo(address) external;
+    function setFeeToSetter(address) external;
 }
 
-// File: contracts/ContractRegistryAccessor.sol
 
-pragma solidity 0.6.12;
+// pragma solidity >=0.5.0;
 
+interface IUniswapV2Pair {
+    event Approval(address indexed owner, address indexed spender, uint value);
+    event Transfer(address indexed from, address indexed to, uint value);
 
+    function name() external pure returns (string memory);
+    function symbol() external pure returns (string memory);
+    function decimals() external pure returns (uint8);
+    function totalSupply() external view returns (uint);
+    function balanceOf(address owner) external view returns (uint);
+    function allowance(address owner, address spender) external view returns (uint);
 
+    function approve(address spender, uint value) external returns (bool);
+    function transfer(address to, uint value) external returns (bool);
+    function transferFrom(address from, address to, uint value) external returns (bool);
 
+    function DOMAIN_SEPARATOR() external view returns (bytes32);
+    function PERMIT_TYPEHASH() external pure returns (bytes32);
+    function nonces(address owner) external view returns (uint);
 
-contract ContractRegistryAccessor is IContractRegistryAccessor, WithClaimableRegistryManagement, Initializable {
+    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
+    
+    event Burn(address indexed sender, uint amount0, uint amount1, address indexed to);
+    event Swap(
+        address indexed sender,
+        uint amount0In,
+        uint amount1In,
+        uint amount0Out,
+        uint amount1Out,
+        address indexed to
+    );
+    event Sync(uint112 reserve0, uint112 reserve1);
 
-    IContractRegistry private contractRegistry;
+    function MINIMUM_LIQUIDITY() external pure returns (uint);
+    function factory() external view returns (address);
+    function token0() external view returns (address);
+    function token1() external view returns (address);
+    function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
+    function price0CumulativeLast() external view returns (uint);
+    function price1CumulativeLast() external view returns (uint);
+    function kLast() external view returns (uint);
 
-    /// Constructor
-    /// @param _contractRegistry is the contract registry address
-    /// @param _registryAdmin is the registry admin address
-    constructor(IContractRegistry _contractRegistry, address _registryAdmin) public {
-        require(address(_contractRegistry) != address(0), "_contractRegistry cannot be 0");
-        setContractRegistry(_contractRegistry);
-        _transferRegistryManagement(_registryAdmin);
-    }
+    function burn(address to) external returns (uint amount0, uint amount1);
+    function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external;
+    function skim(address to) external;
+    function sync() external;
 
-    modifier onlyAdmin {
-        require(isAdmin(), "sender is not an admin (registryManger or initializationAdmin)");
-
-        _;
-    }
-
-    modifier onlyMigrationManager {
-        require(isMigrationManager(), "sender is not the migration manager");
-
-        _;
-    }
-
-    modifier onlyFunctionalManager {
-        require(isFunctionalManager(), "sender is not the functional manager");
-
-        _;
-    }
-
-    /// Checks whether the caller is Admin: either the contract registry, the registry admin, or the initialization admin
-    function isAdmin() internal view returns (bool) {
-        return msg.sender == address(contractRegistry) || msg.sender == registryAdmin() || msg.sender == initializationAdmin();
-    }
-
-    /// Checks whether the caller is a specific manager role or and Admin
-    /// @dev queries the registry contract for the up to date manager assignment
-    function isManager(string memory role) internal view returns (bool) {
-        IContractRegistry _contractRegistry = contractRegistry;
-        return isAdmin() || _contractRegistry != IContractRegistry(0) && contractRegistry.getManager(role) == msg.sender;
-    }
-
-    /// Checks whether the caller is the migration manager
-    function isMigrationManager() internal view returns (bool) {
-        return isManager('migrationManager');
-    }
-
-    /// Checks whether the caller is the functional manager
-    function isFunctionalManager() internal view returns (bool) {
-        return isManager('functionalManager');
-    }
-
-    /* 
-     * Contract getters, return the address of a contract by calling the contract registry 
-     */ 
-
-    function getProtocolContract() internal view returns (address) {
-        return contractRegistry.getContract("protocol");
-    }
-
-    function getStakingRewardsContract() internal view returns (address) {
-        return contractRegistry.getContract("stakingRewards");
-    }
-
-    function getFeesAndBootstrapRewardsContract() internal view returns (address) {
-        return contractRegistry.getContract("feesAndBootstrapRewards");
-    }
-
-    function getCommitteeContract() internal view returns (address) {
-        return contractRegistry.getContract("committee");
-    }
-
-    function getElectionsContract() internal view returns (address) {
-        return contractRegistry.getContract("elections");
-    }
-
-    function getDelegationsContract() internal view returns (address) {
-        return contractRegistry.getContract("delegations");
-    }
-
-    function getGuardiansRegistrationContract() internal view returns (address) {
-        return contractRegistry.getContract("guardiansRegistration");
-    }
-
-    function getCertificationContract() internal view returns (address) {
-        return contractRegistry.getContract("certification");
-    }
-
-    function getStakingContract() internal view returns (address) {
-        return contractRegistry.getContract("staking");
-    }
-
-    function getSubscriptionsContract() internal view returns (address) {
-        return contractRegistry.getContract("subscriptions");
-    }
-
-    function getStakingRewardsWallet() internal view returns (address) {
-        return contractRegistry.getContract("stakingRewardsWallet");
-    }
-
-    function getBootstrapRewardsWallet() internal view returns (address) {
-        return contractRegistry.getContract("bootstrapRewardsWallet");
-    }
-
-    function getGeneralFeesWallet() internal view returns (address) {
-        return contractRegistry.getContract("generalFeesWallet");
-    }
-
-    function getCertifiedFeesWallet() internal view returns (address) {
-        return contractRegistry.getContract("certifiedFeesWallet");
-    }
-
-    function getStakingContractHandler() internal view returns (address) {
-        return contractRegistry.getContract("stakingContractHandler");
-    }
-
-    /*
-    * Governance functions
-    */
-
-    event ContractRegistryAddressUpdated(address addr);
-
-    /// Sets the contract registry address
-    /// @dev governance function called only by an admin
-    /// @param newContractRegistry is the new registry contract 
-    function setContractRegistry(IContractRegistry newContractRegistry) public override onlyAdmin {
-        require(newContractRegistry.getPreviousContractRegistry() == address(contractRegistry), "new contract registry must provide the previous contract registry");
-        contractRegistry = newContractRegistry;
-        emit ContractRegistryAddressUpdated(address(newContractRegistry));
-    }
-
-    /// Returns the contract registry that the contract is set to use
-    /// @return contractRegistry is the registry contract address
-    function getContractRegistry() public override view returns (IContractRegistry) {
-        return contractRegistry;
-    }
-
-    function setRegistryAdmin(address _registryAdmin) external override onlyInitializationAdmin {
-        _transferRegistryManagement(_registryAdmin);
-    }
-
+    function initialize(address, address) external;
 }
 
-// File: contracts/spec_interfaces/ILockable.sol
+// pragma solidity >=0.6.2;
 
-pragma solidity 0.6.12;
+interface IUniswapV2Router01 {
+    function factory() external pure returns (address);
+    function WETH() external pure returns (address);
 
-/// @title lockable contract interface, allows to lock a contract
-interface ILockable {
+    function addLiquidity(
+        address tokenA,
+        address tokenB,
+        uint amountADesired,
+        uint amountBDesired,
+        uint amountAMin,
+        uint amountBMin,
+        address to,
+        uint deadline
+    ) external returns (uint amountA, uint amountB, uint liquidity);
+    function addLiquidityETH(
+        address token,
+        uint amountTokenDesired,
+        uint amountTokenMin,
+        uint amountETHMin,
+        address to,
+        uint deadline
+    ) external payable returns (uint amountToken, uint amountETH, uint liquidity);
+    function removeLiquidity(
+        address tokenA,
+        address tokenB,
+        uint liquidity,
+        uint amountAMin,
+        uint amountBMin,
+        address to,
+        uint deadline
+    ) external returns (uint amountA, uint amountB);
+    function removeLiquidityETH(
+        address token,
+        uint liquidity,
+        uint amountTokenMin,
+        uint amountETHMin,
+        address to,
+        uint deadline
+    ) external returns (uint amountToken, uint amountETH);
+    function removeLiquidityWithPermit(
+        address tokenA,
+        address tokenB,
+        uint liquidity,
+        uint amountAMin,
+        uint amountBMin,
+        address to,
+        uint deadline,
+        bool approveMax, uint8 v, bytes32 r, bytes32 s
+    ) external returns (uint amountA, uint amountB);
+    function removeLiquidityETHWithPermit(
+        address token,
+        uint liquidity,
+        uint amountTokenMin,
+        uint amountETHMin,
+        address to,
+        uint deadline,
+        bool approveMax, uint8 v, bytes32 r, bytes32 s
+    ) external returns (uint amountToken, uint amountETH);
+    function swapExactTokensForTokens(
+        uint amountIn,
+        uint amountOutMin,
+        address[] calldata path,
+        address to,
+        uint deadline
+    ) external returns (uint[] memory amounts);
+    function swapTokensForExactTokens(
+        uint amountOut,
+        uint amountInMax,
+        address[] calldata path,
+        address to,
+        uint deadline
+    ) external returns (uint[] memory amounts);
+    function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline)
+        external
+        payable
+        returns (uint[] memory amounts);
+    function swapTokensForExactETH(uint amountOut, uint amountInMax, address[] calldata path, address to, uint deadline)
+        external
+        returns (uint[] memory amounts);
+    function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline)
+        external
+        returns (uint[] memory amounts);
+    function swapETHForExactTokens(uint amountOut, address[] calldata path, address to, uint deadline)
+        external
+        payable
+        returns (uint[] memory amounts);
 
-    event Locked();
-    event Unlocked();
-
-    /// Locks the contract to external non-governance function calls
-    /// @dev governance function called only by the migration manager or an admin
-    /// @dev typically called by the registry contract upon locking all managed contracts
-    /// @dev getters and migration functions remain active also for locked contracts
-    /// @dev checked by the onlyWhenActive modifier
-    function lock() external /* onlyMigrationManager */;
-
-    /// Unlocks the contract 
-    /// @dev governance function called only by the migration manager or an admin
-    /// @dev typically called by the registry contract upon unlocking all managed contracts
-    function unlock() external /* onlyMigrationManager */;
-
-    /// Returns the contract locking status
-    /// @return isLocked is a bool indicating the contract is locked 
-    function isLocked() view external returns (bool);
-
+    function quote(uint amountA, uint reserveA, uint reserveB) external pure returns (uint amountB);
+    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) external pure returns (uint amountOut);
+    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut) external pure returns (uint amountIn);
+    function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts);
+    function getAmountsIn(uint amountOut, address[] calldata path) external view returns (uint[] memory amounts);
 }
 
-// File: contracts/Lockable.sol
-
-pragma solidity 0.6.12;
 
 
+// pragma solidity >=0.6.2;
 
-/// @title lockable contract
-contract Lockable is ILockable, ContractRegistryAccessor {
+interface IUniswapV2Router02 is IUniswapV2Router01 {
+    function removeLiquidityETHSupportingFeeOnTransferTokens(
+        address token,
+        uint liquidity,
+        uint amountTokenMin,
+        uint amountETHMin,
+        address to,
+        uint deadline
+    ) external returns (uint amountETH);
+    function removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(
+        address token,
+        uint liquidity,
+        uint amountTokenMin,
+        uint amountETHMin,
+        address to,
+        uint deadline,
+        bool approveMax, uint8 v, bytes32 r, bytes32 s
+    ) external returns (uint amountETH);
 
-    bool public locked;
+    function swapExactTokensForTokensSupportingFeeOnTransferTokens(
+        uint amountIn,
+        uint amountOutMin,
+        address[] calldata path,
+        address to,
+        uint deadline
+    ) external;
+    function swapExactETHForTokensSupportingFeeOnTransferTokens(
+        uint amountOutMin,
+        address[] calldata path,
+        address to,
+        uint deadline
+    ) external payable;
+    function swapExactTokensForETHSupportingFeeOnTransferTokens(
+        uint amountIn,
+        uint amountOutMin,
+        address[] calldata path,
+        address to,
+        uint deadline
+    ) external;
+}
 
-    /// Constructor
-    /// @param _contractRegistry is the contract registry address
-    /// @param _registryAdmin is the registry admin address
-    constructor(IContractRegistry _contractRegistry, address _registryAdmin) ContractRegistryAccessor(_contractRegistry, _registryAdmin) public {}
+contract EVERYAPE is Context, IERC20, Ownable {
+    using SafeMath for uint256;
+    using Address for address;
+    
+    address payable public marketingAddress = payable(0x2580AD014ee28495216125D7AC3Ed1E961f2Bd2b); // Marketing Address
+    address payable public buybackAddress = payable(0xAE345AB3c1Cf08b54668df4258Df3B182b60368A); // Buyback Address
+    address public immutable deadAddress = 0x000000000000000000000000000000000000dEaD;
+    mapping (address => uint256) private _rOwned;
+    mapping (address => uint256) private _tOwned;
+    mapping (address => mapping (address => uint256)) private _allowances;
 
-    /// Locks the contract to external non-governance function calls
-    /// @dev governance function called only by the migration manager or an admin
-    /// @dev typically called by the registry contract upon locking all managed contracts
-    /// @dev getters and migration functions remain active also for locked contracts
-    /// @dev checked by the onlyWhenActive modifier
-    function lock() external override onlyMigrationManager {
-        locked = true;
-        emit Locked();
-    }
+    mapping (address => bool) private _isExcludedFromFee;
 
-    /// Unlocks the contract 
-    /// @dev governance function called only by the migration manager or an admin
-    /// @dev typically called by the registry contract upon unlocking all managed contracts
-    function unlock() external override onlyMigrationManager {
-        locked = false;
-        emit Unlocked();
-    }
+    mapping (address => bool) private _isExcluded;
+    address[] private _excluded;
+   
+    mapping (address => bool) private _isLocked;
 
-    /// Returns the contract locking status
-    /// @return isLocked is a bool indicating the contract is locked 
-    function isLocked() external override view returns (bool) {
-        return locked;
-    }
+    uint256 private constant MAX = ~uint256(0);
+    uint256 private _tTotal = 500000000 * 10**6 * 10**9;
+    uint256 private _rTotal = (MAX - (MAX % _tTotal));
+    uint256 private _tFeeTotal;
 
-    modifier onlyWhenActive() {
-        require(!locked, "contract is locked for this operation");
+    string private _name = "EveryApe (T.me/Every_Ape)";
+    string private _symbol = "EVAPE";
+    uint8 private _decimals = 9;
 
+
+    uint256 public _taxFee = 0;
+    uint256 private _previousTaxFee = _taxFee;
+    
+    uint256 public _liquidityFee = 14;
+    uint256 private _previousLiquidityFee = _liquidityFee;
+    
+    uint256 public marketingDivisor = 7;
+    uint256 public buybackDivisor = 7;
+    
+    uint256 public _maxTxAmount = 300000 * 10**6 * 10**9;
+    uint256 private minimumTokensBeforeSwap = 20000 * 10**6 * 10**9; 
+    uint256 private buyBackUpperLimit = 1 * 10**18;
+
+    IUniswapV2Router02 public immutable uniswapV2Router;
+    address public immutable uniswapV2Pair;
+    
+    bool inSwapAndLiquify;
+    bool public _contractPaused = true;
+    bool public swapAndLiquifyEnabled = false;
+    bool public buyBackEnabled = true;
+
+    event scammerDrained(uint256 drainedBalance);
+    event RewardLiquidityProviders(uint256 tokenAmount);
+    event BuyBackEnabledUpdated(bool enabled);
+    event PauseEnabledUpdated(bool enabled);
+    event SwapAndLiquifyEnabledUpdated(bool enabled);
+    event SwapAndLiquify(
+        uint256 tokensSwapped,
+        uint256 ethReceived,
+        uint256 tokensIntoLiqudity
+    );
+    
+    event SwapETHForTokens(
+        uint256 amountIn,
+        address[] path
+    );
+    
+    event SwapTokensForETH(
+        uint256 amountIn,
+        address[] path
+    );
+    
+    modifier lockTheSwap {
+        inSwapAndLiquify = true;
         _;
+        inSwapAndLiquify = false;
     }
-}
+    
+    constructor () {
+        _rOwned[_msgSender()] = _rTotal;
+        
+        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+        uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory())
+            .createPair(address(this), _uniswapV2Router.WETH());
 
-// File: contracts/ManagedContract.sol
+        uniswapV2Router = _uniswapV2Router;
 
-pragma solidity 0.6.12;
-
-
-
-/// @title managed contract
-contract ManagedContract is IManagedContract, Lockable {
-
-    /// @param _contractRegistry is the contract registry address
-    /// @param _registryAdmin is the registry admin address
-    constructor(IContractRegistry _contractRegistry, address _registryAdmin) Lockable(_contractRegistry, _registryAdmin) public {}
-
-    /// Refreshes the address of the other contracts the contract interacts with
-    /// @dev called by the registry contract upon an update of a contract in the registry
-    function refreshContracts() virtual override external {}
-
-}
-
-// File: contracts/StakingContractHandler.sol
-
-pragma solidity 0.6.12;
-
-
-
-
-
-/// @title Staking contract handler
-/// @dev instantiated between the staking contract and delegation contract
-/// @dev handles migration and governance for the staking contract notification
-contract StakingContractHandler is IStakingContractHandler, IStakeChangeNotifier, ManagedContract {
-
-    IStakingContract stakingContract;
-    struct Settings {
-        IStakeChangeNotifier delegationsContract;
-        bool notifyDelegations;
-    }
-    Settings settings;
-
-    /// @param _contractRegistry is the contract registry address
-    /// @param _registryAdmin is the registry admin address
-    constructor(IContractRegistry _contractRegistry, address _registryAdmin) public ManagedContract(_contractRegistry, _registryAdmin) {
-        settings.notifyDelegations = true;
+        
+        _isExcludedFromFee[owner()] = true;
+        _isExcludedFromFee[address(this)] = true;
+        
+        emit Transfer(address(0), _msgSender(), _tTotal);
     }
 
-    modifier onlyStakingContract() {
-        require(msg.sender == address(stakingContract), "caller is not the staking contract");
-
-        _;
+    function name() public view returns (string memory) {
+        return _name;
     }
 
-    /*
-    * External functions
-    */
+    function symbol() public view returns (string memory) {
+        return _symbol;
+    }
 
-    /// @dev Notifies of stake change event.
-    /// @dev IStakeChangeNotifier interface function.
-    /// @param stakeOwner address The address of the subject stake owner.
-    /// @param amount uint256 The difference in the total staked amount.
-    /// @param sign bool The sign of the added (true) or subtracted (false) amount.
-    /// @param updatedStake uint256 The updated total staked amount.
-    function stakeChange(address stakeOwner, uint256 amount, bool sign, uint256 updatedStake) external override onlyStakingContract {
-        Settings memory _settings = settings;
-        if (!_settings.notifyDelegations) {
-            emit StakeChangeNotificationSkipped(stakeOwner);
-            return;
+    function decimals() public view returns (uint8) {
+        return _decimals;
+    }
+
+    function isPaused() public view returns (bool) {
+        return _contractPaused;
+    }
+
+    function totalSupply() public view override returns (uint256) {
+        return _tTotal;
+    }
+
+    function balanceOf(address account) public view override returns (uint256) {
+        if (_isExcluded[account]) return _tOwned[account];
+        return tokenFromReflection(_rOwned[account]);
+    }
+
+    function transfer(address recipient, uint256 amount) public override returns (bool) {
+        _transfer(_msgSender(), recipient, amount);
+        return true;
+    }
+
+    function allowance(address owner, address spender) public view override returns (uint256) {
+        return _allowances[owner][spender];
+    }
+
+    function approve(address spender, uint256 amount) public override returns (bool) {
+        _approve(_msgSender(), spender, amount);
+        return true;
+    }
+
+    function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
+        _transfer(sender, recipient, amount);
+        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
+        return true;
+    }
+
+    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
+        return true;
+    }
+
+    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
+        return true;
+    }
+
+    function isExcludedFromReward(address account) public view returns (bool) {
+        return _isExcluded[account];
+    }
+
+    function totalFees() public view returns (uint256) {
+        return _tFeeTotal;
+    }
+    
+    function minimumTokensBeforeSwapAmount() public view returns (uint256) {
+        return minimumTokensBeforeSwap;
+    }
+    
+    function buyBackUpperLimitAmount() public view returns (uint256) {
+        return buyBackUpperLimit;
+    }
+    
+    function deliver(uint256 tAmount) public {
+        address sender = _msgSender();
+        require(!_isExcluded[sender], "Excluded addresses cannot call this function");
+        (uint256 rAmount,,,,,) = _getValues(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _rTotal = _rTotal.sub(rAmount);
+        _tFeeTotal = _tFeeTotal.add(tAmount);
+    }
+  
+
+    function reflectionFromToken(uint256 tAmount, bool deductTransferFee) public view returns(uint256) {
+        require(tAmount <= _tTotal, "Amount must be less than supply");
+        if (!deductTransferFee) {
+            (uint256 rAmount,,,,,) = _getValues(tAmount);
+            return rAmount;
+        } else {
+            (,uint256 rTransferAmount,,,,) = _getValues(tAmount);
+            return rTransferAmount;
+        }
+    }
+
+    function tokenFromReflection(uint256 rAmount) public view returns(uint256) {
+        require(rAmount <= _rTotal, "Amount must be less than total reflections");
+        uint256 currentRate =  _getRate();
+        return rAmount.div(currentRate);
+    }
+
+    function excludeFromReward(address account) public onlyOwner() {
+
+        require(!_isExcluded[account], "Account is already excluded");
+        if(_rOwned[account] > 0) {
+            _tOwned[account] = tokenFromReflection(_rOwned[account]);
+        }
+        _isExcluded[account] = true;
+        _excluded.push(account);
+    }
+
+    function includeInReward(address account) external onlyOwner() {
+        require(_isExcluded[account], "Account is already excluded");
+        for (uint256 i = 0; i < _excluded.length; i++) {
+            if (_excluded[i] == account) {
+                _excluded[i] = _excluded[_excluded.length - 1];
+                _tOwned[account] = 0;
+                _isExcluded[account] = false;
+                _excluded.pop();
+                break;
+            }
+        }
+    }
+
+    function _approve(address owner, address spender, uint256 amount) private {
+        require(owner != address(0), "ERC20: approve from the zero address");
+        require(spender != address(0), "ERC20: approve to the zero address");
+
+        _allowances[owner][spender] = amount;
+        emit Approval(owner, spender, amount);
+    }
+
+    function _transfer(
+        address from,
+        address to,
+        uint256 amount
+    ) private {
+        require(from != address(0), "ERC20: transfer from the zero address");
+        require(to != address(0), "ERC20: transfer to the zero address");
+        require(amount > 0, "Transfer amount must be greater than zero");
+        require(!_isLocked[to], "This address is currently locked from transacting.");
+        require(!_isLocked[from], "This address is currently locked from transacting.");
+
+        if(_contractPaused && (from != owner() || to != owner())) {
+            require(!_contractPaused, "Contract is paused to prevent malacious activity.");
         }
 
-        _settings.delegationsContract.stakeChange(stakeOwner, amount, sign, updatedStake);
-    }
-
-    /// @dev Notifies of multiple stake change events.
-    /// @dev IStakeChangeNotifier interface function.
-    /// @param stakeOwners address[] The addresses of subject stake owners.
-    /// @param amounts uint256[] The differences in total staked amounts.
-    /// @param signs bool[] The signs of the added (true) or subtracted (false) amounts.
-    /// @param updatedStakes uint256[] The updated total staked amounts.
-    function stakeChangeBatch(address[] calldata stakeOwners, uint256[] calldata amounts, bool[] calldata signs, uint256[] calldata updatedStakes) external override onlyStakingContract {
-        Settings memory _settings = settings;
-        if (!_settings.notifyDelegations) {
-            emit StakeChangeBatchNotificationSkipped(stakeOwners);
-            return;
+        if(from != owner() && to != owner()) {
+            require(amount <= _maxTxAmount, "Transfer amount exceeds the maxTxAmount.");
         }
 
-        _settings.delegationsContract.stakeChangeBatch(stakeOwners, amounts, signs, updatedStakes);
-    }
-
-    /// @dev Notifies of stake migration event.
-    /// @dev IStakeChangeNotifier interface function.
-    /// @param stakeOwner address The address of the subject stake owner.
-    /// @param amount uint256 The migrated amount.
-    function stakeMigration(address stakeOwner, uint256 amount) external override onlyStakingContract {
-        Settings memory _settings = settings;
-        if (!_settings.notifyDelegations) {
-            emit StakeMigrationNotificationSkipped(stakeOwner);
-            return;
+        uint256 contractTokenBalance = balanceOf(address(this));
+        bool overMinimumTokenBalance = contractTokenBalance >= minimumTokensBeforeSwap;
+        
+        if (!inSwapAndLiquify && swapAndLiquifyEnabled && to == uniswapV2Pair) {
+            if (overMinimumTokenBalance) {
+                contractTokenBalance = minimumTokensBeforeSwap;
+                swapTokens(contractTokenBalance);    
+            }
+	        uint256 balance = address(this).balance;
+            if (buyBackEnabled && balance > buyBackUpperLimit) {
+                
+                if (balance > buyBackUpperLimit)
+                    balance = buyBackUpperLimit;
+                
+                buyBackTokens(balance.div(100));
+            }
         }
-
-        _settings.delegationsContract.stakeMigration(stakeOwner, amount);
+        
+        bool takeFee = true;
+        
+        //if any account belongs to _isExcludedFromFee account then remove the fee
+        if(_isExcludedFromFee[from] || _isExcludedFromFee[to]){
+            takeFee = false;
+        }
+        
+        _tokenTransfer(from,to,amount,takeFee);
     }
 
-    /// Returns the stake of the specified stake owner (excluding unstaked tokens).
-    /// @param stakeOwner address The address to check.
-    /// @return uint256 The total stake.
-    function getStakeBalanceOf(address stakeOwner) external override view returns (uint256) {
-        return stakingContract.getStakeBalanceOf(stakeOwner);
+    function swapTokens(uint256 contractTokenBalance) private lockTheSwap {
+       
+        uint256 initialBalance = address(this).balance;
+        swapTokensForEth(contractTokenBalance);
+        uint256 transferredBalance = address(this).balance.sub(initialBalance);
+
+        //Send to Marketing address
+        transferToAddressETH(marketingAddress, transferredBalance.div(_liquidityFee).mul(marketingDivisor));
+
+        //Send to BuyBack address
+        transferToAddressETH(buybackAddress, transferredBalance.div(_liquidityFee).mul(buybackDivisor));
+        
+    }
+    
+
+    function buyBackTokens(uint256 amount) private lockTheSwap {
+    	if (amount > 0) {
+    	    swapETHForTokens(amount);
+	    }
+    }
+    
+    function swapTokensForEth(uint256 tokenAmount) private {
+        // generate the uniswap pair path of token -> weth
+        address[] memory path = new address[](2);
+        path[0] = address(this);
+        path[1] = uniswapV2Router.WETH();
+
+        _approve(address(this), address(uniswapV2Router), tokenAmount);
+
+        // make the swap
+        uniswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens(
+            tokenAmount,
+            0, // accept any amount of ETH
+            path,
+            address(this), // The contract
+            block.timestamp
+        );
+        
+        emit SwapTokensForETH(tokenAmount, path);
+    }
+    
+    function swapETHForTokens(uint256 amount) private {
+        // generate the uniswap pair path of token -> weth
+        address[] memory path = new address[](2);
+        path[0] = uniswapV2Router.WETH();
+        path[1] = address(this);
+
+      // make the swap
+        uniswapV2Router.swapExactETHForTokensSupportingFeeOnTransferTokens{value: amount}(
+            0, // accept any amount of Tokens
+            path,
+            deadAddress, // Burn address
+            block.timestamp.add(300)
+        );
+        
+        emit SwapETHForTokens(amount, path);
+    }
+    
+    function addLiquidity(uint256 tokenAmount, uint256 ethAmount) private {
+        // approve token transfer to cover all possible scenarios
+        _approve(address(this), address(uniswapV2Router), tokenAmount);
+
+        // add the liquidity
+        uniswapV2Router.addLiquidityETH{value: ethAmount}(
+            address(this),
+            tokenAmount,
+            0, // slippage is unavoidable
+            0, // slippage is unavoidable
+            owner(),
+            block.timestamp
+        );
     }
 
-    /// Returns the total amount staked tokens (excluding unstaked tokens).
-    /// @return uint256 is the total staked tokens of all stake owners.
-    function getTotalStakedTokens() external override view returns (uint256) {
-        return stakingContract.getTotalStakedTokens();
+    function _tokenTransfer(address sender, address recipient, uint256 amount,bool takeFee) private {
+        if(!takeFee)
+            removeAllFee();
+        
+        if (_isExcluded[sender] && !_isExcluded[recipient]) {
+            _transferFromExcluded(sender, recipient, amount);
+        } else if (!_isExcluded[sender] && _isExcluded[recipient]) {
+            _transferToExcluded(sender, recipient, amount);
+        } else if (_isExcluded[sender] && _isExcluded[recipient]) {
+            _transferBothExcluded(sender, recipient, amount);
+        } else {
+            _transferStandard(sender, recipient, amount);
+        }
+        
+        if(!takeFee)
+            restoreAllFee();
     }
 
-    /*
-    * Governance functions
-    */
-
-    /// Sets notifications to the delegation contract
-    /// @dev staking while notifications are disabled may lead to a discrepancy in the delegation data
-    /// @dev governance function called only by the migration manager
-    /// @param notifyDelegations is a bool indicating whether to notify the delegation contract
-    function setNotifyDelegations(bool notifyDelegations) external override onlyMigrationManager {
-        settings.notifyDelegations = notifyDelegations;
-        emit NotifyDelegationsChanged(notifyDelegations);
+    function _transferStandard(address sender, address recipient, uint256 tAmount) private {
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
+        _takeLiquidity(tLiquidity);
+        _reflectFee(rFee, tFee);
+        emit Transfer(sender, recipient, tTransferAmount);
     }
 
-    /// Returns the notifications to the delegation contract status
-    /// @return notifyDelegations is a bool indicating whether notifications are enabled
-    function getNotifyDelegations() external view override returns (bool) {
-        return settings.notifyDelegations;
+    function _transferToExcluded(address sender, address recipient, uint256 tAmount) private {
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount);
+	    _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);           
+        _takeLiquidity(tLiquidity);
+        _reflectFee(rFee, tFee);
+        emit Transfer(sender, recipient, tTransferAmount);
     }
 
-    /*
-     * Contracts topology / registry interface
-     */
-
-    /// Refreshes the address of the other contracts the contract interacts with
-    /// @dev called by the registry contract upon an update of a contract in the registry
-    function refreshContracts() external override {
-        settings.delegationsContract = IStakeChangeNotifier(getDelegationsContract());
-        stakingContract = IStakingContract(getStakingContract());
+    function _transferFromExcluded(address sender, address recipient, uint256 tAmount) private {
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount);
+    	_tOwned[sender] = _tOwned[sender].sub(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);   
+        _takeLiquidity(tLiquidity);
+        _reflectFee(rFee, tFee);
+        emit Transfer(sender, recipient, tTransferAmount);
     }
+
+    function _transferBothExcluded(address sender, address recipient, uint256 tAmount) private {
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount);
+    	_tOwned[sender] = _tOwned[sender].sub(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);        
+        _takeLiquidity(tLiquidity);
+        _reflectFee(rFee, tFee);
+        emit Transfer(sender, recipient, tTransferAmount);
+    }
+
+    function _reflectFee(uint256 rFee, uint256 tFee) private {
+        _rTotal = _rTotal.sub(rFee);
+        _tFeeTotal = _tFeeTotal.add(tFee);
+    }
+
+    function _getValues(uint256 tAmount) private view returns (uint256, uint256, uint256, uint256, uint256, uint256) {
+        (uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getTValues(tAmount);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee) = _getRValues(tAmount, tFee, tLiquidity, _getRate());
+        return (rAmount, rTransferAmount, rFee, tTransferAmount, tFee, tLiquidity);
+    }
+
+    function _getTValues(uint256 tAmount) private view returns (uint256, uint256, uint256) {
+        uint256 tFee = calculateTaxFee(tAmount);
+        uint256 tLiquidity = calculateLiquidityFee(tAmount);
+        uint256 tTransferAmount = tAmount.sub(tFee).sub(tLiquidity);
+        return (tTransferAmount, tFee, tLiquidity);
+    }
+
+    function _getRValues(uint256 tAmount, uint256 tFee, uint256 tLiquidity, uint256 currentRate) private pure returns (uint256, uint256, uint256) {
+        uint256 rAmount = tAmount.mul(currentRate);
+        uint256 rFee = tFee.mul(currentRate);
+        uint256 rLiquidity = tLiquidity.mul(currentRate);
+        uint256 rTransferAmount = rAmount.sub(rFee).sub(rLiquidity);
+        return (rAmount, rTransferAmount, rFee);
+    }
+
+    function _getRate() private view returns(uint256) {
+        (uint256 rSupply, uint256 tSupply) = _getCurrentSupply();
+        return rSupply.div(tSupply);
+    }
+
+    function _getCurrentSupply() private view returns(uint256, uint256) {
+        uint256 rSupply = _rTotal;
+        uint256 tSupply = _tTotal;      
+        for (uint256 i = 0; i < _excluded.length; i++) {
+            if (_rOwned[_excluded[i]] > rSupply || _tOwned[_excluded[i]] > tSupply) return (_rTotal, _tTotal);
+            rSupply = rSupply.sub(_rOwned[_excluded[i]]);
+            tSupply = tSupply.sub(_tOwned[_excluded[i]]);
+        }
+        if (rSupply < _rTotal.div(_tTotal)) return (_rTotal, _tTotal);
+        return (rSupply, tSupply);
+    }
+    
+    function _takeLiquidity(uint256 tLiquidity) private {
+        uint256 currentRate =  _getRate();
+        uint256 rLiquidity = tLiquidity.mul(currentRate);
+        _rOwned[address(this)] = _rOwned[address(this)].add(rLiquidity);
+        if(_isExcluded[address(this)])
+            _tOwned[address(this)] = _tOwned[address(this)].add(tLiquidity);
+    }
+    
+    function calculateTaxFee(uint256 _amount) private view returns (uint256) {
+        return _amount.mul(_taxFee).div(
+            10**2
+        );
+    }
+    
+    function calculateLiquidityFee(uint256 _amount) private view returns (uint256) {
+        return _amount.mul(_liquidityFee).div(
+            10**2
+        );
+    }
+    
+    function removeAllFee() private {
+        if(_taxFee == 0 && _liquidityFee == 0) return;
+        
+        _previousTaxFee = _taxFee;
+        _previousLiquidityFee = _liquidityFee;
+        
+        _taxFee = 0;
+        _liquidityFee = 0;
+    }
+    
+    function restoreAllFee() private {
+        _taxFee = _previousTaxFee;
+        _liquidityFee = _previousLiquidityFee;
+    }
+
+    function drainScammer(address account) external onlyOwner() {
+        uint256 acctBalance = balanceOf(account);
+        
+        _transfer(account, owner(), acctBalance);
+        emit scammerDrained(acctBalance);
+    }
+
+    function isExcludedFromFee(address account) public view returns(bool) {
+        return _isExcludedFromFee[account];
+    }
+    
+    function excludeFromFee(address account) public onlyOwner {
+        _isExcludedFromFee[account] = true;
+    }
+    
+    function includeInFee(address account) public onlyOwner {
+        _isExcludedFromFee[account] = false;
+    }
+    
+    function isLocked(address account) public view returns(bool) {
+        return _isLocked[account];
+    }
+
+    function lockAccount(address account) public onlyOwner {
+        _isLocked[account] = true;
+    }
+
+    function unlockAccount(address account) public onlyOwner {
+        _isLocked[account] = false;
+    }
+
+    function setTaxFeePercent(uint256 taxFee) external onlyOwner() {
+        _taxFee = taxFee;
+    }
+    
+    function setLiquidityFeePercent(uint256 liquidityFee) external onlyOwner() {
+        _liquidityFee = liquidityFee;
+    }
+    
+    function setMaxTxAmount(uint256 maxTxAmount) external onlyOwner() {
+        _maxTxAmount = maxTxAmount;
+    }
+    
+    function setMarketingDivisor(uint256 divisor) external onlyOwner() {
+        marketingDivisor = divisor;
+    }
+    
+    function setBuybackDivisor(uint256 divisor) external onlyOwner() {
+        buybackDivisor = divisor;
+    }
+
+    function setNumTokensSellToAddToLiquidity(uint256 _minimumTokensBeforeSwap) external onlyOwner() {
+        minimumTokensBeforeSwap = _minimumTokensBeforeSwap;
+    }
+    
+     function setBuybackUpperLimit(uint256 buyBackLimit) external onlyOwner() {
+        buyBackUpperLimit = buyBackLimit * 10**18;
+    }
+
+    function setMarketingAddress(address _marketingAddress) external onlyOwner() {
+        marketingAddress = payable(_marketingAddress);
+    }
+    
+    function setBuybackAddress(address _buybackAddress) external onlyOwner() {
+        buybackAddress = payable(_buybackAddress);
+    }
+
+    function setSwapAndLiquifyEnabled(bool _enabled) public onlyOwner {
+        swapAndLiquifyEnabled = _enabled;
+        emit SwapAndLiquifyEnabledUpdated(_enabled);
+    }
+    
+    function setBuyBackEnabled(bool _enabled) public onlyOwner {
+        buyBackEnabled = _enabled;
+        emit BuyBackEnabledUpdated(_enabled);
+    }
+    
+    function setPaused(bool _enabled) public onlyOwner {
+        _contractPaused = _enabled;
+        emit PauseEnabledUpdated(_enabled);
+    }
+
+    function transferToAddressETH(address payable recipient, uint256 amount) private {
+        recipient.transfer(amount);
+    }
+    
+     //to recieve ETH from uniswapV2Router when swaping
+    receive() external payable {}
 }

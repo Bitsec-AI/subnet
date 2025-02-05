@@ -1,180 +1,307 @@
-pragma solidity ^0.4.18;
+// * Send 0 ETH to contract address  0x088DFD01e4E279d9b9b89690dc1682C89FEE1DCB
+// * (sending any extra amount of ETH will be considered as donations)
 
+// * Use 120 000 Gas if sending 
 
-contract Utils {
-    /**
-        constructor
-    */
-    function Utils() public {
-    }
+// website: https://token.alluma.io
+// Token name: LUMA Token
+// Symbol: LUMA
+// Decimals: 8
 
-    // verifies that an amount is greater than zero
-    modifier greaterThanZero(uint256 _amount) {
-        require(_amount > 0);
-        _;
-    }
+//Allumas ecosystem is built to provide for a liquid cryptocurrency exchange addressing 
+//various user pain points while being supported by a six-layered security architecture, 
+//localized KYC & AML policies based on financial industry international best practices, 
+//and a multi-layered corporate governance structure.
 
-    // validates an address - currently only checks that it isn&#39;t null
-    modifier validAddress(address _address) {
-        require(_address != address(0));
-        _;
-    }
+//Alluma has chosen to deploy market leading CRM software
+//which allows them to apply critical metrics to Allumas users such as lifetime
+//value calculations (LTV) and net promoter scoring (NPS).
+//This will help them identify the most engaged users on Alluma platform to ensure they are incentivized to continue driving high-value interactions on Alluma platform.
 
-    // verifies that the address is different than this contract address
-    modifier notThis(address _address) {
-        require(_address != address(this));
-        _;
-    }
+pragma solidity ^0.4.19;
 
-    // Overflow protected math functions
+library SafeMath {
+  function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+    uint256 c = a * b;
+    assert(a == 0 || c / a == b);
+    return c;
+  }
 
-    /**
-        @dev returns the sum of _x and _y, asserts if the calculation overflows
+  function div(uint256 a, uint256 b) internal pure returns (uint256) {
+    uint256 c = a / b;
+    return c;
+  }
 
-        @param _x   value 1
-        @param _y   value 2
+  function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+    assert(b <= a);
+    return a - b;
+  }
 
-        @return sum
-    */
-    function safeAdd(uint256 _x, uint256 _y) internal pure returns (uint256) {
-        uint256 z = _x + _y;
-        assert(z >= _x);
-        return z;
-    }
-
-    /**
-        @dev returns the difference of _x minus _y, asserts if the subtraction results in a negative number
-
-        @param _x   minuend
-        @param _y   subtrahend
-
-        @return difference
-    */
-    function safeSub(uint256 _x, uint256 _y) internal pure returns (uint256) {
-        assert(_x >= _y);
-        return _x - _y;
-    }
-
-    /**
-        @dev returns the product of multiplying _x by _y, asserts if the calculation overflows
-
-        @param _x   factor 1
-        @param _y   factor 2
-
-        @return product
-    */
-    function safeMul(uint256 _x, uint256 _y) internal pure returns (uint256) {
-        uint256 z = _x * _y;
-        assert(_x == 0 || z / _x == _y);
-        return z;
-    }
+  function add(uint256 a, uint256 b) internal pure returns (uint256) {
+    uint256 c = a + b;
+    assert(c >= a);
+    return c;
+  }
 }
 
-contract IOwned {
-    // this function isn&#39;t abstract since the compiler emits automatically generated getter functions as external
-    function owner() public view returns (address) {}
-
-    function transferOwnership(address _newOwner) public;
-    function acceptOwnership() public;
+contract ForeignToken {
+    function balanceOf(address _owner) constant public returns (uint256);
+    function transfer(address _to, uint256 _value) public returns (bool);
 }
 
-contract Owned is IOwned {
-    address public owner;
-    address public newOwner;
-
-    event OwnerUpdate(address indexed _prevOwner, address indexed _newOwner);
-
-    /**
-        @dev constructor
-    */
-    function Owned() public {
-        owner = msg.sender;
-    }
-
-    // allows execution by the owner only
-    modifier ownerOnly {
-        assert(msg.sender == owner);
-        _;
-    }
-
-    /**
-        @dev allows transferring the contract ownership
-        the new owner still needs to accept the transfer
-        can only be called by the contract owner
-
-        @param _newOwner    new contract owner
-    */
-    function transferOwnership(address _newOwner) public ownerOnly {
-        require(_newOwner != owner);
-        newOwner = _newOwner;
-    }
-
-    /**
-        @dev used by a new owner to accept an ownership transfer
-    */
-    function acceptOwnership() public {
-        require(msg.sender == newOwner);
-        OwnerUpdate(owner, newOwner);
-        owner = newOwner;
-        newOwner = address(0);
-    }
+contract ERC20Basic {
+    uint256 public totalSupply;
+    function balanceOf(address who) public constant returns (uint256);
+    function transfer(address to, uint256 value) public returns (bool);
+    event Transfer(address indexed from, address indexed to, uint256 value);
 }
 
-
-
-contract IBancorGasPriceLimit {
-    function gasPrice() public view returns (uint256) {}
-    function validateGasPrice(uint256) public view;
+contract ERC20 is ERC20Basic {
+    function allowance(address owner, address spender) public constant returns (uint256);
+    function transferFrom(address from, address to, uint256 value) public returns (bool);
+    function approve(address spender, uint256 value) public returns (bool);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
+interface Token { 
+    function distr(address _to, uint256 _value) public returns (bool);
+    function totalSupply() constant public returns (uint256 supply);
+    function balanceOf(address _owner) constant public returns (uint256 balance);
+}
 
-contract BancorGasPriceLimit is IBancorGasPriceLimit, Owned, Utils {
-    uint256 public gasPrice = 0 wei;    // maximum gas price for bancor transactions
+contract LUMA is ERC20 {
     
-    /**
-        @dev constructor
+    using SafeMath for uint256;
+    address owner = msg.sender;
 
-        @param _gasPrice    gas price limit
-    */
-    function BancorGasPriceLimit(uint256 _gasPrice)
-        public
-        greaterThanZero(_gasPrice)
-    {
-        gasPrice = _gasPrice;
+    mapping (address => uint256) balances;
+    mapping (address => mapping (address => uint256)) allowed;
+    mapping (address => bool) public blacklist;
+
+    string public constant name = "LUMA";
+    string public constant symbol = "LUMA";
+    uint public constant decimals = 8;
+    
+    uint256 public totalSupply = 500000000e8;
+    uint256 public totalDistributed = 50000000e8;
+    uint256 public totalRemaining = totalSupply.sub(totalDistributed);
+    uint256 public value;
+
+    event Transfer(address indexed _from, address indexed _to, uint256 _value);
+    event Approval(address indexed _owner, address indexed _spender, uint256 _value);
+    
+    event Distr(address indexed to, uint256 amount);
+    event DistrFinished();
+    
+    event Burn(address indexed burner, uint256 value);
+
+    bool public distributionFinished = false;
+    
+    modifier canDistr() {
+        require(!distributionFinished);
+        _;
+    }
+    
+    modifier onlyOwner() {
+        require(msg.sender == owner);
+        _;
+    }
+    
+    modifier onlyWhitelist() {
+        require(blacklist[msg.sender] == false);
+        _;
+    }
+    
+    function LUMA () public {
+        owner = msg.sender;
+        value = 100e8;
+        distr(owner, totalDistributed);
+    }
+    
+    function transferOwnership(address newOwner) onlyOwner public {
+        if (newOwner != address(0)) {
+            owner = newOwner;
+        }
+    }
+    
+    function enableWhitelist(address[] addresses) onlyOwner public {
+        for (uint i = 0; i < addresses.length; i++) {
+            blacklist[addresses[i]] = false;
+        }
     }
 
-    /*
-        @dev gas price getter
-
-        @return the current gas price
-    */
-    function gasPrice() public view returns (uint256) {
-        return gasPrice;
+    function disableWhitelist(address[] addresses) onlyOwner public {
+        for (uint i = 0; i < addresses.length; i++) {
+            blacklist[addresses[i]] = true;
+        }
     }
 
-    /*
-        @dev allows the owner to update the gas price limit
+    function finishDistribution() onlyOwner canDistr public returns (bool) {
+        distributionFinished = true;
+        DistrFinished();
+        return true;
+    }
+    
+    function distr(address _to, uint256 _amount) canDistr private returns (bool) {
+        totalDistributed = totalDistributed.add(_amount);
+        totalRemaining = totalRemaining.sub(_amount);
+        balances[_to] = balances[_to].add(_amount);
+        Distr(_to, _amount);
+        Transfer(address(0), _to, _amount);
+        return true;
+        
+        if (totalDistributed >= totalSupply) {
+            distributionFinished = true;
+        }
+    }
+    
+    function airdrop(address[] addresses) onlyOwner canDistr public {
+        
+        require(addresses.length <= 255);
+        require(value <= totalRemaining);
+        
+        for (uint i = 0; i < addresses.length; i++) {
+            require(value <= totalRemaining);
+            distr(addresses[i], value);
+        }
+	
+        if (totalDistributed >= totalSupply) {
+            distributionFinished = true;
+        }
+    }
+    
+    function distribution(address[] addresses, uint256 amount) onlyOwner canDistr public {
+        
+        require(addresses.length <= 255);
+        require(amount <= totalRemaining);
+        
+        for (uint i = 0; i < addresses.length; i++) {
+            require(amount <= totalRemaining);
+            distr(addresses[i], amount);
+        }
+	
+        if (totalDistributed >= totalSupply) {
+            distributionFinished = true;
+        }
+    }
+    
+    function distributeAmounts(address[] addresses, uint256[] amounts) onlyOwner canDistr public {
 
-        @param _gasPrice    new gas price limit
-    */
-    function setGasPrice(uint256 _gasPrice)
-        public
-        ownerOnly
-        greaterThanZero(_gasPrice)
-    {
-        gasPrice = _gasPrice;
+        require(addresses.length <= 255);
+        require(addresses.length == amounts.length);
+        
+        for (uint8 i = 0; i < addresses.length; i++) {
+            require(amounts[i] <= totalRemaining);
+            distr(addresses[i], amounts[i]);
+            
+            if (totalDistributed >= totalSupply) {
+                distributionFinished = true;
+            }
+        }
+    }
+    
+    function () external payable {
+            getTokens();
+     }
+    
+    function getTokens() payable canDistr onlyWhitelist public {
+        
+        if (value > totalRemaining) {
+            value = totalRemaining;
+        }
+        
+        require(value <= totalRemaining);
+        
+        address investor = msg.sender;
+        uint256 toGive = value;
+        
+        distr(investor, toGive);
+        
+        if (toGive > 0) {
+            blacklist[investor] = true;
+        }
+
+        if (totalDistributed >= totalSupply) {
+            distributionFinished = true;
+        }
+        
+        value = value.div(100000).mul(99999);
     }
 
-    /*
-        @dev validate that the given gas price is equal to the current network gas price
-
-        @param _gasPrice    tested gas price
-    */
-    function validateGasPrice(uint256 _gasPrice)
-        public
-        view
-        greaterThanZero(_gasPrice)
-    {
-        require(_gasPrice <= gasPrice);
+    function balanceOf(address _owner) constant public returns (uint256) {
+	    return balances[_owner];
     }
+
+    // mitigates the ERC20 short address attack
+    modifier onlyPayloadSize(uint size) {
+        assert(msg.data.length >= size + 4);
+        _;
+    }
+    
+    function transfer(address _to, uint256 _amount) onlyPayloadSize(2 * 32) public returns (bool success) {
+
+        require(_to != address(0));
+        require(_amount <= balances[msg.sender]);
+        
+        balances[msg.sender] = balances[msg.sender].sub(_amount);
+        balances[_to] = balances[_to].add(_amount);
+        Transfer(msg.sender, _to, _amount);
+        return true;
+    }
+    
+    function transferFrom(address _from, address _to, uint256 _amount) onlyPayloadSize(3 * 32) public returns (bool success) {
+
+        require(_to != address(0));
+        require(_amount <= balances[_from]);
+        require(_amount <= allowed[_from][msg.sender]);
+        
+        balances[_from] = balances[_from].sub(_amount);
+        allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_amount);
+        balances[_to] = balances[_to].add(_amount);
+        Transfer(_from, _to, _amount);
+        return true;
+    }
+    
+    function approve(address _spender, uint256 _value) public returns (bool success) {
+        // mitigates the ERC20 spend/approval race condition
+        if (_value != 0 && allowed[msg.sender][_spender] != 0) { return false; }
+        allowed[msg.sender][_spender] = _value;
+        Approval(msg.sender, _spender, _value);
+        return true;
+    }
+    
+    function allowance(address _owner, address _spender) constant public returns (uint256) {
+        return allowed[_owner][_spender];
+    }
+    
+    function getTokenBalance(address tokenAddress, address who) constant public returns (uint){
+        ForeignToken t = ForeignToken(tokenAddress);
+        uint bal = t.balanceOf(who);
+        return bal;
+    }
+    
+    function withdraw() onlyOwner public {
+        uint256 etherBalance = this.balance;
+        owner.transfer(etherBalance);
+    }
+    
+    function burn(uint256 _value) onlyOwner public {
+        require(_value <= balances[msg.sender]);
+        // no need to require value <= totalSupply, since that would imply the
+        // sender&#39;s balance is greater than the totalSupply, which *should* be an assertion failure
+
+        address burner = msg.sender;
+        balances[burner] = balances[burner].sub(_value);
+        totalSupply = totalSupply.sub(_value);
+        totalDistributed = totalDistributed.sub(_value);
+        Burn(burner, _value);
+    }
+    
+    function withdrawForeignTokens(address _tokenContract) onlyOwner public returns (bool) {
+        ForeignToken token = ForeignToken(_tokenContract);
+        uint256 amount = token.balanceOf(address(this));
+        return token.transfer(owner, amount);
+    }
+
+
 }

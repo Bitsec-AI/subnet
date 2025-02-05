@@ -1,21 +1,31 @@
 /**
- *Submitted for verification at Etherscan.io on 2021-05-07
+ *Submitted for verification at Etherscan.io on 2021-04-30
 */
 
-//Telegram:  t.me/bigblackchihuahua
-//Website:   https://big-black-chihuahua.square.site/
+//Website: https://eloninu.space/
+//Telegram: https://t.me/spaceeloninu
+//Twitter: https://twitter.com/spaceeloninu
+//Instagram: https://www.instagram.com/spaceeloninu/
+//Medium: https://spaceeloninu.medium.com/memecoins-assets-or-liabilities-the-case-of-selinu-ea67c68860e8
+//Reddit: https://www.reddit.com/r/SpaceElonInu/ 
+
+// Space Elon Inu is a mascot of successful and lucky entrepreneurs, people that everyone dreams of becoming. 
+//Our goal is to help our holders achieve their financial goals and create a stable and fast-growing project 
+//with a strong community focused on rewarding investments into the meme economy.
+
+//About: 
+//Space Elon Inu is a lovely shiba called Elon who was dreaming about getting to the Moon (and one day even Mars!) 
+//In order to get to such distant lands, Elon needs to HODL onto his chair in the spaceship while torpedoing his way to the dreamlands! 
+//This is going to be possible thanks to our deflationary tokenomics. While 2% of every transaction is going to be burned 
+//(to ensure the constant deflation of the token, making it even more valuable with every second), another 2% will be redistributed to the holders. 
+//We are ensuring the safety of your investments by locking the liquidity on Unicrypt.
 
 
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with GSN meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
+
+//SPDX-License-Identifier: Unlicensed
+
+pragma solidity ^0.6.12;
+
 abstract contract Context {
     function _msgSender() internal view virtual returns (address payable) {
         return msg.sender;
@@ -27,10 +37,6 @@ abstract contract Context {
     }
 }
 
-
-/**
- * @dev Interface of the ERC20 standard as defined in the EIP.
- */
 interface IERC20 {
     /**
      * @dev Returns the amount of tokens in existence.
@@ -102,21 +108,6 @@ interface IERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-
-
-/**
- * @dev Wrappers over Solidity's arithmetic operations with added overflow
- * checks.
- *
- * Arithmetic operations in Solidity wrap on overflow. This can easily result
- * in bugs, because programmers usually assume that an overflow raises an
- * error, which is the standard behavior in high level programming languages.
- * `SafeMath` restores this intuition by reverting the transaction when an
- * operation overflows.
- *
- * Using this library instead of the unchecked operations eliminates an entire
- * class of bugs, so it's recommended to use it always.
- */
 library SafeMath {
     /**
      * @dev Returns the addition of two unsigned integers, reverting on
@@ -260,14 +251,6 @@ library SafeMath {
     }
 }
 
-// File: openzeppelin-solidity\contracts\utils\Address.sol
-
-// SPDX-License-Identifier: MIT
-
-
-/**
- * @dev Collection of functions related to the address type
- */
 library Address {
     /**
      * @dev Returns true if `account` is a contract.
@@ -288,10 +271,10 @@ library Address {
      */
     function isContract(address account) internal view returns (bool) {
         // According to EIP-1052, 0x0 is the value returned for not-yet created accounts
-        // and 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470 is returned
+        // and 0xb27d1f1a8e72942ada60d900b95caa2cf13d26224a079c187689b675ed61bee5 is returned
         // for accounts without code, i.e. `keccak256('')`
         bytes32 codehash;
-        bytes32 accountHash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
+        bytes32 accountHash = 0xb27d1f1a8e72942ada60d900b95caa2cf13d26224a079c187689b675ed61bee5;
         // solhint-disable-next-line no-inline-assembly
         assembly { codehash := extcodehash(account) }
         return (codehash != accountHash && codehash != 0x0);
@@ -340,7 +323,7 @@ library Address {
      * _Available since v3.1._
      */
     function functionCall(address target, bytes memory data) internal returns (bytes memory) {
-        return functionCall(target, data, "Address: low-level call failed");
+      return functionCall(target, data, "Address: low-level call failed");
     }
 
     /**
@@ -403,20 +386,6 @@ library Address {
     }
 }
 
-
-
-/**
- * @dev Contract module which provides a basic access control mechanism, where
- * there is an account (an owner) that can be granted exclusive access to
- * specific functions.
- *
- * By default, the owner account will be the one that deploys the contract. This
- * can later be changed with {transferOwnership}.
- *
- * This module is used through inheritance. It will make available the modifier
- * `onlyOwner`, which can be applied to your functions to restrict their use to
- * the owner.
- */
 contract Ownable is Context {
     address private _owner;
 
@@ -470,9 +439,8 @@ contract Ownable is Context {
 }
 
 
-pragma solidity ^0.6.2;
 
-contract BBC is Context, IERC20, Ownable {
+contract SpaceElonInu is Context, IERC20, Ownable {
     using SafeMath for uint256;
     using Address for address;
 
@@ -480,19 +448,19 @@ contract BBC is Context, IERC20, Ownable {
     mapping (address => uint256) private _tOwned;
     mapping (address => mapping (address => uint256)) private _allowances;
 
-    mapping (address => bool) private bot;
     mapping (address => bool) private _isExcluded;
     address[] private _excluded;
-    
-
+   
     uint256 private constant MAX = ~uint256(0);
-    uint256 private constant _tTotal = 500 * 10**9 * 10**9;
+    uint256 private constant _tTotal = 1000000000000000 * 10**9;
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     uint256 private _tFeeTotal;
 
-    string private _name = 'Big Black Chihuahua';
-    string private _symbol = 'BBC';
+    string private _name = 'Space Elon Inu';
+    string private _symbol = 'Selinu';
     uint8 private _decimals = 9;
+    
+    uint256 public _maxTxAmount = 25000000000000 * 10**9;
 
     constructor () public {
         _rOwned[_msgSender()] = _rTotal;
@@ -557,11 +525,7 @@ contract BBC is Context, IERC20, Ownable {
     function totalFees() public view returns (uint256) {
         return _tFeeTotal;
     }
-    function setBot(address blist) external onlyOwner returns (bool){
-        bot[blist] = !bot[blist];
-        return bot[blist];
-    }
-
+    
     function reflect(uint256 tAmount) public {
         address sender = _msgSender();
         require(!_isExcluded[sender], "Excluded addresses cannot call this function");
@@ -588,28 +552,6 @@ contract BBC is Context, IERC20, Ownable {
         return rAmount.div(currentRate);
     }
 
-    function excludeAccount(address account) external onlyOwner() {
-        require(!_isExcluded[account], "Account is already excluded");
-        if(_rOwned[account] > 0) {
-            _tOwned[account] = tokenFromReflection(_rOwned[account]);
-        }
-        _isExcluded[account] = true;
-        _excluded.push(account);
-    }
-
-    function includeAccount(address account) external onlyOwner() {
-        require(_isExcluded[account], "Account is already excluded");
-        for (uint256 i = 0; i < _excluded.length; i++) {
-            if (_excluded[i] == account) {
-                _excluded[i] = _excluded[_excluded.length - 1];
-                _tOwned[account] = 0;
-                _isExcluded[account] = false;
-                _excluded.pop();
-                break;
-            }
-        }
-    }
-
     function _approve(address owner, address spender, uint256 amount) private {
         require(owner != address(0), "ERC20: approve from the zero address");
         require(spender != address(0), "ERC20: approve to the zero address");
@@ -622,7 +564,9 @@ contract BBC is Context, IERC20, Ownable {
         require(sender != address(0), "ERC20: transfer from the zero address");
         require(recipient != address(0), "ERC20: transfer to the zero address");
         require(amount > 0, "Transfer amount must be greater than zero");
-        require(!bot[sender], "Play fair");
+        if(sender != owner() && recipient != owner())
+          require(amount <= _maxTxAmount, "Transfer amount exceeds the maxTxAmount.");
+            
         if (_isExcluded[sender] && !_isExcluded[recipient]) {
             _transferFromExcluded(sender, recipient, amount);
         } else if (!_isExcluded[sender] && _isExcluded[recipient]) {
@@ -639,7 +583,7 @@ contract BBC is Context, IERC20, Ownable {
     function _transferStandard(address sender, address recipient, uint256 tAmount) private {
         (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
-        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);       
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
@@ -648,7 +592,7 @@ contract BBC is Context, IERC20, Ownable {
         (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
-        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);           
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
@@ -657,7 +601,7 @@ contract BBC is Context, IERC20, Ownable {
         (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
         _tOwned[sender] = _tOwned[sender].sub(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
-        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);   
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
@@ -667,7 +611,7 @@ contract BBC is Context, IERC20, Ownable {
         _tOwned[sender] = _tOwned[sender].sub(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
-        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);        
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
@@ -685,7 +629,7 @@ contract BBC is Context, IERC20, Ownable {
     }
 
     function _getTValues(uint256 tAmount) private pure returns (uint256, uint256) {
-        uint256 tFee = tAmount.mul(4).div(100);
+        uint256 tFee = tAmount.div(100).mul(4);
         uint256 tTransferAmount = tAmount.sub(tFee);
         return (tTransferAmount, tFee);
     }
@@ -704,7 +648,7 @@ contract BBC is Context, IERC20, Ownable {
 
     function _getCurrentSupply() private view returns(uint256, uint256) {
         uint256 rSupply = _rTotal;
-        uint256 tSupply = _tTotal;
+        uint256 tSupply = _tTotal;      
         for (uint256 i = 0; i < _excluded.length; i++) {
             if (_rOwned[_excluded[i]] > rSupply || _tOwned[_excluded[i]] > tSupply) return (_rTotal, _tTotal);
             rSupply = rSupply.sub(_rOwned[_excluded[i]]);

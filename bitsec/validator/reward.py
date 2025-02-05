@@ -24,43 +24,59 @@ import pydantic
 from bitsec.utils.llm import chat_completion
 from bitsec.protocol import PredictionResponse
 
-def reward(vulnerable: bool, expected_response: PredictionResponse, response: PredictionResponse) -> float:
+def reward(expected_response: PredictionResponse, response: PredictionResponse) -> float:
     """
-    Reward the miner response to the dummy request. This method returns a reward
-    value for the miner, which is used to update the miner's score.
+    Reward the miner response.
 
     Returns:
     - float: The reward value for the miner.
     """
-    score, _, _, _, _ = score_response(expected_response, response)
-
-    if score >= 5:
-        return 1.0
-    elif score >= 4:
-        return 0.5
-    elif score >= 3:
-        return 0.25
-    elif score >= 2:
-        return 0.1
     
-    return 0.0
+    # Jaccard score of the vulnerabilities
+    score = jaccard_score(expected_response, response)
+    
+    # Add weights and other factors
+
+    return score
 
 
-def score_response(expected_response: PredictionResponse, response: PredictionResponse) -> int:
+def jaccard_score(expected_response: PredictionResponse, response: PredictionResponse) -> float:
     """
-    Score the response to the expected response.
+    Calculate the Jaccard score of the vulnerabilities. That is, the intersection over the union of the vulnerabilities. 
 
     Args:
     - expected_response (PredictionResponse): The expected response.
     - response (PredictionResponse): The response to score.
 
     Returns:
-    - int: The score for the response.
-    - str: The reason for the score.
-    - List[str]: The vulnerabilities expected and found.
-    - List[str]: The vulnerabilities expected but not found.
-    - List[str]: The vulnerabilities found but not expected.
+    - float: The Jaccard score.
     """
+    if response.prediction != expected_response.prediction:
+        return 0.0
+    
+    if response.vulnerabilities == expected_response.vulnerabilities:
+        return 1.0
+
+    score = 0.0
+
+    #### Compare categories
+    category_expected = set([vulnerability.category for vulnerability in expected_response.vulnerabilities])
+    category_response = set([vulnerability.category for vulnerability in response.vulnerabilities])
+
+    category_intersection = category_expected.intersection(category_response)
+    category_union = category_expected.union(category_response)
+ 
+    # Handle empty union case to prevent division by zero
+    if len(category_union) == 0:
+        return 1.0
+    else:
+        score = len(category_intersection) / len(category_union)
+
+    # TODO: line range
+    # TODO: description
+
+    return score
+
     if response.prediction != expected_response.prediction:
         # Prediction is wrong, no need to compare vulnerabilities
         return 0, "Prediction boolean is wrong", [], expected_response.vulnerabilities, response.vulnerabilities
@@ -104,7 +120,6 @@ def score_response(expected_response: PredictionResponse, response: PredictionRe
     return score.score, score.verbose_reason, score.vulnerabilities_expected_and_found, score.vulnerabilities_expected_but_not_found, score.vulnerabilities_found_but_not_expected
 
 def get_rewards(
-    label: bool,
     expected_response: PredictionResponse,
     responses: List[PredictionResponse],
 ) -> np.ndarray:
@@ -121,5 +136,5 @@ def get_rewards(
     # Get all the reward results by iteratively calling your reward() function.
     
     return np.array(
-        [reward(label, expected_response, response) for response in responses]
+        [reward(expected_response, response) for response in responses]
     )

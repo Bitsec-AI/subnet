@@ -1,297 +1,935 @@
 /**
- *Submitted for verification at Etherscan.io on 2022-01-12
+ *Submitted for verification at Etherscan.io on 2021-04-27
 */
 
-pragma solidity ^0.5.1;
+// SPDX-License-Identifier: MIT
 
-/// @title BEAN - Beans are designed for global trusted talent chain
-/// @author zhouhang
+pragma solidity 0.5.17;
 
-/**
- * @title 安全数学库
- * @dev 用于uint256的安全计算，合约内的积分操作均使用这个库的函数代替加减乘除，来避免上溢、下溢等问题
+/*
+ * Docs: https://docs.synthetix.io/
+ *
+ *
+ * MIT License
+ * ===========
+ *
+ * Copyright (c) 2020 Synthetix
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
+
+library Address {
+    /**
+     * @dev Returns true if `account` is a contract.
+     *
+     * This test is non-exhaustive, and there may be false-negatives: during the
+     * execution of a contract's constructor, its address will be reported as
+     * not containing a contract.
+     *
+     * > It is unsafe to assume that an address for which this function returns
+     * false is an externally-owned account (EOA) and not a contract.
+     */
+    function isContract(address account) internal view returns (bool) {
+        // This method relies in extcodesize, which returns 0 for contracts in
+        // construction, since the code is only stored at the end of the
+        // constructor execution.
+
+        uint256 size;
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            size := extcodesize(account)
+        }
+        return size > 0;
+    }
+}
+
+interface IERC20 {
+    /**
+     * @dev Returns the amount of tokens in existence.
+     */
+    function totalSupply() external view returns (uint256);
+
+    /**
+     * @dev Returns the amount of tokens owned by `account`.
+     */
+    function balanceOf(address account) external view returns (uint256);
+
+    /**
+     * @dev Moves `amount` tokens from the caller's account to `recipient`.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a `Transfer` event.
+     */
+    function transfer(address recipient, uint256 amount)
+        external
+        returns (bool);
+
+    /**
+     * @dev Returns the remaining number of tokens that `spender` will be
+     * allowed to spend on behalf of `owner` through `transferFrom`. This is
+     * zero by default.
+     *
+     * This value changes when `approve` or `transferFrom` are called.
+     */
+    function allowance(address owner, address spender)
+        external
+        view
+        returns (uint256);
+
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * > Beware that changing an allowance with this method brings the risk
+     * that someone may use both the old and the new allowance by unfortunate
+     * transaction ordering. One possible solution to mitigate this race
+     * condition is to first reduce the spender's allowance to 0 and set the
+     * desired value afterwards:
+     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+     *
+     * Emits an `Approval` event.
+     */
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Moves `amount` tokens from `sender` to `recipient` using the
+     * allowance mechanism. `amount` is then deducted from the caller's
+     * allowance.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a `Transfer` event.
+     */
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
+
+    /**
+     * @dev Emitted when `value` tokens are moved from one account (`from`) to
+     * another (`to`).
+     *
+     * Note that `value` may be zero.
+     */
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    /**
+     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
+     * a call to `approve`. `value` is the new allowance.
+     */
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
+}
+
+interface IStakingRewards {
+    // Views
+    function lastTimeRewardApplicable() external view returns (uint256);
+
+    function rewardPerToken() external view returns (uint256);
+
+    function earned(address account) external view returns (uint256);
+
+    function getRewardForDuration() external view returns (uint256);
+
+    function totalSupply() external view returns (uint256);
+
+    function balanceOf(address account) external view returns (uint256);
+
+    // Mutative
+
+    function stake(uint256 amount) external;
+
+    function withdraw(uint256 amount) external;
+
+    function getReward() external;
+
+    function exit() external;
+}
+
+library Math {
+    /**
+     * @dev Returns the largest of two numbers.
+     */
+    function max(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a >= b ? a : b;
+    }
+
+    /**
+     * @dev Returns the smallest of two numbers.
+     */
+    function min(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a < b ? a : b;
+    }
+
+    /**
+     * @dev Returns the average of two numbers. The result is rounded towards
+     * zero.
+     */
+    function average(uint256 a, uint256 b) internal pure returns (uint256) {
+        // (a + b) / 2 can overflow, so we distribute
+        return (a / 2) + (b / 2) + (((a % 2) + (b % 2)) / 2);
+    }
+}
+
+contract Owned {
+    address public owner;
+    address public nominatedOwner;
+
+    constructor(address _owner) public {
+        require(_owner != address(0), "Owner address cannot be 0");
+        owner = _owner;
+        emit OwnerChanged(address(0), _owner);
+    }
+
+    function nominateNewOwner(address _owner) external onlyOwner {
+        nominatedOwner = _owner;
+        emit OwnerNominated(_owner);
+    }
+
+    function acceptOwnership() external {
+        require(
+            msg.sender == nominatedOwner,
+            "You must be nominated before you can accept ownership"
+        );
+        emit OwnerChanged(owner, nominatedOwner);
+        owner = nominatedOwner;
+        nominatedOwner = address(0);
+    }
+
+    modifier onlyOwner {
+        _onlyOwner();
+        _;
+    }
+
+    function _onlyOwner() private view {
+        require(
+            msg.sender == owner,
+            "Only the contract owner may perform this action"
+        );
+    }
+
+    event OwnerNominated(address newOwner);
+    event OwnerChanged(address oldOwner, address newOwner);
+}
+
+contract Pausable is Owned {
+    uint256 public lastPauseTime;
+    bool public paused;
+
+    constructor() internal {
+        // This contract is abstract, and thus cannot be instantiated directly
+        require(owner != address(0), "Owner must be set");
+        // Paused will be false, and lastPauseTime will be 0 upon initialisation
+    }
+
+    /**
+     * @notice Change the paused state of the contract
+     * @dev Only the contract owner may call this.
+     */
+    function setPaused(bool _paused) external onlyOwner {
+        // Ensure we're actually changing the state before we do anything
+        if (_paused == paused) {
+            return;
+        }
+
+        // Set our paused state.
+        paused = _paused;
+
+        // If applicable, set the last pause time.
+        if (paused) {
+            lastPauseTime = now;
+        }
+
+        // Let everyone know that our pause state has changed.
+        emit PauseChanged(paused);
+    }
+
+    event PauseChanged(bool isPaused);
+
+    modifier notPaused {
+        require(
+            !paused,
+            "This action cannot be performed while the contract is paused"
+        );
+        _;
+    }
+}
+
+contract ReentrancyGuard {
+    /// @dev counter to allow mutex lock with only one SSTORE operation
+    uint256 private _guardCounter;
+
+    constructor() internal {
+        // The counter starts at one to prevent changing it from zero to a non-zero
+        // value, which is a more expensive operation.
+        _guardCounter = 1;
+    }
+
+    /**
+     * @dev Prevents a contract from calling itself, directly or indirectly.
+     * Calling a `nonReentrant` function from another `nonReentrant`
+     * function is not supported. It is possible to prevent this from happening
+     * by making the `nonReentrant` function external, and make it call a
+     * `private` function that does the actual work.
+     */
+    modifier nonReentrant() {
+        _guardCounter += 1;
+        uint256 localCounter = _guardCounter;
+        _;
+        require(
+            localCounter == _guardCounter,
+            "ReentrancyGuard: reentrant call"
+        );
+    }
+}
+
+contract RewardsDistributionRecipient is Owned {
+    address public rewardsDistribution;
+
+    function notifyRewardAmount(uint256 reward, address rewardHolder) external;
+
+    modifier onlyRewardsDistribution() {
+        require(
+            msg.sender == rewardsDistribution,
+            "Caller is not RewardsDistribution contract"
+        );
+        _;
+    }
+
+    function setRewardsDistribution(address _rewardsDistribution)
+        external
+        onlyOwner
+    {
+        rewardsDistribution = _rewardsDistribution;
+    }
+}
+
+library SafeERC20 {
+    using SafeMath for uint256;
+    using Address for address;
+
+    function safeTransfer(
+        IERC20 token,
+        address to,
+        uint256 value
+    ) internal {
+        callOptionalReturn(
+            token,
+            abi.encodeWithSelector(token.transfer.selector, to, value)
+        );
+    }
+
+    function safeTransferFrom(
+        IERC20 token,
+        address from,
+        address to,
+        uint256 value
+    ) internal {
+        callOptionalReturn(
+            token,
+            abi.encodeWithSelector(token.transferFrom.selector, from, to, value)
+        );
+    }
+
+    function safeApprove(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
+        // safeApprove should only be called when setting an initial allowance,
+        // or when resetting it to zero. To increase and decrease it, use
+        // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
+        // solhint-disable-next-line max-line-length
+        require(
+            (value == 0) || (token.allowance(address(this), spender) == 0),
+            "SafeERC20: approve from non-zero to non-zero allowance"
+        );
+        callOptionalReturn(
+            token,
+            abi.encodeWithSelector(token.approve.selector, spender, value)
+        );
+    }
+
+    function safeIncreaseAllowance(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
+        uint256 newAllowance =
+            token.allowance(address(this), spender).add(value);
+        callOptionalReturn(
+            token,
+            abi.encodeWithSelector(
+                token.approve.selector,
+                spender,
+                newAllowance
+            )
+        );
+    }
+
+    function safeDecreaseAllowance(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
+        uint256 newAllowance =
+            token.allowance(address(this), spender).sub(value);
+        callOptionalReturn(
+            token,
+            abi.encodeWithSelector(
+                token.approve.selector,
+                spender,
+                newAllowance
+            )
+        );
+    }
+
+    /**
+     * @dev Imitates a Solidity high-level call (i.e. a regular function call to a contract), relaxing the requirement
+     * on the return value: the return value is optional (but if data is returned, it must not be false).
+     * @param token The token targeted by the call.
+     * @param data The call data (encoded using abi.encode or one of its variants).
+     */
+    function callOptionalReturn(IERC20 token, bytes memory data) private {
+        // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
+        // we're implementing it ourselves.
+
+        // A Solidity high level call has three parts:
+        //  1. The target address is checked to verify it contains contract code
+        //  2. The call itself is made, and success asserted
+        //  3. The return value is decoded, which in turn checks the size of the returned data.
+        // solhint-disable-next-line max-line-length
+        require(address(token).isContract(), "SafeERC20: call to non-contract");
+
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool success, bytes memory returndata) = address(token).call(data);
+        require(success, "SafeERC20: low-level call failed");
+
+        if (returndata.length > 0) {
+            // Return data is optional
+            // solhint-disable-next-line max-line-length
+            require(
+                abi.decode(returndata, (bool)),
+                "SafeERC20: ERC20 operation did not succeed"
+            );
+        }
+    }
+}
+
 library SafeMath {
+    /**
+     * @dev Returns the addition of two unsigned integers, reverting on
+     * overflow.
+     *
+     * Counterpart to Solidity's `+` operator.
+     *
+     * Requirements:
+     * - Addition cannot overflow.
+     */
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a, "SafeMath: addition overflow");
 
-	/**
-	 * @dev 乘法
-	 */
-	function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-		if (a == 0) {
-			return 0;
-		}
-		uint256 c = a * b;
-		require(c / a == b);
-		return c;
-	}
+        return c;
+    }
 
-	/**
-	 * @dev 除法
-	 */
-	function div(uint256 a, uint256 b) internal pure returns (uint256) {
-		require(b > 0); // Solidity only automatically asserts when dividing by 0
-    uint256 c = a / b;
+    /**
+     * @dev Returns the subtraction of two unsigned integers, reverting on
+     * overflow (when the result is negative).
+     *
+     * Counterpart to Solidity's `-` operator.
+     *
+     * Requirements:
+     * - Subtraction cannot overflow.
+     */
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b <= a, "SafeMath: subtraction overflow");
+        uint256 c = a - b;
 
-		return c;
-	}
+        return c;
+    }
 
-	/**
-	 * @dev 减法
-	 */
-	function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-		require(b <= a);
-		uint256 c = a - b;
-    require(c <= a);
+    /**
+     * @dev Returns the multiplication of two unsigned integers, reverting on
+     * overflow.
+     *
+     * Counterpart to Solidity's `*` operator.
+     *
+     * Requirements:
+     * - Multiplication cannot overflow.
+     */
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+        // benefit is lost if 'b' is also tested.
+        // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
+        if (a == 0) {
+            return 0;
+        }
 
-    return c;
-	}
+        uint256 c = a * b;
+        require(c / a == b, "SafeMath: multiplication overflow");
 
-	/**
-	 * @dev 加法
-	 */
-	function add(uint256 a, uint256 b) internal pure returns (uint256) {
-		uint256 c = a + b;
-    require(c >= a);
+        return c;
+    }
 
-    return c;
-	}
+    /**
+     * @dev Returns the integer division of two unsigned integers. Reverts on
+     * division by zero. The result is rounded towards zero.
+     *
+     * Counterpart to Solidity's `/` operator. Note: this function uses a
+     * `revert` opcode (which leaves remaining gas untouched) while Solidity
+     * uses an invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     * - The divisor cannot be zero.
+     */
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        // Solidity only automatically asserts when dividing by 0
+        require(b > 0, "SafeMath: division by zero");
+        uint256 c = a / b;
+        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+
+        return c;
+    }
+
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+     * Reverts when dividing by zero.
+     *
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+     * invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     * - The divisor cannot be zero.
+     */
+    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b != 0, "SafeMath: modulo by zero");
+        return a % b;
+    }
+}
+
+interface IChainLinkFeed {
+    function latestAnswer() external view returns (int256);
+}
+
+contract StakingRewards is
+    IStakingRewards,
+    RewardsDistributionRecipient,
+    ReentrancyGuard,
+    Pausable
+{
+    using SafeMath for uint256;
+    using SafeERC20 for IERC20;
+
+    /* ========== STATE VARIABLES ========== */
+    IChainLinkFeed public constant FASTGAS =
+        IChainLinkFeed(0x169E633A2D1E6c10dD91238Ba11c4A708dfEF37C);
+
+    IERC20 public rewardsToken;
+    IERC20 public stakingToken;
+    uint256 public periodFinish = 0;
+    uint256 public rewardRate = 0;
+    uint256 public rewardsDuration;
+    uint256 public lastUpdateTime;
+    uint256 public rewardPerTokenStored;
+
+    mapping(address => uint256) public userRewardPerTokenPaid;
+    mapping(address => uint256) public rewards;
+
+    uint256 private _totalSupply;
+    mapping(address => uint256) private _balances;
+
+    /* ========== CONSTRUCTOR ========== */
+
+    constructor(
+        address _owner,
+        address _rewardsDistribution,
+        address _rewardsToken,
+        address _stakingToken,
+        uint256 _rewardsDuration
+    ) public Owned(_owner) {
+        rewardsToken = IERC20(_rewardsToken);
+        stakingToken = IERC20(_stakingToken);
+        rewardsDistribution = _rewardsDistribution;
+        rewardsDuration = _rewardsDuration;
+    }
+
+    /* ========== VIEWS ========== */
+
+    function totalSupply() external view returns (uint256) {
+        return _totalSupply;
+    }
+
+    function getFastGas() external view returns (uint256) {
+        return uint256(FASTGAS.latestAnswer());
+    }
+
+    function balanceOf(address account) external view returns (uint256) {
+        return _balances[account];
+    }
+
+    function lastTimeRewardApplicable() public view returns (uint256) {
+        return Math.min(block.timestamp, periodFinish);
+    }
+
+    function rewardPerToken() public view returns (uint256) {
+        if (_totalSupply == 0) {
+            return rewardPerTokenStored;
+        }
+        return
+            rewardPerTokenStored.add(
+                lastTimeRewardApplicable()
+                    .sub(lastUpdateTime)
+                    .mul(rewardRate)
+                    .mul(1e18)
+                    .div(_totalSupply)
+            );
+    }
+
+    function earned(address account) public view returns (uint256) {
+        return
+            _balances[account]
+                .mul(rewardPerToken().sub(userRewardPerTokenPaid[account]))
+                .div(1e18)
+                .add(rewards[account]);
+    }
+
+    function getRewardForDuration() external view returns (uint256) {
+        return rewardRate.mul(rewardsDuration);
+    }
+
+    /* ========== MUTATIVE FUNCTIONS ========== */
+
+    function stake(uint256 amount)
+        external
+        nonReentrant
+        notPaused
+        updateReward(msg.sender)
+    {
+        require(amount > 0, "Cannot stake 0");
+        _totalSupply = _totalSupply.add(amount);
+        _balances[msg.sender] = _balances[msg.sender].add(amount);
+        stakingToken.safeTransferFrom(msg.sender, address(this), amount);
+        emit Staked(msg.sender, amount);
+    }
+
+    function withdraw(uint256 amount)
+        public
+        nonReentrant
+        updateReward(msg.sender)
+    {
+        require(amount > 0, "Cannot withdraw 0");
+        _totalSupply = _totalSupply.sub(amount);
+        _balances[msg.sender] = _balances[msg.sender].sub(amount);
+        stakingToken.safeTransfer(msg.sender, amount);
+        emit Withdrawn(msg.sender, amount);
+    }
+
+    function getReward() public nonReentrant updateReward(msg.sender) {
+        uint256 reward = rewards[msg.sender];
+        if (reward > 0) {
+            // Safe gaurd against error if reward is greater than balance in contract
+            uint256 balance = rewardsToken.balanceOf(address(this));
+            if (rewards[msg.sender] > balance) {
+                reward = balance;
+            }
+            rewards[msg.sender] = 0;
+            rewardsToken.safeTransfer(msg.sender, reward);
+            emit RewardPaid(msg.sender, reward);
+        }
+    }
+
+    function exit() external {
+        withdraw(_balances[msg.sender]);
+        getReward();
+    }
+
+    /* ========== RESTRICTED FUNCTIONS ========== */
+
+    function notifyRewardAmount(uint256 reward, address rewardHolder)
+        external
+        onlyRewardsDistribution
+        updateReward(address(0))
+    {
+        if (block.timestamp >= periodFinish) {
+            rewardRate = reward.div(rewardsDuration);
+        } else {
+            uint256 remaining = periodFinish.sub(block.timestamp);
+            uint256 leftover = remaining.mul(rewardRate);
+            rewardRate = reward.add(leftover).div(rewardsDuration);
+        }
+
+        lastUpdateTime = block.timestamp;
+        periodFinish = block.timestamp.add(rewardsDuration);
+
+        // handle the transfer of reward tokens via `transferFrom` to reduce the number
+        // of transactions required and ensure correctness of the reward amount
+
+        rewardsToken.safeTransferFrom(rewardHolder, address(this), reward);
+
+        emit RewardAdded(reward);
+
+    }
+
+    // Added to support recovering LP Rewards from other systems such as BAL to be distributed to holders
+    function recoverERC20(address tokenAddress, uint256 tokenAmount)
+        external
+        onlyOwner
+    {
+        require(
+            tokenAddress != address(stakingToken),
+            "Cannot withdraw the staking token"
+        );
+        IERC20(tokenAddress).safeTransfer(owner, tokenAmount);
+        emit Recovered(tokenAddress, tokenAmount);
+    }
+
+    function setRewardsDuration(uint256 _rewardsDuration) external onlyOwner {
+        require(
+            block.timestamp > periodFinish,
+            "Previous rewards period must be complete before changing the duration for the new period"
+        );
+        rewardsDuration = _rewardsDuration;
+        emit RewardsDurationUpdated(rewardsDuration);
+    }
+
+    /* ========== MODIFIERS ========== */
+
+    modifier updateReward(address account) {
+        rewardPerTokenStored = rewardPerToken();
+        lastUpdateTime = lastTimeRewardApplicable();
+        if (account != address(0)) {
+            rewards[account] = earned(account);
+            userRewardPerTokenPaid[account] = rewardPerTokenStored;
+        }
+        _;
+    }
+
+    /* ========== EVENTS ========== */
+
+    event RewardAdded(uint256 reward);
+    event Staked(address indexed user, uint256 amount);
+    event Withdrawn(address indexed user, uint256 amount);
+    event RewardPaid(address indexed user, uint256 reward);
+    event RewardsDurationUpdated(uint256 newDuration);
+    event Recovered(address token, uint256 amount);
 }
 
 /**
- * @title 所有权合约
- * @dev 用于控制合约的所有权，包括转让所有权
+ * @dev Contract module which provides a basic access control mechanism, where
+ * there is an account (an owner) that can be granted exclusive access to
+ * specific functions.
+ *
+ * This module is used through inheritance. It will make available the modifier
+ * `onlyOwner`, which can be aplied to your functions to restrict their use to
+ * the owner.
  */
 contract Ownable {
-	address internal owner_; //合约所有者
+    address private _owner;
 
-	event OwnershipTransferred(address indexed previousOwner, address indexed newOwner); //合约所有权转让事件
+    event OwnershipTransferred(
+        address indexed previousOwner,
+        address indexed newOwner
+    );
 
-	/**
-	 * @dev 构造函数
-	 */
-	constructor() public {
-		owner_ = msg.sender; //合约所有者为合约创建者
-	}
-
-	/**
-     * @dev 合约所有者
+    /**
+     * @dev Initializes the contract setting the deployer as the initial owner.
      */
-	function owner() public view returns (address) {
-		return owner_;
-	}
+    constructor() internal {
+        _owner = msg.sender;
+        emit OwnershipTransferred(address(0), _owner);
+    }
 
-	/**
-     * @dev onlyOwner函数修改器：判断合约使用者是不是合约拥有者，是合约拥有者才能执行
+    /**
+     * @dev Returns the address of the current owner.
      */
-	modifier onlyOwner() {
-		require(msg.sender == owner_);
-		_;
-	}
+    function owner() public view returns (address) {
+        return _owner;
+    }
 
-	/**
-	 * @dev 转让合约所有权：只有合约所有者能使用，转让合约所有权给newOwner
-	 * @param  newOwner 新的合约所有者
-	 */
-	function transferOwnership(address newOwner) public onlyOwner {
-		require(newOwner != address(0));
-		emit OwnershipTransferred(owner_, newOwner);
-		owner_ = newOwner;
-	}
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(isOwner(), "Ownable: caller is not the owner");
+        _;
+    }
+
+    /**
+     * @dev Returns true if the caller is the current owner.
+     */
+    function isOwner() public view returns (bool) {
+        return msg.sender == _owner;
+    }
+
+    /**
+     * @dev Leaves the contract without owner. It will not be possible to call
+     * `onlyOwner` functions anymore. Can only be called by the current owner.
+     *
+     * > Note: Renouncing ownership will leave the contract without an owner,
+     * thereby removing any functionality that is only available to the owner.
+     */
+    function renounceOwnership() public onlyOwner {
+        emit OwnershipTransferred(_owner, address(0));
+        _owner = address(0);
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
+     */
+    function transferOwnership(address newOwner) public onlyOwner {
+        _transferOwnership(newOwner);
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     */
+    function _transferOwnership(address newOwner) internal {
+        require(
+            newOwner != address(0),
+            "Ownable: new owner is the zero address"
+        );
+        emit OwnershipTransferred(_owner, newOwner);
+        _owner = newOwner;
+    }
 }
 
-/**
- * @title BALC可暂停标准积分合约
- * @dev 可暂停的标准积分合约包括查询余额、积分转账、授权额度、查询授额、授额转账、增加授额、减少授额、暂停合约、重启合约功能，继承Ownable合约功能
- */
-contract BALC is Ownable {
+contract StakingRewardsFactory is Ownable {
+    using SafeERC20 for IERC20;
 
-	using SafeMath for uint256; //uint256类型使用SafeMath库
+    // immutables
+    address public rewardsToken;
+    uint256 public stakingRewardsGenesis;
 
-	string private name_; //积分名称
-	string private symbol_; //积分符号，类似货币符号
-	uint256 private decimals_; //小数点后位数
-	uint256 private totalSupply_; //发行总量
-	bool private paused_; //是否暂停合约
+    // the staking tokens for which the rewards contract has been deployed
+    address[] public stakingTokens;
 
-	mapping(address => uint256) internal balances; //地址余额映射
-	mapping(address => mapping(address => uint256)) internal allowed; //授权额度映射
+    // info about rewards for a particular staking token
+    struct StakingRewardsInfo {
+        address stakingRewards;
+        uint256 rewardAmount;
+    }
 
-	event Transfer(address indexed from, address indexed to, uint256 value); //积分转账事件
-	event Approval(address indexed owner, address indexed spender, uint256 value); //授权额度事件
-	event Pause(); //合约暂停事件
-	event Unpause(); //合约重启事件
+    // rewards info by staking token
+    mapping(address => StakingRewardsInfo)
+        public stakingRewardsInfoByStakingToken;
 
-	/**
-	 * @dev 构造函数：web3代码生成后，需要自定义_name,_symbol,_decimals,_totalSupply
-	 */
-	constructor(string memory _name, string memory _symbol, uint256 _decimals, uint256 _totalSupply, address _owner) public {
-		name_ = _name;
-		symbol_ = _symbol;
-		decimals_ = _decimals;
-		totalSupply_ = _totalSupply.mul(10 ** decimals_); //发行总量按小数点后位数转换
-		paused_ = false; //默认合约不暂停
-		owner_ = _owner;
-		balances[owner_] = totalSupply_; //合约发布者持有初始所有积分
-	}
+    constructor(address _rewardsToken, uint256 _stakingRewardsGenesis)
+        public
+        Ownable()
+    {
+        require(
+            _stakingRewardsGenesis >= block.timestamp,
+            "StakingRewardsFactory::constructor: genesis too soon"
+        );
 
-	/**
-	 * @dev 积分名称
-	 */
-	function name() public view returns (string memory) {
-		return name_;
-	}
+        rewardsToken = _rewardsToken;
+        stakingRewardsGenesis = _stakingRewardsGenesis;
+    }
 
-	/**
-	 * @dev 积分符号
-	 */
-	function symbol() public view returns (string memory) {
-		return symbol_;
-	}
+    ///// permissioned functions
 
-	/**
-	 * @dev 小数点后位数
-	 */
-	function decimals() public view returns (uint256) {
-		return decimals_;
-	}
+    // deploy a staking reward contract for the staking token, and store the reward amount
+    // the reward will be distributed to the staking reward contract no sooner than the genesis
+    function deploy(
+        address stakingToken,
+        uint256 rewardAmount,
+        uint256 rewardsDuration
+    ) public onlyOwner {
+        StakingRewardsInfo storage info =
+            stakingRewardsInfoByStakingToken[stakingToken];
+        require(
+            info.stakingRewards == address(0),
+            "StakingRewardsFactory::deploy: already deployed"
+        );
 
-	/**
-	 * @dev 发行总量
-	 */
-	function totalSupply() public view returns (uint256) {
-		return totalSupply_;
-	}
+        // Args on the StakingRewards
+        // address _owner,
+        // address _rewardsDistribution,
+        // address _rewardsToken,
+        // address _stakingToken,
+        // uint256 _rewardsDuration
+        info.stakingRewards = address(
+            new StakingRewards(
+                /*_rewardsDistribution=*/
+                owner(),
+                address(this),
+                rewardsToken,
+                stakingToken,
+                rewardsDuration
+            )
+        );
+        info.rewardAmount = rewardAmount;
+        stakingTokens.push(stakingToken);
+    }
 
-	/**
-	 * @dev 是否暂停
-	 */
-	function isPaused() public view returns (bool) {
-		return paused_;
-	}
+    // Fallback function to return money to reward distributer via pool deployer
+    // In case of issues or incorrect calls or errors
+    function refund(uint256 amount, address refundAddress) public onlyOwner {
+        require(IERC20(rewardsToken).balanceOf(address(this)) >= amount, "StakingRewardsFactory::refund: Not enough tokens");
+        IERC20(rewardsToken).safeTransfer(refundAddress, amount);
+    }
 
-	/**
-	 * @dev whenNotPaused函数修改器：判断合约是否未暂停，未暂停时才能执行
-	 */
-	modifier whenNotPaused() {
-		require(!paused_);
-		_;
-	}
+    ///// permissionless functions
 
-	/**
-	 * @dev whenNotPaused函数修改器：判断合约是否暂停，暂停时才能执行
-	 */
-	modifier whenPaused() {
-		require(paused_);
-		_;
-	}
+    // call notifyRewardAmount for all staking tokens.
+    function notifyRewardAmounts() public {
+        require(
+            stakingTokens.length > 0,
+            "StakingRewardsFactory::notifyRewardAmounts: called before any deploys"
+        );
+        for (uint256 i = 0; i < stakingTokens.length; i++) {
+            notifyRewardAmount(stakingTokens[i]);
+        }
+    }
 
-	/**
-	 * @dev 积分转账：在合约未暂停时，由合约使用者msg.sender，向_to转入_value数量的积分
-	 * @param  _to 转入地址 _value 积分数量
-	 * @return  bool 是否转账成功
-	 */
-	function transfer(address _to, uint256 _value) public whenNotPaused returns (bool) {
-		require(_to != address(0));
-		require(_value <= balances[msg.sender]);
+    // notify reward amount for an individual staking token.
+    // this is a fallback in case the notifyRewardAmounts costs too much gas to call for all contracts
+    function notifyRewardAmount(address stakingToken) public {
+        require(
+            block.timestamp >= stakingRewardsGenesis,
+            "StakingRewardsFactory::notifyRewardAmount: not ready"
+        );
 
-		balances[msg.sender] = balances[msg.sender].sub(_value);
-		balances[_to] = balances[_to].add(_value);
-		emit Transfer(msg.sender, _to, _value);
-		return true;
-	}
+        StakingRewardsInfo storage info =
+            stakingRewardsInfoByStakingToken[stakingToken];
+        require(
+            info.stakingRewards != address(0),
+            "StakingRewardsFactory::notifyRewardAmount: not deployed"
+        );
 
-	/**
-	 * @dev 余额查询：查询_account地址的积分余额
-	 * @param  _account 积分账户地址
-	 * @return  uint256 积分余额
-	 */
-	function balanceOf(address _account) public view returns (uint256) {
-		return balances[_account];
-	}
+        if (info.rewardAmount > 0) {
+            uint256 rewardAmount = info.rewardAmount;
+            info.rewardAmount = 0;
 
-	/**
-	 * @dev 授权额度：在合约未暂停时，由合约使用者msg.sender，向_spender授权_value数量积分额度
-	 * @param  _spender 被授权地址 _value 授权额度
-	 * @return  bool 是否授权成功
-	 */
-	function approve(address _spender, uint256 _value) public whenNotPaused returns (bool) {
-		require(_spender != address(0));
-		require(_value < totalSupply_);
-		allowed[msg.sender][_spender] = _value;
-		emit Approval(msg.sender, _spender, _value);
-		return true;
-	}
-
-	/**
-     * @dev 授额转账：在合约未暂停时，由合约使用者msg.sender，从_from向_to转入_value数量的积分，转账数量不能超过_from的授权额度和余额
-     * @param  _from 授额地址 _to转入地址 _value 积分数量
-     * @return  bool 是否转账成功
-     */
-	function transferFrom(address _from, address _to, uint256 _value) public whenNotPaused returns (bool) {
-		require(_to != address(0));
-		require(_value <= balances[_from]);
-		require(_value <= allowed[_from][msg.sender]);
-    
-        allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
-		balances[_from] = balances[_from].sub(_value);
-		balances[_to] = balances[_to].add(_value);
-		emit Transfer(_from, _to, _value);
-		return true;
-	}
-
-	/**
-	 * @dev 查询授额：查询由_owner向_spender授权的积分额度
-	 * @param  _owner 授权地址 _spender 被授权地址
-	 * @return  uint256 授权额度
-	 */
-	function allowance(address _owner, address _spender) public view returns (uint256) {
-		return allowed[_owner][_spender];
-	}
-
-	/**
-	 * @dev 增加授额：在合约未暂停时，由合约使用者msg.sender向_spender增加_addValue数量的积分额度
-	 * @param  _spender 被授权地址 _addedValue 增加的授权额度
-	 * @return  bool 是否增加授额成功
-	 */
-	function increaseApproval(address _spender, uint256 _addedValue) public whenNotPaused returns (bool success) {
-        require(_spender != address(0));
-		allowed[msg.sender][_spender] = allowed[msg.sender][_spender].add(_addedValue);
-		emit Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
-		return true;
-	}
-
-	/**
-	 * @dev 减少授额：在合约未暂停时，由合约使用者msg.sender向_spender减少_subtractedValue数量的积分额度
-	 * @param  _spender 被授权地址 _subtractedValue 减少的授权额度
-	 * @return  bool 是否减少授额成功
-	 */
-	function decreaseApproval(address _spender, uint256 _subtractedValue) public whenNotPaused returns (bool success) {
-        require(_spender != address(0));
-		uint256 oldValue = allowed[msg.sender][_spender];
-		if (_subtractedValue > oldValue) {
-			allowed[msg.sender][_spender] = 0;
-		} else {
-			allowed[msg.sender][_spender] = oldValue.sub(_subtractedValue);
-		}
-		emit Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
-		return true;
-	}
-
-	/**
-	 * @dev 暂停合约：只有合约所有者能使用，在合约未暂停时，暂停合约
-	 */
-	function pause() onlyOwner whenNotPaused public returns (bool) {
-		paused_ = true;
-		emit Pause();
-		return true;
-	}
-
-	/**a
-	 * @dev 重启合约：只有合约所有者能使用，在合约暂停时，重启合约
-	 */
-	function unpause() onlyOwner whenPaused public returns (bool) {
-		paused_ = false;
-		emit Unpause();
-		return true;
-	}
+            IERC20(rewardsToken).approve(info.stakingRewards, rewardAmount);
+            StakingRewards(info.stakingRewards).notifyRewardAmount(
+                rewardAmount,
+                address(this)
+            );
+        }
+    }
 }

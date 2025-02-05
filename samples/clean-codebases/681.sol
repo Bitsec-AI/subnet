@@ -1,25 +1,17 @@
 /**
- *Submitted for verification at Etherscan.io on 2021-08-18
+ *Submitted for verification at Etherscan.io on 2021-04-10
 */
 
-/**
- *Submitted for verification at Etherscan.io on 2021-08-17
-*/
+// SPDX-License-Identifier: Unlicensed
 
-// SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.6;
 
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with GSN meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
+// Pumpy: The Meme Coin for the Degens
+// A deflationary coin that rewards holders with 10% redistribution, 5% to holders and 5% to burn wallet
+
+
+pragma solidity ^0.8.0;
+
 abstract contract Context {
     function _msgSender() internal view virtual returns (address) {
         return msg.sender;
@@ -31,9 +23,6 @@ abstract contract Context {
     }
 }
 
-/**
- * @dev Interface of the ERC20 standard as defined in the EIP.
- */
 interface IERC20 {
     /**
      * @dev Returns the amount of tokens in existence.
@@ -105,19 +94,6 @@ interface IERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-/**
- * @dev Wrappers over Solidity's arithmetic operations with added overflow
- * checks.
- *
- * Arithmetic operations in Solidity wrap on overflow. This can easily result
- * in bugs, because programmers usually assume that an overflow raises an
- * error, which is the standard behavior in high level programming languages.
- * `SafeMath` restores this intuition by reverting the transaction when an
- * operation overflows.
- *
- * Using this library instead of the unchecked operations eliminates an entire
- * class of bugs, so it's recommended to use it always.
- */
 library SafeMath {
     /**
      * @dev Returns the addition of two unsigned integers, reverting on
@@ -261,9 +237,6 @@ library SafeMath {
     }
 }
 
-/**
- * @dev Collection of functions related to the address type
- */
 library Address {
     /**
      * @dev Returns true if `account` is a contract.
@@ -399,18 +372,6 @@ library Address {
     }
 }
 
-/**
- * @dev Contract module which provides a basic access control mechanism, where
- * there is an account (an owner) that can be granted exclusive access to
- * specific functions.
- *
- * By default, the owner account will be the one that deploys the contract. This
- * can later be changed with {transferOwnership}.
- *
- * This module is used through inheritance. It will make available the modifier
- * `onlyOwner`, which can be applied to your functions to restrict their use to
- * the owner.
- */
 contract Ownable is Context {
     address private _owner;
 
@@ -464,7 +425,8 @@ contract Ownable is Context {
 }
 
 
-contract SleepyETH is Context, IERC20, Ownable {
+
+contract Pumpy is Context, IERC20, Ownable {
     using SafeMath for uint256;
     using Address for address;
 
@@ -476,22 +438,16 @@ contract SleepyETH is Context, IERC20, Ownable {
     address[] private _excluded;
    
     uint256 private constant MAX = ~uint256(0);
-    uint256 private constant _tTotal = 100 * 10**6 * 10**18;
+    uint256 private constant _tTotal = 100000000 * 10**6 * 10**18;
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     uint256 private _tFeeTotal;
-    address payable private _charityWalletAddress;
 
-    string private _name = 'SleepyETH';
-    string private _symbol = 'SleepyETH';
+    string private _name = 'Pumpy';
+    string private _symbol = 'Pumpy';
     uint8 private _decimals = 18;
-    
-    uint256 public _charityFee = 2;
-    uint256 private _previousCharityFee = _charityFee;
-    
-    constructor () {
+
+    constructor () public {
         _rOwned[_msgSender()] = _rTotal;
-        _charityWalletAddress = payable(0xEa8346C7DE82AB7862002d4a62d2F4b42D483fEE);
-       
         emit Transfer(address(0), _msgSender(), _tTotal);
     }
 
@@ -507,7 +463,7 @@ contract SleepyETH is Context, IERC20, Ownable {
         return _decimals;
     }
 
-    function totalSupply() public pure override returns (uint256) {
+    function totalSupply() public view override returns (uint256) {
         return _tTotal;
     }
 
@@ -557,7 +513,7 @@ contract SleepyETH is Context, IERC20, Ownable {
     function reflect(uint256 tAmount) public {
         address sender = _msgSender();
         require(!_isExcluded[sender], "Excluded addresses cannot call this function");
-        (uint256 rAmount,,,,,) = _getValues(tAmount);
+        (uint256 rAmount,,,,) = _getValues(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _rTotal = _rTotal.sub(rAmount);
         _tFeeTotal = _tFeeTotal.add(tAmount);
@@ -566,10 +522,10 @@ contract SleepyETH is Context, IERC20, Ownable {
     function reflectionFromToken(uint256 tAmount, bool deductTransferFee) public view returns(uint256) {
         require(tAmount <= _tTotal, "Amount must be less than supply");
         if (!deductTransferFee) {
-            (uint256 rAmount,,,,,) = _getValues(tAmount);
+            (uint256 rAmount,,,,) = _getValues(tAmount);
             return rAmount;
         } else {
-            (,uint256 rTransferAmount,,,,) = _getValues(tAmount);
+            (,uint256 rTransferAmount,,,) = _getValues(tAmount);
             return rTransferAmount;
         }
     }
@@ -628,70 +584,73 @@ contract SleepyETH is Context, IERC20, Ownable {
     }
 
     function _transferStandard(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tCharity) = _getValues(tAmount);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
-        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);  
-        _takeCharity(tCharity, sender);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);       
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
 
     function _transferToExcluded(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tCharity) = _getValues(tAmount);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
-        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);  
-        _takeCharity(tCharity, sender);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);           
         _reflectFee(rFee, tFee);
-      
         emit Transfer(sender, recipient, tTransferAmount);
     }
 
     function _transferFromExcluded(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tCharity) = _getValues(tAmount);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
         _tOwned[sender] = _tOwned[sender].sub(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
-        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
-        _takeCharity(tCharity, sender);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);   
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
 
     function _transferBothExcluded(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tCharity) = _getValues(tAmount);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(tAmount);
         _tOwned[sender] = _tOwned[sender].sub(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
-        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);   
-        _takeCharity(tCharity, sender);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);        
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
 
     function _reflectFee(uint256 rFee, uint256 tFee) private {
+       
         _rTotal = _rTotal.sub(rFee);
         _tFeeTotal = _tFeeTotal.add(tFee);
     }
 
-    function _getValues(uint256 tAmount) private view returns (uint256, uint256, uint256, uint256, uint256, uint256) {
-        (uint256 tTransferAmount, uint256 tFee, uint256 tCharity) = _getTValues(tAmount);
+    function _getValues(uint256 tAmount) private view returns (uint256, uint256, uint256, uint256, uint256) {
+        (uint256 tTransferAmount, uint256 tFee) = _getTValues(tAmount);
         uint256 currentRate =  _getRate();
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee) = _getRValues(tAmount, tFee, tCharity, currentRate);
-        return (rAmount, rTransferAmount, rFee, tTransferAmount, tFee, tCharity);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee) = _getRValues(tAmount, tFee, currentRate);
+        return (rAmount, rTransferAmount, rFee, tTransferAmount, tFee);
     }
 
-    function _getTValues(uint256 tAmount) private view returns (uint256, uint256,uint256) {
-        uint256 tFee = (tAmount.mul(8)).div(100);
-        uint256 tCharity = calculateCharityFee(tAmount);
-        uint256 tTransferAmount = tAmount.sub(tFee).sub(tCharity);
-        return (tTransferAmount, tFee, tCharity);
+    function _getTValues(uint256 tAmount) private view returns (uint256, uint256) {
+       
+        uint256 tFee;
+        if(_tTotal >= 30000000 * (10**6) * (10**18))
+        {
+        tFee = tAmount.div(100).mul(5);
+        }
+        else
+        {
+        tFee = 0;
+        }
+        uint256 tTransferAmount = tAmount.sub(tFee);
+        return (tTransferAmount, tFee);
     }
 
-    function _getRValues(uint256 tAmount, uint256 tFee, uint256 tCharity, uint256 currentRate) private pure returns (uint256, uint256, uint256) {
+    function _getRValues(uint256 tAmount, uint256 tFee, uint256 currentRate) private pure returns (uint256, uint256, uint256) {
         uint256 rAmount = tAmount.mul(currentRate);
         uint256 rFee = tFee.mul(currentRate);
-        uint256 rCharity = tCharity.mul(currentRate);
-        uint256 rTransferAmount = rAmount.sub(rFee).sub(rCharity);
+        uint256 rTransferAmount = rAmount.sub(rFee);
         return (rAmount, rTransferAmount, rFee);
     }
 
@@ -699,7 +658,8 @@ contract SleepyETH is Context, IERC20, Ownable {
         (uint256 rSupply, uint256 tSupply) = _getCurrentSupply();
         return rSupply.div(tSupply);
     }
-
+    uint256 public rSupply;
+    uint256 public tSupply; 
     function _getCurrentSupply() private view returns(uint256, uint256) {
         uint256 rSupply = _rTotal;
         uint256 tSupply = _tTotal;      
@@ -711,21 +671,4 @@ contract SleepyETH is Context, IERC20, Ownable {
         if (rSupply < _rTotal.div(_tTotal)) return (_rTotal, _tTotal);
         return (rSupply, tSupply);
     }
-    
-    function _takeCharity(uint256 tCharity, address sender) private {
-        uint256 currentRate =  _getRate();
-        uint256 rCharity = tCharity.mul(currentRate);
-        _rOwned[_charityWalletAddress] = _rOwned[_charityWalletAddress].add(rCharity);
-        if(_isExcluded[_charityWalletAddress])
-            _tOwned[_charityWalletAddress] = _tOwned[_charityWalletAddress].add(tCharity);
-        emit Transfer(sender, _charityWalletAddress, tCharity);
-    }
-    
-     function calculateCharityFee(uint256 _amount) private view returns (uint256) {
-        return _amount.mul(_charityFee).div(100);
-    }
-    
-     function _setCharityWalletAddress(address payable charityWalletAddress) external onlyOwner() {
-            _charityWalletAddress = charityWalletAddress;
-        }
 }

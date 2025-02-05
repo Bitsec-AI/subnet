@@ -1,27 +1,29 @@
 /**
- *Submitted for verification at Etherscan.io on 2021-06-01
+ *Submitted for verification at Etherscan.io on 2021-07-02
 */
 
-// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
+pragma solidity ^0.6.12;
 
-// SPDX-License-Identifier: MIT
+abstract contract Context {
+    function _msgSender() internal view virtual returns (address payable) {
+        return msg.sender;
+    }
 
-pragma solidity ^0.6.0;
+    function _msgData() internal view virtual returns (bytes memory) {
+        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
+        return msg.data;
+    }
+}
 
-/**
- * @dev Interface of the ERC20 standard as defined in the EIP.
- */
 interface IERC20 {
     /**
      * @dev Returns the amount of tokens in existence.
      */
     function totalSupply() external view returns (uint256);
-
     /**
      * @dev Returns the amount of tokens owned by `account`.
      */
     function balanceOf(address account) external view returns (uint256);
-
     /**
      * @dev Moves `amount` tokens from the caller's account to `recipient`.
      *
@@ -30,7 +32,6 @@ interface IERC20 {
      * Emits a {Transfer} event.
      */
     function transfer(address recipient, uint256 amount) external returns (bool);
-
     /**
      * @dev Returns the remaining number of tokens that `spender` will be
      * allowed to spend on behalf of `owner` through {transferFrom}. This is
@@ -39,7 +40,6 @@ interface IERC20 {
      * This value changes when {approve} or {transferFrom} are called.
      */
     function allowance(address owner, address spender) external view returns (uint256);
-
     /**
      * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
      *
@@ -55,7 +55,6 @@ interface IERC20 {
      * Emits an {Approval} event.
      */
     function approve(address spender, uint256 amount) external returns (bool);
-
     /**
      * @dev Moves `amount` tokens from `sender` to `recipient` using the
      * allowance mechanism. `amount` is then deducted from the caller's
@@ -66,7 +65,6 @@ interface IERC20 {
      * Emits a {Transfer} event.
      */
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-
     /**
      * @dev Emitted when `value` tokens are moved from one account (`from`) to
      * another (`to`).
@@ -74,7 +72,6 @@ interface IERC20 {
      * Note that `value` may be zero.
      */
     event Transfer(address indexed from, address indexed to, uint256 value);
-
     /**
      * @dev Emitted when the allowance of a `spender` for an `owner` is set by
      * a call to {approve}. `value` is the new allowance.
@@ -82,24 +79,6 @@ interface IERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-// File: @openzeppelin/contracts/math/SafeMath.sol
-
-
-pragma solidity ^0.6.0;
-
-/**
- * @dev Wrappers over Solidity's arithmetic operations with added overflow
- * checks.
- *
- * Arithmetic operations in Solidity wrap on overflow. This can easily result
- * in bugs, because programmers usually assume that an overflow raises an
- * error, which is the standard behavior in high level programming languages.
- * `SafeMath` restores this intuition by reverting the transaction when an
- * operation overflows.
- *
- * Using this library instead of the unchecked operations eliminates an entire
- * class of bugs, so it's recommended to use it always.
- */
 library SafeMath {
     /**
      * @dev Returns the addition of two unsigned integers, reverting on
@@ -117,7 +96,6 @@ library SafeMath {
 
         return c;
     }
-
     /**
      * @dev Returns the subtraction of two unsigned integers, reverting on
      * overflow (when the result is negative).
@@ -131,7 +109,6 @@ library SafeMath {
     function sub(uint256 a, uint256 b) internal pure returns (uint256) {
         return sub(a, b, "SafeMath: subtraction overflow");
     }
-
     /**
      * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
      * overflow (when the result is negative).
@@ -145,10 +122,8 @@ library SafeMath {
     function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
         require(b <= a, errorMessage);
         uint256 c = a - b;
-
         return c;
     }
-
     /**
      * @dev Returns the multiplication of two unsigned integers, reverting on
      * overflow.
@@ -166,13 +141,10 @@ library SafeMath {
         if (a == 0) {
             return 0;
         }
-
         uint256 c = a * b;
         require(c / a == b, "SafeMath: multiplication overflow");
-
         return c;
     }
-
     /**
      * @dev Returns the integer division of two unsigned integers. Reverts on
      * division by zero. The result is rounded towards zero.
@@ -188,7 +160,6 @@ library SafeMath {
     function div(uint256 a, uint256 b) internal pure returns (uint256) {
         return div(a, b, "SafeMath: division by zero");
     }
-
     /**
      * @dev Returns the integer division of two unsigned integers. Reverts with custom message on
      * division by zero. The result is rounded towards zero.
@@ -205,10 +176,8 @@ library SafeMath {
         require(b > 0, errorMessage);
         uint256 c = a / b;
         // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-
         return c;
     }
-
     /**
      * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
      * Reverts when dividing by zero.
@@ -224,7 +193,6 @@ library SafeMath {
     function mod(uint256 a, uint256 b) internal pure returns (uint256) {
         return mod(a, b, "SafeMath: modulo by zero");
     }
-
     /**
      * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
      * Reverts with custom message when dividing by zero.
@@ -243,14 +211,6 @@ library SafeMath {
     }
 }
 
-// File: @openzeppelin/contracts/utils/Address.sol
-
-
-pragma solidity ^0.6.2;
-
-/**
- * @dev Collection of functions related to the address type
- */
 library Address {
     /**
      * @dev Returns true if `account` is a contract.
@@ -270,16 +230,15 @@ library Address {
      * ====
      */
     function isContract(address account) internal view returns (bool) {
-        // This method relies in extcodesize, which returns 0 for contracts in
-        // construction, since the code is only stored at the end of the
-        // constructor execution.
-
-        uint256 size;
+        // According to EIP-1052, 0x0 is the value returned for not-yet created accounts
+        // and 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470 is returned
+        // for accounts without code, i.e. `keccak256('')`
+        bytes32 codehash;
+        bytes32 accountHash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
         // solhint-disable-next-line no-inline-assembly
-        assembly { size := extcodesize(account) }
-        return size > 0;
+        assembly { codehash := extcodehash(account) }
+        return (codehash != accountHash && codehash != 0x0);
     }
-
     /**
      * @dev Replacement for Solidity's `transfer`: sends `amount` wei to
      * `recipient`, forwarding all available gas and reverting on errors.
@@ -303,7 +262,6 @@ library Address {
         (bool success, ) = recipient.call{ value: amount }("");
         require(success, "Address: unable to send value, recipient may have reverted");
     }
-
     /**
      * @dev Performs a Solidity function call using a low level `call`. A
      * plain`call` is an unsafe replacement for a function call: use this
@@ -325,7 +283,6 @@ library Address {
     function functionCall(address target, bytes memory data) internal returns (bytes memory) {
       return functionCall(target, data, "Address: low-level call failed");
     }
-
     /**
      * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`], but with
      * `errorMessage` as a fallback revert reason when `target` reverts.
@@ -335,7 +292,6 @@ library Address {
     function functionCall(address target, bytes memory data, string memory errorMessage) internal returns (bytes memory) {
         return _functionCallWithValue(target, data, 0, errorMessage);
     }
-
     /**
      * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`],
      * but also transferring `value` wei to `target`.
@@ -350,7 +306,6 @@ library Address {
     function functionCallWithValue(address target, bytes memory data, uint256 value) internal returns (bytes memory) {
         return functionCallWithValue(target, data, value, "Address: low-level call with value failed");
     }
-
     /**
      * @dev Same as {xref-Address-functionCallWithValue-address-bytes-uint256-}[`functionCallWithValue`], but
      * with `errorMessage` as a fallback revert reason when `target` reverts.
@@ -386,130 +341,10 @@ library Address {
     }
 }
 
-// File: @openzeppelin/contracts/token/ERC20/SafeERC20.sol
-
-
-pragma solidity ^0.6.0;
-
-
-
-
-/**
- * @title SafeERC20
- * @dev Wrappers around ERC20 operations that throw on failure (when the token
- * contract returns false). Tokens that return no value (and instead revert or
- * throw on failure) are also supported, non-reverting calls are assumed to be
- * successful.
- * To use this library you can add a `using SafeERC20 for IERC20;` statement to your contract,
- * which allows you to call the safe operations as `token.safeTransfer(...)`, etc.
- */
-library SafeERC20 {
-    using SafeMath for uint256;
-    using Address for address;
-
-    function safeTransfer(IERC20 token, address to, uint256 value) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
-    }
-
-    function safeTransferFrom(IERC20 token, address from, address to, uint256 value) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
-    }
-
-    /**
-     * @dev Deprecated. This function has issues similar to the ones found in
-     * {IERC20-approve}, and its usage is discouraged.
-     *
-     * Whenever possible, use {safeIncreaseAllowance} and
-     * {safeDecreaseAllowance} instead.
-     */
-    function safeApprove(IERC20 token, address spender, uint256 value) internal {
-        // safeApprove should only be called when setting an initial allowance,
-        // or when resetting it to zero. To increase and decrease it, use
-        // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
-        // solhint-disable-next-line max-line-length
-        require((value == 0) || (token.allowance(address(this), spender) == 0),
-            "SafeERC20: approve from non-zero to non-zero allowance"
-        );
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
-    }
-
-    function safeIncreaseAllowance(IERC20 token, address spender, uint256 value) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).add(value);
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
-    }
-
-    function safeDecreaseAllowance(IERC20 token, address spender, uint256 value) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).sub(value, "SafeERC20: decreased allowance below zero");
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
-    }
-
-    /**
-     * @dev Imitates a Solidity high-level call (i.e. a regular function call to a contract), relaxing the requirement
-     * on the return value: the return value is optional (but if data is returned, it must not be false).
-     * @param token The token targeted by the call.
-     * @param data The call data (encoded using abi.encode or one of its variants).
-     */
-    function _callOptionalReturn(IERC20 token, bytes memory data) private {
-        // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
-        // we're implementing it ourselves. We use {Address.functionCall} to perform this call, which verifies that
-        // the target address contains contract code and also asserts for success in the low-level call.
-
-        bytes memory returndata = address(token).functionCall(data, "SafeERC20: low-level call failed");
-        if (returndata.length > 0) { // Return data is optional
-            // solhint-disable-next-line max-line-length
-            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
-        }
-    }
-}
-
-// File: @openzeppelin/contracts/GSN/Context.sol
-
-
-pragma solidity ^0.6.0;
-
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with GSN meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
-abstract contract Context {
-    function _msgSender() internal view virtual returns (address payable) {
-        return msg.sender;
-    }
-
-    function _msgData() internal view virtual returns (bytes memory) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
-    }
-}
-
-// File: @openzeppelin/contracts/access/Ownable.sol
-
-
-pragma solidity ^0.6.0;
-
-/**
- * @dev Contract module which provides a basic access control mechanism, where
- * there is an account (an owner) that can be granted exclusive access to
- * specific functions.
- *
- * By default, the owner account will be the one that deploys the contract. This
- * can later be changed with {transferOwnership}.
- *
- * This module is used through inheritance. It will make available the modifier
- * `onlyOwner`, which can be applied to your functions to restrict their use to
- * the owner.
- */
 contract Ownable is Context {
     address private _owner;
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
     /**
      * @dev Initializes the contract setting the deployer as the initial owner.
      */
@@ -518,14 +353,12 @@ contract Ownable is Context {
         _owner = msgSender;
         emit OwnershipTransferred(address(0), msgSender);
     }
-
     /**
      * @dev Returns the address of the current owner.
      */
     function owner() public view returns (address) {
         return _owner;
     }
-
     /**
      * @dev Throws if called by any account other than the owner.
      */
@@ -533,7 +366,6 @@ contract Ownable is Context {
         require(_owner == _msgSender(), "Ownable: caller is not the owner");
         _;
     }
-
     /**
      * @dev Leaves the contract without owner. It will not be possible to call
      * `onlyOwner` functions anymore. Can only be called by the current owner.
@@ -545,7 +377,6 @@ contract Ownable is Context {
         emit OwnershipTransferred(_owner, address(0));
         _owner = address(0);
     }
-
     /**
      * @dev Transfers ownership of the contract to a new account (`newOwner`).
      * Can only be called by the current owner.
@@ -557,594 +388,247 @@ contract Ownable is Context {
     }
 }
 
-// File: contracts/Claimer.sol
+contract FLOKU is Context, IERC20, Ownable {
+    using SafeMath for uint256;
+    using Address for address;
 
-pragma solidity 0.6.10;
+    mapping (address => uint256) private _rOwned;
+    mapping (address => uint256) private _tOwned;
+    mapping (address => mapping (address => uint256)) private _allowances;
 
+    mapping (address => bool) private _isExcluded;
+    address[] private _excluded;
+   
+    uint256 private constant MAX = ~uint256(0);
+    uint256 private constant _tTotal = 1000000000000000 * 10**18;
+    uint256 private _rTotal = (MAX - (MAX % _tTotal));
+    uint256 private _tBurnTotal;
 
+    string private _name = 'Floku Inu';
+    string private _symbol = 'FLOKU';
+    uint8 private _decimals = 18;
 
-
-/**
- * @title Reclaimer
- * @author Protofire
- * @dev Allows owner to claim ERC20 tokens ot ETH sent to this contract.
- */
-abstract contract Claimer is Ownable {
-    using SafeERC20 for IERC20;
-
-    /**
-     * @dev send all token balance of an arbitrary erc20 token
-     * in the contract to another address
-     * @param token token to reclaim
-     * @param _to address to send eth balance to
-     */
-    function claimToken(IERC20 token, address _to) external onlyOwner {
-        uint256 balance = token.balanceOf(address(this));
-        token.safeTransfer(_to, balance);
+    constructor () public {
+        _rOwned[_msgSender()] = _rTotal;
+        emit Transfer(address(0), _msgSender(), _tTotal);
     }
 
-    /**
-     * @dev send all eth balance in the contract to another address
-     * @param _to address to send eth balance to
-     */
-    function claimEther(address payable _to) external onlyOwner {
-        (bool sent, ) = _to.call{value: address(this).balance}("");
-        require(sent, "Failed to send Ether");
-    }
-}
-
-// File: contracts/Registry.sol
-
-pragma solidity 0.6.10;
-pragma experimental ABIEncoderV2;
-
-
-abstract contract Registry is Claimer {
-    struct AttributeData {
-        uint256 value;
-        address updatedBy;
-        uint256 timestamp;
+    function name() public view returns (string memory) {
+        return _name;
     }
 
-    mapping(address => mapping(bytes32 => AttributeData)) public attributes;
-
-    event SetAttribute(
-        address indexed who,
-        bytes32 attribute,
-        uint256 value,
-        address indexed updatedBy
-    );
-
-    function setAttribute(
-        address _who,
-        bytes32 _attribute,
-        uint256 _value
-    ) public onlyOwner {
-        attributes[_who][_attribute] = AttributeData(
-            _value,
-            msg.sender,
-            block.timestamp
-        );
-        emit SetAttribute(_who, _attribute, _value, msg.sender);
+    function symbol() public view returns (string memory) {
+        return _symbol;
     }
 
-    function hasAttribute(address _who, bytes32 _attribute)
-        public
-        view
-        returns (bool)
-    {
-        return attributes[_who][_attribute].value != 0;
+    function decimals() public view returns (uint8) {
+        return _decimals;
     }
 
-    function getAttribute(address _who, bytes32 _attribute)
-        public
-        view
-        returns (AttributeData memory data)
-    {
-        data = attributes[_who][_attribute];
+    function totalSupply() public view override returns (uint256) {
+        return _tTotal;
     }
 
-    function getAttributeValue(address _who, bytes32 _attribute)
-        public
-        view
-        returns (uint256)
-    {
-        return attributes[_who][_attribute].value;
-    }
-}
-
-// File: contracts/interfaces/IUserRegistry.sol
-
-
-pragma solidity 0.6.10;
-
-/**
- * @dev Interface of the Registry contract.
- */
-interface IUserRegistry {
-    function canTransfer(address _from, address _to) external view;
-
-    function canTransferFrom(
-        address _spender,
-        address _from,
-        address _to
-    ) external view;
-
-    function canMint(address _to) external view;
-
-    function canBurn(address _from, uint256 _amount) external view;
-
-    function canWipe(address _account) external view;
-
-    function isRedeem(address _sender, address _recipient)
-        external
-        view
-        returns (bool);
-
-    function isRedeemFrom(
-        address _caller,
-        address _sender,
-        address _recipient
-    ) external view returns (bool);
-}
-
-// File: contracts/UserRegistry.sol
-
-pragma solidity 0.6.10;
-
-
-
-
-contract UserRegistry is Registry, IUserRegistry {
-    uint256 public constant REDEMPTION_ADDRESS_COUNT = 0x100000;
-    bytes32 public constant IS_BLOCKLISTED = "IS_BLOCKLISTED";
-    bytes32 public constant KYC_AML_VERIFIED = "KYC_AML_VERIFIED";
-    bytes32 public constant CAN_BURN = "CAN_BURN";
-    bytes32 public constant USER_REDEEM_ADDRESS = "USER_REDEEM_ADDRESS";
-    bytes32 public constant REDEEM_ADDRESS_USER = "REDEEM_ADDRESS_USER";
-
-    address public token;
-
-    mapping(address => string) private usersId;
-    mapping(string => address) private usersById;
-
-    uint256 private redemptionAddressCount;
-
-    uint256 public minBurnBound;
-    uint256 public maxBurnBound;
-
-    struct User {
-        address account;
-        string id;
-        address redeemAddress;
-        bool blocked;
-        bool KYC; // solhint-disable-line var-name-mixedcase
-        bool canBurn;
+    function balanceOf(address account) public view override returns (uint256) {
+        if (_isExcluded[account]) return _tOwned[account];
+        return tokenFromReflection(_rOwned[account]);
     }
 
-    event RegisterNewUser(
-        address indexed account,
-        address indexed redeemAddress
-    );
-
-    event UserKycVerified(address indexed account);
-
-    event UserKycUnverified(address indexed account);
-
-    event EnableRedeemAddress(address indexed account);
-
-    event DisableRedeemAddress(address indexed account);
-
-    event BlockAccount(address indexed account);
-
-    event UnblockAccount(address indexed account);
-
-    event MinBurnBound(uint256 minBurn);
-
-    event MaxBurnBound(uint256 minBurn);
-
-    constructor(
-        address _token,
-        uint256 _minBurnBound,
-        uint256 _maxBurnBound
-    ) public {
-        require(_minBurnBound <= _maxBurnBound, "min bigger than max");
-        token = _token;
-        minBurnBound = _minBurnBound;
-        maxBurnBound = _maxBurnBound;
+    function transfer(address recipient, uint256 amount) public override returns (bool) {
+        _transfer(_msgSender(), recipient, amount);
+        return true;
     }
 
-    function setToken(address _token) public onlyOwner {
-        token = _token;
+    function allowance(address owner, address spender) public view override returns (uint256) {
+        return _allowances[owner][spender];
     }
 
-    function setMinBurnBound(uint256 _minBurnBound) public onlyOwner {
-        require(_minBurnBound <= maxBurnBound, "min bigger than max");
-        minBurnBound = _minBurnBound;
-
-        emit MinBurnBound(_minBurnBound);
+    function approve(address spender, uint256 amount) public override returns (bool) {
+        _approve(_msgSender(), spender, amount);
+        return true;
     }
 
-    function setMaxBurnBound(uint256 _maxBurnBound) public onlyOwner {
-        require(minBurnBound <= _maxBurnBound, "min bigger than max");
-        maxBurnBound = _maxBurnBound;
-
-        emit MaxBurnBound(_maxBurnBound);
+    function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
+        _transfer(sender, recipient, amount);
+        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
+        return true;
     }
 
-    /**
-     * @dev Adds a new user in the registry.
-     *      Sets {REDEEM_ADDRESS_USER} attribute for redeemAddress as `_account`.
-     *      Sets {USER_REDEEM_ADDRESS} attribute for `_account` as redeemAddress.
-     *
-     * Emits a {RegisterNewUser} event.
-     *
-     * Requirements:
-     *
-     * - `_account` should not be a registered as user.
-     * - number of redeem address should not be greater than max availables.
-     */
-    function registerNewUser(address _account, string calldata _id)
-        public
-        onlyOwner
-    {
-        require(!_isUser(_account), "user exist");
-        require(usersById[_id] == address(0), "id already taken");
-
-        redemptionAddressCount++;
-        require(
-            REDEMPTION_ADDRESS_COUNT > redemptionAddressCount,
-            "max allowed users"
-        );
-
-        setAttribute(
-            address(redemptionAddressCount),
-            REDEEM_ADDRESS_USER,
-            uint256(_account)
-        );
-
-        setAttribute(_account, USER_REDEEM_ADDRESS, redemptionAddressCount);
-
-        usersId[_account] = _id;
-        usersById[_id] = _account;
-
-        emit RegisterNewUser(_account, address(redemptionAddressCount));
+    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
+        return true;
     }
 
-    /**
-     * @dev Gets user's data.
-     *
-     * Requirements:
-     *
-     * - the caller should be the owner.
-     */
-    function getUser(address _account)
-        public
-        view
-        onlyOwner
-        returns (User memory user)
-    {
-        user.account = _account;
-        user.id = usersId[_account];
-        user.redeemAddress = getRedeemAddress(_account);
-        user.blocked = _isBlocked(_account);
-        user.KYC = _isKyced(_account);
-        user.canBurn =
-            getAttributeValue(getRedeemAddress(_account), CAN_BURN) == 1;
+    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
+        return true;
     }
 
-    /**
-     * @dev Gets user by its id.
-     *
-     * Requirements:
-     *
-     * - the caller should be the owner.
-     */
-    function getUserById(string calldata _id)
-        public
-        view
-        onlyOwner
-        returns (User memory user)
-    {
-        return getUser(usersById[_id]);
+    function isExcluded(address account) public view returns (bool) {
+        return _isExcluded[account];
     }
 
-    /**
-     * @dev Sets user id.
-     *
-     * Requirements:
-     *
-     * - the caller should be the owner.
-     * - `_account` should be a registered as user.
-     * - `_id` should not be taken.
-     */
-    function setUserId(address _account, string calldata _id) public onlyOwner {
-        require(_isUser(_account), "not a user");
-        require(usersById[_id] == address(0), "id already taken");
-        string memory prevId = usersId[_account];
-        usersId[_account] = _id;
-        usersById[_id] = _account;
-        delete usersById[prevId];
+    function totalBurn() public view returns (uint256) {
+        return _tBurnTotal;
     }
 
-    /**
-     * @dev Sets user as KYC verified.
-     *
-     * Emits a {UserKycVerified} event.
-     *
-     * Requirements:
-     *
-     * - `_account` should be a registered as user.
-     */
-    function userKycVerified(address _account) public onlyOwner {
-        require(_isUser(_account), "not a user");
-
-        setAttribute(_account, KYC_AML_VERIFIED, 1);
-
-        emit UserKycVerified(_account);
+    function reflect(uint256 tAmount) public {
+        address sender = _msgSender();
+        require(!_isExcluded[sender], "Excluded addresses cannot call this function");
+        (uint256 rAmount,,,,,,,) = _getValues(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _rTotal = _rTotal.sub(rAmount);
+        _tBurnTotal = _tBurnTotal.add(tAmount);
     }
 
-    /**
-     * @dev Sets user as KYC un-verified.
-     *
-     * Emits a {UserKycVerified} event.
-     *
-     * Requirements:
-     *
-     * - `_account` should be a registered as user.
-     */
-    function userKycUnverified(address _account) public onlyOwner {
-        require(_isUser(_account), "not a user");
-
-        setAttribute(_account, KYC_AML_VERIFIED, 0);
-
-        emit UserKycUnverified(_account);
+    function reflectionFromToken(uint256 tAmount, bool deductTransferFee) public view returns(uint256) {
+        require(tAmount <= _tTotal, "Amount must be less than supply");
+        if (!deductTransferFee) {
+            (uint256 rAmount,,,,,,,) = _getValues(tAmount);
+            return rAmount;
+        } else {
+            (,uint256 rTransferAmount,,,,,,) = _getValues(tAmount);
+            return rTransferAmount;
+        }
     }
 
-    /**
-     * @dev Enables `_account` redeem address to burn.
-     *
-     * Emits a {EnableUserRedeemAddress} event.
-     *
-     * Requirements:
-     *
-     * - `_account` should be a registered as user.
-     * - `_account` should be KYC verified.
-     */
-    function enableRedeemAddress(address _account) public onlyOwner {
-        require(_isUser(_account), "not a user");
-        require(_isKyced(_account), "user has not KYC");
-
-        setAttribute(getRedeemAddress(_account), CAN_BURN, 1);
-
-        emit EnableRedeemAddress(_account);
+    function tokenFromReflection(uint256 rAmount) public view returns(uint256) {
+        require(rAmount <= _rTotal, "Amount must be less than total reflections");
+        uint256 currentRate =  _getRate();
+        return rAmount.div(currentRate);
     }
 
-    /**
-     * @dev Disables `_account` redeem address to burn.
-     *
-     * Emits a {DisableRedeemAddress} event.
-     *
-     * Requirements:
-     *
-     * - `_account` should be a registered as user.
-     */
-    function disableRedeemAddress(address _account) public onlyOwner {
-        require(_isUser(_account), "not a user");
-
-        setAttribute(getRedeemAddress(_account), CAN_BURN, 0);
-
-        emit DisableRedeemAddress(_account);
+    function excludeAccount(address account) external onlyOwner() {
+        require(!_isExcluded[account], "Account is already excluded");
+        if(_rOwned[account] > 0) {
+            _tOwned[account] = tokenFromReflection(_rOwned[account]);
+        }
+        _isExcluded[account] = true;
+        _excluded.push(account);
     }
 
-    /**
-     * @dev Sets user as KYC verified.
-     *      Enables `_account` redeem address to burn.
-     *
-     * Emits a {UserKycVerified} event.
-     * Emits a {EnableUserRedeemAddress} event.
-     *
-     * Requirements:
-     *
-     * - `_account` should be a registered as user.
-     */
-    function verifyKycEnableRedeem(address _account) public onlyOwner {
-        require(_isUser(_account), "not a user");
-
-        setAttribute(_account, KYC_AML_VERIFIED, 1);
-        setAttribute(getRedeemAddress(_account), CAN_BURN, 1);
-
-        emit UserKycVerified(_account);
-        emit EnableRedeemAddress(getRedeemAddress(_account));
+    function includeAccount(address account) external onlyOwner() {
+        require(_isExcluded[account], "Account is already included");
+        for (uint256 i = 0; i < _excluded.length; i++) {
+            if (_excluded[i] == account) {
+                _excluded[i] = _excluded[_excluded.length - 1];
+                _tOwned[account] = 0;
+                _isExcluded[account] = false;
+                _excluded.pop();
+                break;
+            }
+        }
     }
 
-    /**
-     * @dev Sets user as KYC un-verified.
-     *      Disables `_account` redeem address to burn.
-     *
-     * Emits a {UserKycVerified} event.
-     * Emits a {v} event.
-     *
-     * Requirements:
-     *
-     * - `_account` should be a registered as user.
-     */
-    function unverifyKycDisableRedeem(address _account) public onlyOwner {
-        require(_isUser(_account), "not a user");
+    function _approve(address owner, address spender, uint256 amount) private {
+        require(owner != address(0), "ERC20: approve from the zero address");
+        require(spender != address(0), "ERC20: approve to the zero address");
 
-        setAttribute(_account, KYC_AML_VERIFIED, 0);
-        setAttribute(getRedeemAddress(_account), CAN_BURN, 0);
-
-        emit UserKycUnverified(_account);
-        emit DisableRedeemAddress(getRedeemAddress(_account));
+        _allowances[owner][spender] = amount;
+        emit Approval(owner, spender, amount);
     }
 
-    /**
-     * @dev Registers `_account` as blocked.
-     *
-     * Emits a {BlockAccount} event.
-     *
-     * Requirements:
-     *
-     * - `_account` should not be already blocked.
-     */
-    function blockAccount(address _account) public onlyOwner {
-        require(!_isBlocked(_account), "user already blocked");
-        setAttribute(_account, IS_BLOCKLISTED, 1);
-
-        emit BlockAccount(_account);
+    function _transfer(address sender, address recipient, uint256 amount) private {
+        require(sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+        require(amount > 0, "Transfer amount must be greater than zero");
+        if (_isExcluded[sender] && !_isExcluded[recipient]) {
+            _transferFromExcluded(sender, recipient, amount);
+        } else if (!_isExcluded[sender] && _isExcluded[recipient]) {
+            _transferToExcluded(sender, recipient, amount);
+        } else if (!_isExcluded[sender] && !_isExcluded[recipient]) {
+            _transferStandard(sender, recipient, amount);
+        } else if (_isExcluded[sender] && _isExcluded[recipient]) {
+            _transferBothExcluded(sender, recipient, amount);
+        } else {
+            _transferStandard(sender, recipient, amount);
+        }
     }
 
-    /**
-     * @dev Registers `_account` as un-blocked.
-     *
-     * Emits a {UnblockAccount} event.
-     *
-     * Requirements:
-     *
-     * - `_account` should be blocked.
-     */
-    function unblockAccount(address _account) public onlyOwner {
-        require(_isBlocked(_account), "user not blocked");
-        setAttribute(_account, IS_BLOCKLISTED, 0);
-
-        emit UnblockAccount(_account);
+    function _transferStandard(address sender, address recipient, uint256 tAmount) private {
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee,uint256 tBurnValue,uint256 tTax,uint256 tLiquidity) = _getValues(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);       
+        _reflectFee(rFee, tFee, tBurnValue,tTax,tLiquidity);
+        emit Transfer(sender, recipient, tTransferAmount);
     }
 
-    /**
-     * @dev Gets user's account associated to a given `_redeemAddress`.
-     */
-    function getUserByRedeemAddress(address _redeemAddress)
-        public
-        view
-        returns (address)
-    {
-        return address(getAttributeValue(_redeemAddress, REDEEM_ADDRESS_USER));
+    function _transferToExcluded(address sender, address recipient, uint256 tAmount) private {
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee,uint256 tBurnValue,uint256 tTax,uint256 tLiquidity) = _getValues(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);           
+        _reflectFee(rFee, tFee, tBurnValue,tTax,tLiquidity);
+        emit Transfer(sender, recipient, tTransferAmount);
     }
 
-    /**
-     * @dev Gets redeem address associated to a given `_account`
-     */
-    function getRedeemAddress(address _account) public view returns (address) {
-        return address(getAttributeValue(_account, USER_REDEEM_ADDRESS));
+    function _transferFromExcluded(address sender, address recipient, uint256 tAmount) private {
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee,uint256 tBurnValue,uint256 tTax,uint256 tLiquidity) = _getValues(tAmount);
+        _tOwned[sender] = _tOwned[sender].sub(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);   
+       _reflectFee(rFee, tFee, tBurnValue,tTax,tLiquidity);
+        emit Transfer(sender, recipient, tTransferAmount);
     }
 
-    /**
-     * @dev Checks if the given `_account` is a registered user.
-     */
-    function _isUser(address _account) internal view returns (bool) {
-        return getAttributeValue(_account, USER_REDEEM_ADDRESS) != 0;
+    function _transferBothExcluded(address sender, address recipient, uint256 tAmount) private {
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee,uint256 tBurnValue,uint256 tTax,uint256 tLiquidity) = _getValues(tAmount);
+        _tOwned[sender] = _tOwned[sender].sub(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);        
+        _reflectFee(rFee, tFee, tBurnValue,tTax,tLiquidity);
+        emit Transfer(sender, recipient, tTransferAmount);
     }
 
-    /**
-     * @dev Checks if the given `_account` is blocked.
-     */
-    function _isBlocked(address _account) internal view returns (bool) {
-        return getAttributeValue(_account, IS_BLOCKLISTED) == 1;
+    function _reflectFee(uint256 rFee, uint256 tFee, uint256 tBurnValue,uint256 tTax,uint256 tLiquidity) private {
+        _rTotal = _rTotal.sub(rFee);
+        _tBurnTotal = _tBurnTotal.add(tFee).add(tBurnValue).add(tTax).add(tLiquidity);
     }
 
-    /**
-     * @dev Checks if the given `_account` is KYC verified.
-     */
-    function _isKyced(address _account) internal view returns (bool) {
-        return getAttributeValue(_account, KYC_AML_VERIFIED) != 0;
+    function _getValues(uint256 tAmount) private view returns (uint256, uint256, uint256, uint256, uint256,uint256,uint256,uint256) {
+        uint256[12] memory _localVal;
+        (_localVal[0]/**tTransferAmount*/, _localVal[1]  /**tFee*/, _localVal[2] /**tBurnValue*/,_localVal[8]/*tTAx*/,_localVal[10]/**tLiquidity*/) = _getTValues(tAmount);
+        _localVal[3] /**currentRate*/ =  _getRate();
+        ( _localVal[4] /**rAmount*/,  _localVal[5] /**rTransferAmount*/, _localVal[6] /**rFee*/, _localVal[7] /**rBurnValue*/,_localVal[9]/*rTax*/,_localVal[11]/**rLiquidity*/) = _getRValues(tAmount, _localVal[1], _localVal[3], _localVal[2],_localVal[8],_localVal[10]);
+        return (_localVal[4], _localVal[5], _localVal[6], _localVal[0], _localVal[1], _localVal[2],_localVal[8],_localVal[10]);
+    }
+    
+    function _getTValues(uint256 tAmount) private pure returns (uint256, uint256, uint256,uint256,uint256) {
+        uint256[5] memory _localVal;
+        
+        _localVal[0]/**supply*/ = tAmount.div(100).mul(0);
+        _localVal[1]/**tBurnValue*/ = tAmount.div(100).mul(0);
+        _localVal[2]/**tholder*/ = tAmount.div(100).mul(1 );
+        _localVal[3]/**tLiquidity*/ = tAmount.div(100).mul(15);
+        _localVal[4]/**tTransferAmount*/ = tAmount.sub(_localVal[2]).sub(_localVal[1]).sub(_localVal[0]).sub(_localVal[3]);
+        return (_localVal[4], _localVal[2], _localVal[1],_localVal[0], _localVal[3]);
     }
 
-    /**
-     * @dev Checks if the given `_account` is a redeeming address.
-     */
-    function _isRedemptionAddress(address _account)
-        internal
-        pure
-        returns (bool)
-    {
-        return uint256(_account) < REDEMPTION_ADDRESS_COUNT;
+    function _getRValues(uint256 tAmount, uint256 tFee, uint256 currentRate, uint256 tBurnValue,uint256 tTax,uint tLiquidity) private pure returns (uint256, uint256, uint256,uint256,uint256,uint256) {
+        uint256 rAmount = tAmount.mul(currentRate);
+        uint256 rFee = tFee.mul(currentRate);
+        uint256 rBurnValue = tBurnValue.mul(currentRate);
+        uint256 rLiqidity = tLiquidity.mul(currentRate);
+        uint256 rTax = tTax.mul(currentRate);
+        uint256 rTransferAmount = rAmount.sub(rFee).sub(rBurnValue).sub(rTax).sub(rLiqidity);
+        return (rAmount, rTransferAmount, rFee, rBurnValue,rTax,rLiqidity);
     }
 
-    /**
-     * @dev Determines if it is redeeming.
-     */
-    function isRedeem(address, address _recipient)
-        external
-        view
-        override
-        onlyToken
-        returns (bool)
-    {
-        return _isRedemptionAddress(_recipient);
+    function _getRate() private view returns(uint256) {
+        (uint256 rSupply, uint256 tSupply) = _getCurrentSupply();
+        return rSupply.div(tSupply);
     }
 
-    /**
-     * @dev Determines if it is redeeming from.
-     */
-    function isRedeemFrom(
-        address,
-        address,
-        address _recipient
-    ) external view override onlyToken returns (bool) {
-        return _isRedemptionAddress(_recipient);
-    }
-
-    /**
-     * @dev Throws if any of `_from` or `_to` is blocklisted.
-     */
-    function canTransfer(address _from, address _to)
-        external
-        view
-        override
-        onlyToken
-    {
-        require(!_isBlocked(_from), "blocklisted");
-        require(!_isBlocked(_to), "blocklisted");
-    }
-
-    /**
-     * @dev Throws if any of `_spender`, `_from` or `_to` is blocklisted.
-     */
-    function canTransferFrom(
-        address _spender,
-        address _from,
-        address _to
-    ) external view override onlyToken {
-        require(!_isBlocked(_spender), "blocklisted");
-        require(!_isBlocked(_from), "blocklisted");
-        require(!_isBlocked(_to), "blocklisted");
-    }
-
-    /**
-     * @dev Throws if any of `_to` is not KYC verified or blocklisted.
-     */
-    function canMint(address _to) external view override onlyToken {
-        require(_isKyced(_to), "user has not KYC");
-        require(!_isBlocked(_to), "blocklisted");
-    }
-
-    /**
-     * @dev Throws if any of `_from` is not enabled to burn or `_amount` lower than minBurnBound.
-     */
-    function canBurn(address _from, uint256 _amount)
-        external
-        view
-        override
-        onlyToken
-    {
-        require(getAttributeValue(_from, CAN_BURN) != 0, "can not burn");
-        require(_amount >= minBurnBound, "below min bound");
-        require(_amount <= maxBurnBound, "above max bound");
-    }
-
-    /**
-     * @dev Throws if any of `_account` is not blocked.
-     */
-    function canWipe(address _account) external view override onlyToken {
-        require(_isBlocked(_account), "can not wipe");
-    }
-
-    /**
-     * @dev Throws if called by any address other than the token.
-     */
-    modifier onlyToken() {
-        require(msg.sender == token, "only Token");
-        _;
+    function _getCurrentSupply() private view returns(uint256, uint256) {
+        uint256 rSupply = _rTotal;
+        uint256 tSupply = _tTotal;      
+        for (uint256 i = 0; i < _excluded.length; i++) {
+            if (_rOwned[_excluded[i]] > rSupply || _tOwned[_excluded[i]] > tSupply) return (_rTotal, _tTotal);
+            rSupply = rSupply.sub(_rOwned[_excluded[i]]);
+            tSupply = tSupply.sub(_tOwned[_excluded[i]]);
+        }
+        if (rSupply < _rTotal.div(_tTotal)) return (_rTotal, _tTotal);
+        return (rSupply, tSupply);
     }
 }

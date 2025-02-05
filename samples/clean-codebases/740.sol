@@ -1,581 +1,955 @@
-/**
- *Submitted for verification at Etherscan.io on 2021-02-15
-*/
+pragma solidity 0.4.24;
 
-// SPDX-License-Identifier: MIT
+contract Ownable {
 
-pragma solidity >=0.6.0 <0.8.0;
+    address public owner;
 
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with GSN meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
-abstract contract Context {
-    function _msgSender() internal view virtual returns (address payable) {
-        return msg.sender;
+    constructor() public {
+        owner = msg.sender;
     }
 
-    function _msgData() internal view virtual returns (bytes memory) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
+    function setOwner(address _owner) public onlyOwner {
+        owner = _owner;
+    }
+
+    modifier onlyOwner {
+        require(msg.sender == owner);
+        _;
+    }
+
+}
+
+contract Vault is Ownable { 
+
+    function () public payable {
+
+    }
+
+    function getBalance() public view returns (uint) {
+        return address(this).balance;
+    }
+
+    function withdraw(uint amount) public onlyOwner {
+        require(address(this).balance >= amount);
+        owner.transfer(amount);
+    }
+
+    function withdrawAll() public onlyOwner {
+        withdraw(address(this).balance);
     }
 }
 
-pragma solidity >=0.6.0 <0.8.0;
 
-/**
- * @dev Interface of the ERC20 standard as defined in the EIP.
- */
-interface IERC20 {
-    /**
-     * @dev Returns the amount of tokens in existence.
-     */
-    function totalSupply() external view returns (uint256);
+contract CappedVault is Vault { 
 
-    /**
-     * @dev Returns the amount of tokens owned by `account`.
-     */
-    function balanceOf(address account) external view returns (uint256);
+    uint public limit;
+    uint withdrawn = 0;
 
-    /**
-     * @dev Moves `amount` tokens from the caller's account to `recipient`.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transfer(address recipient, uint256 amount) external returns (bool);
+    constructor() public {
+        limit = 33333 ether;
+    }
 
-    /**
-     * @dev Returns the remaining number of tokens that `spender` will be
-     * allowed to spend on behalf of `owner` through {transferFrom}. This is
-     * zero by default.
-     *
-     * This value changes when {approve} or {transferFrom} are called.
-     */
-    function allowance(address owner, address spender) external view returns (uint256);
+    function () public payable {
+        require(total() + msg.value <= limit);
+    }
 
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * IMPORTANT: Beware that changing an allowance with this method brings the risk
-     * that someone may use both the old and the new allowance by unfortunate
-     * transaction ordering. One possible solution to mitigate this race
-     * condition is to first reduce the spender's allowance to 0 and set the
-     * desired value afterwards:
-     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-     *
-     * Emits an {Approval} event.
-     */
-    function approve(address spender, uint256 amount) external returns (bool);
+    function total() public view returns(uint) {
+        return getBalance() + withdrawn;
+    }
 
-    /**
-     * @dev Moves `amount` tokens from `sender` to `recipient` using the
-     * allowance mechanism. `amount` is then deducted from the caller's
-     * allowance.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    function withdraw(uint amount) public onlyOwner {
+        require(address(this).balance >= amount);
+        owner.transfer(amount);
+        withdrawn += amount;
+    }
 
-    /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
-     *
-     * Note that `value` may be zero.
-     */
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to {approve}. `value` is the new allowance.
-     */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-pragma solidity >=0.6.0 <0.8.0;
 
-/**
- * @dev Wrappers over Solidity's arithmetic operations with added overflow
- * checks.
- *
- * Arithmetic operations in Solidity wrap on overflow. This can easily result
- * in bugs, because programmers usually assume that an overflow raises an
- * error, which is the standard behavior in high level programming languages.
- * `SafeMath` restores this intuition by reverting the transaction when an
- * operation overflows.
- *
- * Using this library instead of the unchecked operations eliminates an entire
- * class of bugs, so it's recommended to use it always.
- */
-library SafeMath {
+contract PreviousInterface {
+
+    function ownerOf(uint id) public view returns (address);
+
+    function getCard(uint id) public view returns (uint16, uint16);
+
+    function totalSupply() public view returns (uint);
+
+    function burnCount() public view returns (uint);
+
+}
+
+contract Pausable is Ownable {
+    
+    event Pause();
+    event Unpause();
+
+    bool public paused = false;
+
+
     /**
-     * @dev Returns the addition of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `+` operator.
-     *
-     * Requirements:
-     *
-     * - Addition cannot overflow.
-     */
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a + b;
-        require(c >= a, "SafeMath: addition overflow");
-
-        return c;
+    * @dev Modifier to make a function callable only when the contract is not paused.
+    */
+    modifier whenNotPaused() {
+        require(!paused);
+        _;
     }
 
     /**
-     * @dev Returns the subtraction of two unsigned integers, reverting on
-     * overflow (when the result is negative).
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
-     */
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        return sub(a, b, "SafeMath: subtraction overflow");
+    * @dev Modifier to make a function callable only when the contract is paused.
+    */
+    modifier whenPaused() {
+        require(paused);
+        _;
     }
 
     /**
-     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
-     * overflow (when the result is negative).
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
-     */
-    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        require(b <= a, errorMessage);
-        uint256 c = a - b;
-
-        return c;
+    * @dev called by the owner to pause, triggers stopped state
+    */
+    function pause() onlyOwner whenNotPaused public {
+        paused = true;
+        emit Pause();
     }
 
     /**
-     * @dev Returns the multiplication of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `*` operator.
-     *
-     * Requirements:
-     *
-     * - Multiplication cannot overflow.
-     */
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-        // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
-        if (a == 0) {
-            return 0;
+    * @dev called by the owner to unpause, returns to normal state
+    */
+    function unpause() onlyOwner whenPaused public {
+        paused = false;
+        emit Unpause();
+    }
+}
+
+contract Governable {
+
+    event Pause();
+    event Unpause();
+
+    address public governor;
+    bool public paused = false;
+
+    constructor() public {
+        governor = msg.sender;
+    }
+
+    function setGovernor(address _gov) public onlyGovernor {
+        governor = _gov;
+    }
+
+    modifier onlyGovernor {
+        require(msg.sender == governor);
+        _;
+    }
+
+    /**
+    * @dev Modifier to make a function callable only when the contract is not paused.
+    */
+    modifier whenNotPaused() {
+        require(!paused);
+        _;
+    }
+
+    /**
+    * @dev Modifier to make a function callable only when the contract is paused.
+    */
+    modifier whenPaused() {
+        require(paused);
+        _;
+    }
+
+    /**
+    * @dev called by the owner to pause, triggers stopped state
+    */
+    function pause() onlyGovernor whenNotPaused public {
+        paused = true;
+        emit Pause();
+    }
+
+    /**
+    * @dev called by the owner to unpause, returns to normal state
+    */
+    function unpause() onlyGovernor whenPaused public {
+        paused = false;
+        emit Unpause();
+    }
+
+}
+
+contract CardBase is Governable {
+
+
+    struct Card {
+        uint16 proto;
+        uint16 purity;
+    }
+
+    function getCard(uint id) public view returns (uint16 proto, uint16 purity) {
+        Card memory card = cards[id];
+        return (card.proto, card.purity);
+    }
+
+    function getShine(uint16 purity) public pure returns (uint8) {
+        return uint8(purity / 1000);
+    }
+
+    Card[] public cards;
+    
+}
+
+contract CardProto is CardBase {
+
+    event NewProtoCard(
+        uint16 id, uint8 season, uint8 god, 
+        Rarity rarity, uint8 mana, uint8 attack, 
+        uint8 health, uint8 cardType, uint8 tribe, bool packable
+    );
+
+    struct Limit {
+        uint64 limit;
+        bool exists;
+    }
+
+    // limits for mythic cards
+    mapping(uint16 => Limit) public limits;
+
+    // can only set limits once
+    function setLimit(uint16 id, uint64 limit) public onlyGovernor {
+        Limit memory l = limits[id];
+        require(!l.exists);
+        limits[id] = Limit({
+            limit: limit,
+            exists: true
+        });
+    }
+
+    function getLimit(uint16 id) public view returns (uint64 limit, bool set) {
+        Limit memory l = limits[id];
+        return (l.limit, l.exists);
+    }
+
+    // could make these arrays to save gas
+    // not really necessary - will be update a very limited no of times
+    mapping(uint8 => bool) public seasonTradable;
+    mapping(uint8 => bool) public seasonTradabilityLocked;
+    uint8 public currentSeason;
+
+    function makeTradable(uint8 season) public onlyGovernor {
+        seasonTradable[season] = true;
+    }
+
+    function makeUntradable(uint8 season) public onlyGovernor {
+        require(!seasonTradabilityLocked[season]);
+        seasonTradable[season] = false;
+    }
+
+    function makePermanantlyTradable(uint8 season) public onlyGovernor {
+        require(seasonTradable[season]);
+        seasonTradabilityLocked[season] = true;
+    }
+
+    function isTradable(uint16 proto) public view returns (bool) {
+        return seasonTradable[protos[proto].season];
+    }
+
+    function nextSeason() public onlyGovernor {
+        //Seasons shouldn&#39;t go to 0 if there is more than the uint8 should hold, the governor should know this &#175;\_(ツ)_/&#175; -M
+        require(currentSeason <= 255); 
+
+        currentSeason++;
+        mythic.length = 0;
+        legendary.length = 0;
+        epic.length = 0;
+        rare.length = 0;
+        common.length = 0;
+    }
+
+    enum Rarity {
+        Common,
+        Rare,
+        Epic,
+        Legendary, 
+        Mythic
+    }
+
+    uint8 constant SPELL = 1;
+    uint8 constant MINION = 2;
+    uint8 constant WEAPON = 3;
+    uint8 constant HERO = 4;
+
+    struct ProtoCard {
+        bool exists;
+        uint8 god;
+        uint8 season;
+        uint8 cardType;
+        Rarity rarity;
+        uint8 mana;
+        uint8 attack;
+        uint8 health;
+        uint8 tribe;
+    }
+
+    // there is a particular design decision driving this:
+    // need to be able to iterate over mythics only for card generation
+    // don&#39;t store 5 different arrays: have to use 2 ids
+    // better to bear this cost (2 bytes per proto card)
+    // rather than 1 byte per instance
+
+    uint16 public protoCount;
+    
+    mapping(uint16 => ProtoCard) protos;
+
+    uint16[] public mythic;
+    uint16[] public legendary;
+    uint16[] public epic;
+    uint16[] public rare;
+    uint16[] public common;
+
+    function addProtos(
+        uint16[] externalIDs, uint8[] gods, Rarity[] rarities, uint8[] manas, uint8[] attacks, 
+        uint8[] healths, uint8[] cardTypes, uint8[] tribes, bool[] packable
+    ) public onlyGovernor returns(uint16) {
+
+        for (uint i = 0; i < externalIDs.length; i++) {
+
+            ProtoCard memory card = ProtoCard({
+                exists: true,
+                god: gods[i],
+                season: currentSeason,
+                cardType: cardTypes[i],
+                rarity: rarities[i],
+                mana: manas[i],
+                attack: attacks[i],
+                health: healths[i],
+                tribe: tribes[i]
+            });
+
+            _addProto(externalIDs[i], card, packable[i]);
+        }
+        
+    }
+
+    function addProto(
+        uint16 externalID, uint8 god, Rarity rarity, uint8 mana, uint8 attack, uint8 health, uint8 cardType, uint8 tribe, bool packable
+    ) public onlyGovernor returns(uint16) {
+        ProtoCard memory card = ProtoCard({
+            exists: true,
+            god: god,
+            season: currentSeason,
+            cardType: cardType,
+            rarity: rarity,
+            mana: mana,
+            attack: attack,
+            health: health,
+            tribe: tribe
+        });
+
+        _addProto(externalID, card, packable);
+    }
+
+    function addWeapon(
+        uint16 externalID, uint8 god, Rarity rarity, uint8 mana, uint8 attack, uint8 durability, bool packable
+    ) public onlyGovernor returns(uint16) {
+
+        ProtoCard memory card = ProtoCard({
+            exists: true,
+            god: god,
+            season: currentSeason,
+            cardType: WEAPON,
+            rarity: rarity,
+            mana: mana,
+            attack: attack,
+            health: durability,
+            tribe: 0
+        });
+
+        _addProto(externalID, card, packable);
+    }
+
+    function addSpell(uint16 externalID, uint8 god, Rarity rarity, uint8 mana, bool packable) public onlyGovernor returns(uint16) {
+
+        ProtoCard memory card = ProtoCard({
+            exists: true,
+            god: god,
+            season: currentSeason,
+            cardType: SPELL,
+            rarity: rarity,
+            mana: mana,
+            attack: 0,
+            health: 0,
+            tribe: 0
+        });
+
+        _addProto(externalID, card, packable);
+    }
+
+    function addMinion(
+        uint16 externalID, uint8 god, Rarity rarity, uint8 mana, uint8 attack, uint8 health, uint8 tribe, bool packable
+    ) public onlyGovernor returns(uint16) {
+
+        ProtoCard memory card = ProtoCard({
+            exists: true,
+            god: god,
+            season: currentSeason,
+            cardType: MINION,
+            rarity: rarity,
+            mana: mana,
+            attack: attack,
+            health: health,
+            tribe: tribe
+        });
+
+        _addProto(externalID, card, packable);
+    }
+
+    function _addProto(uint16 externalID, ProtoCard memory card, bool packable) internal {
+
+        require(!protos[externalID].exists);
+
+        card.exists = true;
+
+        protos[externalID] = card;
+
+        protoCount++;
+
+        emit NewProtoCard(
+            externalID, currentSeason, card.god, 
+            card.rarity, card.mana, card.attack, 
+            card.health, card.cardType, card.tribe, packable
+        );
+
+        if (packable) {
+            Rarity rarity = card.rarity;
+            if (rarity == Rarity.Common) {
+                common.push(externalID);
+            } else if (rarity == Rarity.Rare) {
+                rare.push(externalID);
+            } else if (rarity == Rarity.Epic) {
+                epic.push(externalID);
+            } else if (rarity == Rarity.Legendary) {
+                legendary.push(externalID);
+            } else if (rarity == Rarity.Mythic) {
+                mythic.push(externalID);
+            } else {
+                require(false);
+            }
+        }
+    }
+
+    function getProto(uint16 id) public view returns(
+        bool exists, uint8 god, uint8 season, uint8 cardType, Rarity rarity, uint8 mana, uint8 attack, uint8 health, uint8 tribe
+    ) {
+        ProtoCard memory proto = protos[id];
+        return (
+            proto.exists,
+            proto.god,
+            proto.season,
+            proto.cardType,
+            proto.rarity,
+            proto.mana,
+            proto.attack,
+            proto.health,
+            proto.tribe
+        );
+    }
+
+    function getRandomCard(Rarity rarity, uint16 random) public view returns (uint16) {
+        // modulo bias is fine - creates rarity tiers etc
+        // will obviously revert is there are no cards of that type: this is expected - should never happen
+        if (rarity == Rarity.Common) {
+            return common[random % common.length];
+        } else if (rarity == Rarity.Rare) {
+            return rare[random % rare.length];
+        } else if (rarity == Rarity.Epic) {
+            return epic[random % epic.length];
+        } else if (rarity == Rarity.Legendary) {
+            return legendary[random % legendary.length];
+        } else if (rarity == Rarity.Mythic) {
+            // make sure a mythic is available
+            uint16 id;
+            uint64 limit;
+            bool set;
+            for (uint i = 0; i < mythic.length; i++) {
+                id = mythic[(random + i) % mythic.length];
+                (limit, set) = getLimit(id);
+                if (set && limit > 0){
+                    return id;
+                }
+            }
+            // if not, they get a legendary :(
+            return legendary[random % legendary.length];
+        }
+        require(false);
+        return 0;
+    }
+
+    // can never adjust tradable cards
+    // each season gets a &#39;balancing beta&#39;
+    // totally immutable: season, rarity
+    function replaceProto(
+        uint16 index, uint8 god, uint8 cardType, uint8 mana, uint8 attack, uint8 health, uint8 tribe
+    ) public onlyGovernor {
+        ProtoCard memory pc = protos[index];
+        require(!seasonTradable[pc.season]);
+        protos[index] = ProtoCard({
+            exists: true,
+            god: god,
+            season: pc.season,
+            cardType: cardType,
+            rarity: pc.rarity,
+            mana: mana,
+            attack: attack,
+            health: health,
+            tribe: tribe
+        });
+    }
+
+}
+
+contract MigrationInterface {
+
+    function createCard(address user, uint16 proto, uint16 purity) public returns (uint);
+
+    function getRandomCard(CardProto.Rarity rarity, uint16 random) public view returns (uint16);
+
+    function migrate(uint id) public;
+
+}
+
+contract CardPackThree {
+
+    MigrationInterface public migration;
+    uint public creationBlock;
+
+    constructor(MigrationInterface _core) public payable {
+        migration = _core;
+        creationBlock = 5939061 + 2000; // set to creation block of first contracts + 8 hours for down time
+    }
+
+    event Referral(address indexed referrer, uint value, address purchaser);
+
+    /**
+    * purchase &#39;count&#39; of this type of pack
+    */
+    function purchase(uint16 packCount, address referrer) public payable;
+
+    // store purity and shine as one number to save users gas
+    function _getPurity(uint16 randOne, uint16 randTwo) internal pure returns (uint16) {
+        if (randOne >= 998) {
+            return 3000 + randTwo;
+        } else if (randOne >= 988) {
+            return 2000 + randTwo;
+        } else if (randOne >= 938) {
+            return 1000 + randTwo;
+        } else {
+            return randTwo;
+        }
+    }
+
+}
+
+contract FirstPheonix is Pausable {
+
+    MigrationInterface core;
+
+    constructor(MigrationInterface _core) public {
+        core = _core;
+    }
+
+    address[] public approved;
+
+    uint16 PHEONIX_PROTO = 380;
+
+    mapping(address => bool) public claimed;
+
+    function approvePack(address toApprove) public onlyOwner {
+        approved.push(toApprove);
+    }
+
+    function isApproved(address test) public view returns (bool) {
+        for (uint i = 0; i < approved.length; i++) {
+            if (approved[i] == test) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // pause once cards become tradable
+    function claimPheonix(address user) public returns (bool){
+
+        require(isApproved(msg.sender));
+
+        if (claimed[user] || paused){
+            return false;
         }
 
-        uint256 c = a * b;
-        require(c / a == b, "SafeMath: multiplication overflow");
+        claimed[user] = true;
 
-        return c;
+        core.createCard(user, PHEONIX_PROTO, 0);
+
+        return true;
     }
 
-    /**
-     * @dev Returns the integer division of two unsigned integers. Reverts on
-     * division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        return div(a, b, "SafeMath: division by zero");
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers. Reverts with custom message on
-     * division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        require(b > 0, errorMessage);
-        uint256 c = a / b;
-        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-
-        return c;
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * Reverts when dividing by zero.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        return mod(a, b, "SafeMath: modulo by zero");
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * Reverts with custom message when dividing by zero.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        require(b != 0, errorMessage);
-        return a % b;
-    }
 }
 
-pragma solidity >=0.6.0 <0.8.0;
 
 
+contract PresalePackThree is CardPackThree, Pausable {
 
+    CappedVault public vault;
 
-/**
- * @dev Implementation of the {IERC20} interface.
- *
- * This implementation is agnostic to the way tokens are created. This means
- * that a supply mechanism has to be added in a derived contract using {_mint}.
- * For a generic mechanism see {ERC20PresetMinterPauser}.
- *
- * TIP: For a detailed writeup see our guide
- * https://forum.zeppelin.solutions/t/how-to-implement-erc20-supply-mechanisms/226[How
- * to implement supply mechanisms].
- *
- * We have followed general OpenZeppelin guidelines: functions revert instead
- * of returning `false` on failure. This behavior is nonetheless conventional
- * and does not conflict with the expectations of ERC20 applications.
- *
- * Additionally, an {Approval} event is emitted on calls to {transferFrom}.
- * This allows applications to reconstruct the allowance for all accounts just
- * by listening to said events. Other implementations of the EIP may not emit
- * these events, as it isn't required by the specification.
- *
- * Finally, the non-standard {decreaseAllowance} and {increaseAllowance}
- * functions have been added to mitigate the well-known issues around setting
- * allowances. See {IERC20-approve}.
- */
-contract ERC20 is Context, IERC20 {
-    using SafeMath for uint256;
+    Purchase[] public purchases;
 
-    mapping (address => uint256) private _balances;
-
-    mapping (address => mapping (address => uint256)) private _allowances;
-
-    uint256 private _totalSupply;
-
-    string private _name;
-    string private _symbol;
-    uint8 private _decimals;
-
-    /**
-     * @dev Sets the values for {name} and {symbol}, initializes {decimals} with
-     * a default value of 18.
-     *
-     * To select a different value for {decimals}, use {_setupDecimals}.
-     *
-     * All three of these values are immutable: they can only be set once during
-     * construction.
-     */
-    constructor (string memory name_, string memory symbol_) public {
-        _name = name_;
-        _symbol = symbol_;
-        _decimals = 18;
+    function getPurchaseCount() public view returns (uint) {
+        return purchases.length;
     }
 
-    /**
-     * @dev Returns the name of the token.
-     */
-    function name() public view returns (string memory) {
-        return _name;
+    struct Purchase {
+        uint16 current;
+        uint16 count;
+        address user;
+        uint randomness;
+        uint64 commit;
     }
 
-    /**
-     * @dev Returns the symbol of the token, usually a shorter version of the
-     * name.
-     */
-    function symbol() public view returns (string memory) {
-        return _symbol;
+    event PacksPurchased(uint indexed id, address indexed user, uint16 count);
+    event PackOpened(uint indexed id, uint16 startIndex, address indexed user, uint[] cardIDs);
+    event RandomnessReceived(uint indexed id, address indexed user, uint16 count, uint randomness);
+
+    constructor(MigrationInterface _core, CappedVault _vault) public payable CardPackThree(_core) {
+        vault = _vault;
     }
 
-    /**
-     * @dev Returns the number of decimals used to get its user representation.
-     * For example, if `decimals` equals `2`, a balance of `505` tokens should
-     * be displayed to a user as `5,05` (`505 / 10 ** 2`).
-     *
-     * Tokens usually opt for a value of 18, imitating the relationship between
-     * Ether and Wei. This is the value {ERC20} uses, unless {_setupDecimals} is
-     * called.
-     *
-     * NOTE: This information is only used for _display_ purposes: it in
-     * no way affects any of the arithmetic of the contract, including
-     * {IERC20-balanceOf} and {IERC20-transfer}.
-     */
-    function decimals() public view returns (uint8) {
-        return _decimals;
+    function basePrice() public returns (uint);
+    function getCardDetails(uint16 packIndex, uint8 cardIndex, uint result) public view returns (uint16 proto, uint16 purity);
+    
+    function packSize() public view returns (uint8) {
+        return 5;
     }
 
-    /**
-     * @dev See {IERC20-totalSupply}.
-     */
-    function totalSupply() public view override returns (uint256) {
-        return _totalSupply;
+    function packsPerClaim() public view returns (uint16) {
+        return 15;
     }
 
-    /**
-     * @dev See {IERC20-balanceOf}.
-     */
-    function balanceOf(address account) public view override returns (uint256) {
-        return _balances[account];
+    // start in bytes, length in bytes
+    function extract(uint num, uint length, uint start) internal pure returns (uint) {
+        return (((1 << (length * 8)) - 1) & (num >> ((start * 8) - 1)));
     }
 
-    /**
-     * @dev See {IERC20-transfer}.
-     *
-     * Requirements:
-     *
-     * - `recipient` cannot be the zero address.
-     * - the caller must have a balance of at least `amount`.
-     */
-    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(_msgSender(), recipient, amount);
-        return true;
+    function purchase(uint16 packCount, address referrer) whenNotPaused public payable {
+
+        require(packCount > 0);
+        require(referrer != msg.sender);
+
+        uint price = calculatePrice(basePrice(), packCount);
+
+        require(msg.value >= price);
+
+        Purchase memory p = Purchase({
+            user: msg.sender,
+            count: packCount,
+            commit: uint64(block.number),
+            randomness: 0,
+            current: 0
+        });
+
+        uint id = purchases.push(p) - 1;
+
+        emit PacksPurchased(id, msg.sender, packCount);
+
+        if (referrer != address(0)) {
+            uint commission = price / 10;
+            referrer.transfer(commission);
+            price -= commission;
+            emit Referral(referrer, commission, msg.sender);
+        }
+        
+        address(vault).transfer(price); 
     }
 
-    /**
-     * @dev See {IERC20-allowance}.
-     */
-    function allowance(address owner, address spender) public view virtual override returns (uint256) {
-        return _allowances[owner][spender];
+    // can be called by anybody
+    // can miners withhold blocks --> not really
+    // giving up block reward for extra chance --> still really low
+    function callback(uint id) public {
+
+        Purchase storage p = purchases[id];
+
+        require(p.randomness == 0);
+
+        bytes32 bhash = blockhash(p.commit);
+        // will get the same on every block
+        // only use properties which can&#39;t be altered by the user
+        uint random = uint(keccak256(abi.encodePacked(bhash, p.user, address(this), p.count)));
+
+        // can&#39;t callback on the original block
+        require(uint64(block.number) != p.commit);
+
+        if (uint(bhash) == 0) {
+            // should never happen (must call within next 256 blocks)
+            // if it does, just give them 1: will become common and therefore less valuable
+            // set to 1 rather than 0 to avoid calling claim before randomness
+            p.randomness = 1;
+        } else {
+            p.randomness = random;
+        }
+
+        emit RandomnessReceived(id, p.user, p.count, p.randomness);
     }
 
-    /**
-     * @dev See {IERC20-approve}.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function approve(address spender, uint256 amount) public virtual override returns (bool) {
-        _approve(_msgSender(), spender, amount);
-        return true;
+    function claim(uint id) public {
+        
+        Purchase storage p = purchases[id];
+
+        require(canClaim);
+
+        uint16 proto;
+        uint16 purity;
+        uint16 count = p.count;
+        uint result = p.randomness;
+        uint8 size = packSize();
+
+        address user = p.user;
+        uint16 current = p.current;
+
+        require(result != 0); // have to wait for the callback
+        // require(user == msg.sender); // not needed
+        require(count > 0);
+
+        uint[] memory ids = new uint[](size);
+
+        uint16 end = current + packsPerClaim() > count ? count : current + packsPerClaim();
+
+        require(end > current);
+
+        for (uint16 i = current; i < end; i++) {
+            for (uint8 j = 0; j < size; j++) {
+                (proto, purity) = getCardDetails(i, j, result);
+                ids[j] = migration.createCard(user, proto, purity);
+            }
+            emit PackOpened(id, (i * size), user, ids);
+        }
+        p.current += (end - current);
     }
 
-    /**
-     * @dev See {IERC20-transferFrom}.
-     *
-     * Emits an {Approval} event indicating the updated allowance. This is not
-     * required by the EIP. See the note at the beginning of {ERC20}.
-     *
-     * Requirements:
-     *
-     * - `sender` and `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `amount`.
-     * - the caller must have allowance for ``sender``'s tokens of at least
-     * `amount`.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {      
-        _transfer(sender, recipient, amount);
-        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
-        return true;
+    function predictPacks(uint id) external view returns (uint16[] protos, uint16[] purities) {
+
+        Purchase memory p = purchases[id];
+
+        uint16 proto;
+        uint16 purity;
+        uint16 count = p.count;
+        uint result = p.randomness;
+        uint8 size = packSize();
+
+        purities = new uint16[](size * count);
+        protos = new uint16[](size * count);
+
+        for (uint16 i = 0; i < count; i++) {
+            for (uint8 j = 0; j < size; j++) {
+                (proto, purity) = getCardDetails(i, j, result);
+                purities[(i * size) + j] = purity;
+                protos[(i * size) + j] = proto;
+            }
+        }
+        return (protos, purities);
     }
 
-    /**
-     * @dev Atomically increases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
-        return true;
+    function calculatePrice(uint base, uint16 packCount) public view returns (uint) {
+        // roughly 6k blocks per day
+        uint difference = block.number - creationBlock;
+        uint numDays = difference / 6000;
+        if (20 > numDays) {
+            return (base - (((20 - numDays) * base) / 100)) * packCount;
+        }
+        return base * packCount;
     }
 
-    /**
-     * @dev Atomically decreases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     * - `spender` must have allowance for the caller of at least
-     * `subtractedValue`.
-     */
-    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
-        return true;
+    function _getCommonPlusRarity(uint32 rand) internal pure returns (CardProto.Rarity) {
+        if (rand == 999999) {
+            return CardProto.Rarity.Mythic;
+        } else if (rand >= 998345) {
+            return CardProto.Rarity.Legendary;
+        } else if (rand >= 986765) {
+            return CardProto.Rarity.Epic;
+        } else if (rand >= 924890) {
+            return CardProto.Rarity.Rare;
+        } else {
+            return CardProto.Rarity.Common;
+        }
     }
 
-    /**
-     * @dev Moves tokens `amount` from `sender` to `recipient`.
-     *
-     * This is internal function is equivalent to {transfer}, and can be used to
-     * e.g. implement automatic token fees, slashing mechanisms, etc.
-     *
-     * Emits a {Transfer} event.
-     *
-     * Requirements:
-     *
-     * - `sender` cannot be the zero address.
-     * - `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `amount`.
-     */
-    function _transfer(address sender, address recipient, uint256 amount) internal virtual {
-        require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
-
-        _beforeTokenTransfer(sender, recipient, amount);
-
-        _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
-        _balances[recipient] = _balances[recipient].add(amount);
-        emit Transfer(sender, recipient, amount);
+    function _getRarePlusRarity(uint32 rand) internal pure returns (CardProto.Rarity) {
+        if (rand == 999999) {
+            return CardProto.Rarity.Mythic;
+        } else if (rand >= 981615) {
+            return CardProto.Rarity.Legendary;
+        } else if (rand >= 852940) {
+            return CardProto.Rarity.Epic;
+        } else {
+            return CardProto.Rarity.Rare;
+        } 
     }
 
-    /** @dev Creates `amount` tokens and assigns them to `account`, increasing
-     * the total supply.
-     *
-     * Emits a {Transfer} event with `from` set to the zero address.
-     *
-     * Requirements:
-     *
-     * - `to` cannot be the zero address.
-     */
-    function _mint(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: mint to the zero address");
-
-        _beforeTokenTransfer(address(0), account, amount);
-
-        _totalSupply = _totalSupply.add(amount);
-        _balances[account] = _balances[account].add(amount);
-        emit Transfer(address(0), account, amount);
+    function _getEpicPlusRarity(uint32 rand) internal pure returns (CardProto.Rarity) {
+        if (rand == 999999) {
+            return CardProto.Rarity.Mythic;
+        } else if (rand >= 981615) {
+            return CardProto.Rarity.Legendary;
+        } else {
+            return CardProto.Rarity.Epic;
+        }
     }
 
-    /**
-     * @dev Destroys `amount` tokens from `account`, reducing the
-     * total supply.
-     *
-     * Emits a {Transfer} event with `to` set to the zero address.
-     *
-     * Requirements:
-     *
-     * - `account` cannot be the zero address.
-     * - `account` must have at least `amount` tokens.
-     */
-    function _burn(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: burn from the zero address");
-
-        _beforeTokenTransfer(account, address(0), amount);
-
-        _balances[account] = _balances[account].sub(amount, "ERC20: burn amount exceeds balance");
-        _totalSupply = _totalSupply.sub(amount);
-        emit Transfer(account, address(0), amount);
+    function _getLegendaryPlusRarity(uint32 rand) internal pure returns (CardProto.Rarity) {
+        if (rand == 999999) {
+            return CardProto.Rarity.Mythic;
+        } else {
+            return CardProto.Rarity.Legendary;
+        } 
     }
 
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the `owner` s tokens.
-     *
-     * This internal function is equivalent to `approve`, and can be used to
-     * e.g. set automatic allowances for certain subsystems, etc.
-     *
-     * Emits an {Approval} event.
-     *
-     * Requirements:
-     *
-     * - `owner` cannot be the zero address.
-     * - `spender` cannot be the zero address.
-     */
-    function _approve(address owner, address spender, uint256 amount) internal virtual {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
+    bool public canClaim = true;
 
-        _allowances[owner][spender] = amount;
-        emit Approval(owner, spender, amount);
+    function setCanClaim(bool claim) public onlyOwner {
+        canClaim = claim;
     }
 
-    /**
-     * @dev Sets {decimals} to a value other than the default one of 18.
-     *
-     * WARNING: This function should only be called from the constructor. Most
-     * applications that interact with token contracts will not expect
-     * {decimals} to ever change, and may work incorrectly if it does.
-     */
-    function _setupDecimals(uint8 decimals_) internal {
-        _decimals = decimals_;
+    function getComponents(
+        uint16 i, uint8 j, uint rand
+    ) internal returns (
+        uint random, uint32 rarityRandom, uint16 purityOne, uint16 purityTwo, uint16 protoRandom
+    ) {
+        random = uint(keccak256(abi.encodePacked(i, rand, j)));
+        rarityRandom = uint32(extract(random, 4, 10) % 1000000);
+        purityOne = uint16(extract(random, 2, 4) % 1000);
+        purityTwo = uint16(extract(random, 2, 6) % 1000);
+        protoRandom = uint16(extract(random, 2, 8) % (2**16-1));
+        return (random, rarityRandom, purityOne, purityTwo, protoRandom);
     }
 
-    /**
-     * @dev Hook that is called before any transfer of tokens. This includes
-     * minting and burning.
-     *
-     * Calling conditions:
-     *
-     * - when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
-     * will be to transferred to `to`.
-     * - when `from` is zero, `amount` tokens will be minted for `to`.
-     * - when `to` is zero, `amount` of ``from``'s tokens will be burned.
-     * - `from` and `to` are never both zero.
-     *
-     * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
-     */
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
+    function withdraw() public onlyOwner {
+        owner.transfer(address(this).balance);
+    }
+
 }
 
-pragma solidity ^0.7.0;
+contract PackMultiplier is PresalePackThree {
 
-contract BEAR is ERC20 {
-    constructor(
-        uint256 supply,
-        address owner,
-        string memory name,
-        string memory symbol
-    )
-        ERC20(name, symbol)
+    address[] public packs;
+    uint16 public multiplier = 3;
+    FirstPheonix pheonix;
+    PreviousInterface old;
+
+    uint16 public packLimit = 5;
+
+    constructor(PreviousInterface _old, address[] _packs, MigrationInterface _core, CappedVault vault, FirstPheonix _pheonix) 
+        public PresalePackThree(_core, vault) 
     {
-        _mint(owner, supply);
+        packs = _packs;
+        pheonix = _pheonix;
+        old = _old;
     }
+
+    function getCardCount() internal view returns (uint) {
+        return old.totalSupply() + old.burnCount();
+    }
+
+    function isPriorPack(address test) public view returns(bool) {
+        for (uint i = 0; i < packs.length; i++) {
+            if (packs[i] == test) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    event Status(uint before, uint aft);
+
+    function claimMultiple(address pack, uint purchaseID) public returns (uint16, address) {
+
+        require(isPriorPack(pack));
+
+        uint length = getCardCount();
+
+        PresalePackThree(pack).claim(purchaseID);
+
+        uint lengthAfter = getCardCount();
+
+        require(lengthAfter > length);
+
+        uint16 cardDifference = uint16(lengthAfter - length);
+
+        require(cardDifference % 5 == 0);
+
+        uint16 packCount = cardDifference / 5;
+
+        uint16 extra = packCount * multiplier;
+
+        address lastCardOwner = old.ownerOf(lengthAfter - 1);
+
+        Purchase memory p = Purchase({
+            user: lastCardOwner,
+            count: extra,
+            commit: uint64(block.number),
+            randomness: 0,
+            current: 0
+        });
+
+        uint id = purchases.push(p) - 1;
+
+        emit PacksPurchased(id, lastCardOwner, extra);
+
+        // try to give them a first pheonix
+        pheonix.claimPheonix(lastCardOwner);
+
+        emit Status(length, lengthAfter);
+
+
+        if (packCount <= packLimit) {
+            for (uint i = 0; i < cardDifference; i++) {
+                migration.migrate(lengthAfter - 1 - i);
+            }
+        }
+
+        return (extra, lastCardOwner);
+    }
+
+    function setPackLimit(uint16 limit) public onlyOwner {
+        packLimit = limit;
+    }
+
+
+}
+contract RarePackThree is PackMultiplier {
+    
+    function basePrice() public returns (uint) {
+        return 12 finney;
+    }
+
+    constructor(PreviousInterface _old, address[] _packs, MigrationInterface _core, CappedVault vault, FirstPheonix _pheonix) 
+        public PackMultiplier(_old, _packs, _core, vault, _pheonix) {
+        
+    }
+
+    function getCardDetails(uint16 packIndex, uint8 cardIndex, uint result) public view returns (uint16 proto, uint16 purity) {
+        uint random;
+        uint32 rarityRandom;
+        uint16 protoRandom;
+        uint16 purityOne;
+        uint16 purityTwo;
+        CardProto.Rarity rarity;
+
+        (random, rarityRandom, purityOne, purityTwo, protoRandom) = getComponents(packIndex, cardIndex, result);
+
+        if (cardIndex == 4) {
+            rarity = _getRarePlusRarity(rarityRandom);
+        } else {
+            rarity = _getCommonPlusRarity(rarityRandom);
+        }
+
+        purity = _getPurity(purityOne, purityTwo);
+    
+        proto = migration.getRandomCard(rarity, protoRandom);
+        return (proto, purity);
+    }  
+    
 }

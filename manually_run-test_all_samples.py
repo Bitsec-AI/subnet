@@ -1,3 +1,7 @@
+################################################################################
+# WARNING: this script no longer works, because the score_response function has changed to jaccard_score and only returns a score
+################################################################################
+
 import os
 from rich.console import Console
 from rich.table import Table

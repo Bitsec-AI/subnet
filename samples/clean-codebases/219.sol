@@ -1,150 +1,385 @@
+pragma solidity ^0.4.11;
+
 /**
- *Submitted for verification at Etherscan.io on 2021-08-25
-*/
+ * Math operations with safety checks
+ */
+library SafeMath {
+  function mul(uint256 a, uint256 b) internal returns (uint256) {
+    uint256 c = a * b;
+    assert(a == 0 || c / a == b);
+    return c;
+  }
 
-// SPDX-License-Identifier: MIT
-pragma solidity 0.8.6;
+  function div(uint256 a, uint256 b) internal returns (uint256) {
+    // assert(b > 0); // Solidity automatically throws when dividing by 0
+    uint256 c = a / b;
+    // assert(a == b * c + a % b); // There is no case in which this doesn&#39;t hold
+    return c;
+  }
 
-interface vote {
-    struct VoteData {
-        bool is_open;
-        bool is_executed;
-        uint start_date;
-        uint snapshot_block;
-        uint support_required;
-        uint min_accept_quorum;
-        uint yea;
-        uint nay;
-        uint voting_power;
+  function sub(uint256 a, uint256 b) internal returns (uint256) {
+    assert(b <= a);
+    return a - b;
+  }
+
+  function add(uint256 a, uint256 b) internal returns (uint256) {
+    uint256 c = a + b;
+    assert(c >= a);
+    return c;
+  }
+
+  function max64(uint64 a, uint64 b) internal constant returns (uint64) {
+    return a >= b ? a : b;
+  }
+
+  function min64(uint64 a, uint64 b) internal constant returns (uint64) {
+    return a < b ? a : b;
+  }
+
+  function max256(uint256 a, uint256 b) internal constant returns (uint256) {
+    return a >= b ? a : b;
+  }
+
+  function min256(uint256 a, uint256 b) internal constant returns (uint256) {
+    return a < b ? a : b;
+  }
+
+}
+
+/*
+ * Ownable
+ *
+ * Base contract with an owner.
+ * Provides onlyOwner modifier, which prevents function from running if it is called by anyone other than the owner.
+ */
+contract Ownable {
+  address public owner;
+
+  function Ownable() {
+    owner = msg.sender;
+  }
+
+  modifier onlyOwner() {
+    if (msg.sender != owner) {
+      throw;
     }
-    
-    function getVote(uint vote_id) external view returns (VoteData memory);
-    function getVoterState(uint vote_id, address voter) external view returns (uint);
-}
+    _;
+  }
 
-interface ve {
-    function balanceOfAt(address owner, uint block_number) external view returns (uint);
-}
-
-interface erc20 {
-    function transfer(address recipient, uint amount) external returns (bool);
-    function balanceOf(address) external view returns (uint);
-    function transferFrom(address sender, address recipient, uint amount) external returns (bool);
-}
-
-contract BribeV2Vote {
-    vote constant VOTE = vote(0xE478de485ad2fe566d49342Cbd03E49ed7DB3356);
-    ve constant veCRV = ve(0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2);
-    uint constant desired_vote = 1;
-    
-    // vote_id => reward_token => reward_amount
-    mapping(uint => mapping(address => uint)) public reward_amount;
-    mapping(uint => uint) public snapshot_block;
-    mapping(uint => uint) public yeas;
-    mapping(uint => mapping(address => mapping(address => uint))) given_rewards;
-    mapping(uint => mapping(address => uint)) public vote_states;
-    mapping(uint => mapping(address => mapping(address => bool))) public has_claimed;
-    
-    mapping(uint => address[]) _rewards_per_vote;
-    mapping(uint => mapping(address => bool)) _rewards_for_vote_exists;
-    
-    event Bribe(address indexed briber, uint vote_id, address reward_token, uint amount);
-    event Claim(address indexed claimant, uint vote_id, address reward_token, uint amount);
-    
-    function rewards_per_vote(uint vote_id) external view returns (address[] memory) {
-        return _rewards_per_vote[vote_id];
+  function transferOwnership(address newOwner) onlyOwner {
+    if (newOwner != address(0)) {
+      owner = newOwner;
     }
-    
-    function add_reward_amount(uint vote_id, address reward_token, uint amount) external returns (bool) {
-        vote.VoteData memory _vote = VOTE.getVote(vote_id);
-        uint _vote_state = vote_states[vote_id][reward_token];
-        require(_vote_state == 0);
-        _safeTransferFrom(reward_token, msg.sender, address(this), amount);
-        reward_amount[vote_id][reward_token] += amount;
-        given_rewards[vote_id][reward_token][msg.sender] += amount;
-        snapshot_block[vote_id] = _vote.snapshot_block;
-        if (!_rewards_for_vote_exists[vote_id][reward_token]) {
-            _rewards_for_vote_exists[vote_id][reward_token] = true;
-            _rewards_per_vote[vote_id].push(reward_token);
+  }
+
+}
+
+
+/*
+ * Haltable
+ *
+ * Abstract contract that allows children to implement an
+ * emergency stop mechanism. Differs from Pausable by causing a throw when in halt mode.
+ *
+ *
+ * Originally envisioned in FirstBlood ICO contract.
+ */
+contract Haltable is Ownable {
+  bool public halted;
+
+  modifier stopInEmergency {
+    if (halted) throw;
+    _;
+  }
+
+  modifier onlyInEmergency {
+    if (!halted) throw;
+    _;
+  }
+
+  // called by the owner on emergency, triggers stopped state
+  function halt() external onlyOwner {
+    halted = true;
+  }
+
+  // called by the owner on end of emergency, returns to normal state
+  function unhalt() external onlyOwner onlyInEmergency {
+    halted = false;
+  }
+
+}
+
+/**
+ * @title ERC20Basic
+ * @dev Simpler version of ERC20 interface
+ * @dev see https://github.com/ethereum/EIPs/issues/20
+ */
+contract ERC20Basic {
+  uint256 public totalSupply;
+  function balanceOf(address who) constant returns (uint256);
+  function transfer(address to, uint256 value);
+  event Transfer(address indexed from, address indexed to, uint256 value);
+}
+
+/**
+ * @title ERC20 interface
+ * @dev see https://github.com/ethereum/EIPs/issues/20
+ */
+contract ERC20 is ERC20Basic {
+  function allowance(address owner, address spender) constant returns (uint256);
+  function transferFrom(address from, address to, uint256 value);
+  function approve(address spender, uint256 value);
+  event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+
+
+/**
+ * @title Basic token
+ * @dev Basic version of StandardToken, with no allowances. 
+ */
+contract BasicToken is ERC20Basic {
+  using SafeMath for uint256;
+
+  mapping(address => uint256) balances;
+
+  /**
+   * @dev Fix for the ERC20 short address attack.
+   */
+  modifier onlyPayloadSize(uint256 size) {
+     if(msg.data.length < size + 4) {
+       throw;
+     }
+     _;
+  }
+
+  /**
+  * @dev transfer token for a specified address
+  * @param _to The address to transfer to.
+  * @param _value The amount to be transferred.
+  */
+  function transfer(address _to, uint256 _value) onlyPayloadSize(2 * 32) {
+    balances[msg.sender] = balances[msg.sender].sub(_value);
+    balances[_to] = balances[_to].add(_value);
+    Transfer(msg.sender, _to, _value);
+  }
+
+  /**
+  * @dev Gets the balance of the specified address.
+  * @param _owner The address to query the the balance of. 
+  * @return An uint256 representing the amount owned by the passed address.
+  */
+  function balanceOf(address _owner) constant returns (uint256 balance) {
+    return balances[_owner];
+  }
+
+}
+
+/**
+ * @title Standard ERC20 token
+ *
+ * @dev Implemantation of the basic standart token.
+ * @dev https://github.com/ethereum/EIPs/issues/20
+ * @dev Based on code by FirstBlood: https://github.com/Firstbloodio/token/blob/master/smart_contract/FirstBloodToken.sol
+ */
+contract StandardToken is BasicToken, ERC20 {
+
+  mapping (address => mapping (address => uint256)) allowed;
+
+
+  /**
+   * @dev Transfer tokens from one address to another
+   * @param _from address The address which you want to send tokens from
+   * @param _to address The address which you want to transfer to
+   * @param _value uint256 the amout of tokens to be transfered
+   */
+  function transferFrom(address _from, address _to, uint256 _value) onlyPayloadSize(3 * 32) {
+    var _allowance = allowed[_from][msg.sender];
+
+    // Check is not needed because sub(_allowance, _value) will already throw if this condition is not met
+    // if (_value > _allowance) throw;
+
+    balances[_to] = balances[_to].add(_value);
+    balances[_from] = balances[_from].sub(_value);
+    allowed[_from][msg.sender] = _allowance.sub(_value);
+    Transfer(_from, _to, _value);
+  }
+
+  /**
+   * @dev Aprove the passed address to spend the specified amount of tokens on behalf of msg.sender.
+   * @param _spender The address which will spend the funds.
+   * @param _value The amount of tokens to be spent.
+   */
+  function approve(address _spender, uint256 _value) {
+
+    // To change the approve amount you first have to reduce the addresses`
+    //  allowance to zero by calling `approve(_spender, 0)` if it is not
+    //  already 0 to mitigate the race condition described here:
+    //  https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+    if ((_value != 0) && (allowed[msg.sender][_spender] != 0)) throw;
+
+    allowed[msg.sender][_spender] = _value;
+    Approval(msg.sender, _spender, _value);
+  }
+
+  /**
+   * @dev Function to check the amount of tokens that an owner allowed to a spender.
+   * @param _owner address The address which owns the funds.
+   * @param _spender address The address which will spend the funds.
+   * @return A uint256 specifing the amount of tokens still avaible for the spender.
+   */
+  function allowance(address _owner, address _spender) constant returns (uint256 remaining) {
+    return allowed[_owner][_spender];
+  }
+
+}
+
+/**
+ * @title SimpleToken
+ * @dev Very simple ERC20 Token example, where all tokens are pre-assigned to the creator. 
+ * Note they can later distribute these tokens as they wish using `transfer` and other
+ * `StandardToken` functions.
+ */
+contract AhooleeToken is StandardToken {
+
+  string public name = "Ahoolee Token";
+  string public symbol = "AHT";
+  uint256 public decimals = 18;
+  uint256 public INITIAL_SUPPLY = 100000000 * 1 ether;
+
+  /**
+   * @dev Contructor that gives msg.sender all of existing tokens. 
+   */
+  function AhooleeToken() {
+    totalSupply = INITIAL_SUPPLY;
+    balances[msg.sender] = INITIAL_SUPPLY;
+  }
+
+}
+
+
+contract AhooleeTokenPreSale is Haltable {
+    using SafeMath for uint;
+
+    string public name = "Ahoolee Token PreSale";
+
+    AhooleeToken public token;
+    address public beneficiary;
+
+    uint public hardCap;
+    uint public softCap;
+    uint public collected;
+    uint public price;
+    uint public purchaseLimit;
+
+    uint public tokensSold = 0;
+    uint public weiRaised = 0;
+    uint public investorCount = 0;
+    uint public weiRefunded = 0;
+
+    uint public startTime;
+    uint public endTime;
+
+    bool public softCapReached = false;
+    bool public crowdsaleFinished = false;
+
+    mapping (address => bool) refunded;
+
+    event GoalReached(uint amountRaised);
+    event SoftCapReached(uint softCap);
+    event NewContribution(address indexed holder, uint256 tokenAmount, uint256 etherAmount);
+    event Refunded(address indexed holder, uint256 amount);
+
+    modifier onlyAfter(uint time) {
+        if (now < time) throw;
+        _;
+    }
+
+    modifier onlyBefore(uint time) {
+        if (now > time) throw;
+        _;
+    }
+
+    function AhooleeTokenPreSale(
+        uint _hardCapUSD,
+        uint _softCapUSD,
+        address _token,
+        address _beneficiary,
+        uint _totalTokens,
+        uint _priceETH,
+        uint _purchaseLimitUSD,
+
+        uint _startTime,
+        uint _duration
+    ) {
+        hardCap = _hardCapUSD  * 1 ether / _priceETH;
+        softCap = _softCapUSD * 1 ether / _priceETH;
+        price = _totalTokens * 1 ether / hardCap;
+
+        purchaseLimit = _purchaseLimitUSD * 1 ether / _priceETH * price;
+        token = AhooleeToken(_token);
+        beneficiary = _beneficiary;
+
+        startTime = _startTime;
+        endTime = _startTime + _duration * 1 hours;
+    }
+
+    function () payable stopInEmergency{
+        if (msg.value < 0.01 * 1 ether) throw;
+        doPurchase(msg.sender);
+    }
+
+    function refund() external onlyAfter(endTime) {
+        if (softCapReached) throw;
+        if (refunded[msg.sender]) throw;
+
+        uint balance = token.balanceOf(msg.sender);
+        if (balance == 0) throw;
+
+        uint refund = balance / price;
+        if (refund > this.balance) {
+            refund = this.balance;
         }
-        emit Bribe(msg.sender, vote_id, reward_token, amount);
-        return true;
+
+        if (!msg.sender.send(refund)) throw;
+        refunded[msg.sender] = true;
+        weiRefunded = weiRefunded.add(refund);
+        Refunded(msg.sender, refund);
     }
-    
-    function estimate_bribe(uint vote_id, address reward_token, address claimant) external view returns (uint) {
-        vote.VoteData memory _vote = VOTE.getVote(vote_id);
-        uint _vecrv = veCRV.balanceOfAt(claimant, _vote.snapshot_block);
-        if (VOTE.getVoterState(vote_id, claimant) == desired_vote) {
-            return reward_amount[vote_id][reward_token] * _vecrv / _vote.yea;
-        } else {
-            return reward_amount[vote_id][reward_token] * _vecrv / (_vote.yea + _vecrv);
-        }
+
+    function withdraw() onlyOwner {
+        if (!softCapReached) throw;
+        if (!beneficiary.send(collected)) throw;
+        token.transfer(beneficiary, token.balanceOf(this));
+        crowdsaleFinished = true;
     }
-    
-    function _update_vote_state(uint vote_id, address reward_token) internal returns (uint) {
-        vote.VoteData memory _vote = VOTE.getVote(vote_id);
-        require(!_vote.is_open);
-        uint total_vecrv = _vote.yea + _vote.nay;
-        bool has_quorum = total_vecrv * 10**18 / _vote.voting_power > _vote.min_accept_quorum;
-        bool has_support = _vote.yea * 10**18 / total_vecrv > _vote.support_required;
+
+    function doPurchase(address _owner) private onlyAfter(startTime) onlyBefore(endTime) {
         
-        if (has_quorum && has_support) {
-            vote_states[vote_id][reward_token] = 1;
-            yeas[vote_id] = _vote.yea;
-            return 1;
-        } else {
-            vote_states[vote_id][reward_token] = 2;
-            return 2;
+        assert(crowdsaleFinished == false);
+
+        if (collected.add(msg.value) > hardCap) throw;
+
+        if (!softCapReached && collected < softCap && collected.add(msg.value) >= softCap) {
+            softCapReached = true;
+            SoftCapReached(softCap);
         }
-    }
-    
-    function withdraw_reward(uint vote_id, address reward_token, address claimant) external returns (bool) {
-        uint _vote_state = vote_states[vote_id][reward_token];
-        if (_vote_state == 0) {
-            _vote_state = _update_vote_state(vote_id, reward_token);
+
+        uint tokens = msg.value * price;
+        if (token.balanceOf(msg.sender) + tokens > purchaseLimit) throw;
+
+        if (token.balanceOf(msg.sender) == 0) investorCount++;
+      
+        collected = collected.add(msg.value);
+
+        token.transfer(msg.sender, tokens);
+
+        weiRaised = weiRaised.add(msg.value);
+        tokensSold = tokensSold.add(tokens);
+
+        NewContribution(_owner, tokens, msg.value);
+
+        if (collected == hardCap) {
+            GoalReached(hardCap);
         }
-        require(_vote_state == 2);
-        uint _amount = given_rewards[vote_id][reward_token][msg.sender];
-        given_rewards[vote_id][reward_token][msg.sender] = 0;
-        reward_amount[vote_id][reward_token] -= _amount;
-        _safeTransfer(reward_token, claimant, _amount);
-        return true;
-    }
-    
-    function claim_reward(uint vote_id, address reward_token, address claiment) external returns (bool) {
-        return _claim_reward(vote_id, reward_token, claiment);
-    }
-    
-    function claim_reward(uint vote_id, address reward_token) external returns (bool) {
-        return _claim_reward(vote_id, reward_token, msg.sender);
-    }
-    
-    function _claim_reward(uint vote_id, address reward_token, address claimant) internal returns (bool) {
-        uint _vote_state = vote_states[vote_id][reward_token];
-        if (_vote_state == 0) {
-            _vote_state = _update_vote_state(vote_id, reward_token);
-        }
-        require(_vote_state == 1);
-        require(!has_claimed[vote_id][reward_token][msg.sender]);
-        require(VOTE.getVoterState(vote_id, claimant) == desired_vote);
-        has_claimed[vote_id][reward_token][msg.sender] = true;
-        
-        uint _vecrv = veCRV.balanceOfAt(claimant, snapshot_block[vote_id]);
-        uint _amount = reward_amount[vote_id][reward_token] * _vecrv / yeas[vote_id];
-        _safeTransfer(reward_token, claimant, _amount);
-        emit Bribe(claimant, vote_id, reward_token, _amount);
-        return true;
-    }
-    
-    function _safeTransfer(address token, address to, uint256 value) internal {
-        (bool success, bytes memory data) =
-            token.call(abi.encodeWithSelector(erc20.transfer.selector, to, value));
-        require(success && (data.length == 0 || abi.decode(data, (bool))));
-    }
-    
-    function _safeTransferFrom(address token, address from, address to, uint256 value) internal {
-        (bool success, bytes memory data) =
-            token.call(abi.encodeWithSelector(erc20.transferFrom.selector, from, to, value));
-        require(success && (data.length == 0 || abi.decode(data, (bool))));
     }
 }

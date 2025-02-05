@@ -1,551 +1,776 @@
-/**
- *Submitted for verification at Etherscan.io on 2021-06-14
-*/
+pragma solidity ^0.4.11;
 
-// SPDX-License-Identifier: MIT
-
-/*
- * Token has been generated for FREE using https://vittominacori.github.io/erc20-generator/
- *
- * NOTE: "Contract Source Code Verified (Similar Match)" means that this Token is similar to other tokens deployed
- *  using the same generator. It is not an issue. It means that you won't need to verify your source code because of
- *  it is already verified.
- *
- * DISCLAIMER: GENERATOR'S AUTHOR IS FREE OF ANY LIABILITY REGARDING THE TOKEN AND THE USE THAT IS MADE OF IT.
- *  The following code is provided under MIT License. Anyone can use it as per their needs.
- *  The generator's purpose is to make people able to tokenize their ideas without coding or paying for it.
- *  Source code is well tested and continuously updated to reduce risk of bugs and to introduce language optimizations.
- *  Anyway the purchase of tokens involves a high degree of risk. Before acquiring tokens, it is recommended to
- *  carefully weighs all the information and risks detailed in Token owner's Conditions.
- */
-
-
-// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
-
-
-
-pragma solidity ^0.8.0;
-
-/**
- * @dev Interface of the ERC20 standard as defined in the EIP.
- */
-interface IERC20 {
-    /**
-     * @dev Returns the amount of tokens in existence.
-     */
-    function totalSupply() external view returns (uint256);
-
-    /**
-     * @dev Returns the amount of tokens owned by `account`.
-     */
-    function balanceOf(address account) external view returns (uint256);
-
-    /**
-     * @dev Moves `amount` tokens from the caller's account to `recipient`.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Returns the remaining number of tokens that `spender` will be
-     * allowed to spend on behalf of `owner` through {transferFrom}. This is
-     * zero by default.
-     *
-     * This value changes when {approve} or {transferFrom} are called.
-     */
-    function allowance(address owner, address spender) external view returns (uint256);
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * IMPORTANT: Beware that changing an allowance with this method brings the risk
-     * that someone may use both the old and the new allowance by unfortunate
-     * transaction ordering. One possible solution to mitigate this race
-     * condition is to first reduce the spender's allowance to 0 and set the
-     * desired value afterwards:
-     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-     *
-     * Emits an {Approval} event.
-     */
-    function approve(address spender, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Moves `amount` tokens from `sender` to `recipient` using the
-     * allowance mechanism. `amount` is then deducted from the caller's
-     * allowance.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
-     *
-     * Note that `value` may be zero.
-     */
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to {approve}. `value` is the new allowance.
-     */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+contract ERC20Basic {
+  uint256 public totalSupply;
+  function balanceOf(address who) constant returns (uint256);
+  function transfer(address to, uint256 value) returns (bool);
+  event Transfer(address indexed from, address indexed to, uint256 value);
 }
 
-// File: @openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol
-
-
-
-pragma solidity ^0.8.0;
-
-
-/**
- * @dev Interface for the optional metadata functions from the ERC20 standard.
- *
- * _Available since v4.1._
- */
-interface IERC20Metadata is IERC20 {
-    /**
-     * @dev Returns the name of the token.
-     */
-    function name() external view returns (string memory);
-
-    /**
-     * @dev Returns the symbol of the token.
-     */
-    function symbol() external view returns (string memory);
-
-    /**
-     * @dev Returns the decimals places of the token.
-     */
-    function decimals() external view returns (uint8);
+contract ERC20 is ERC20Basic {
+  function allowance(address owner, address spender) constant returns (uint256);
+  function transferFrom(address from, address to, uint256 value) returns (bool);
+  function approve(address spender, uint256 value) returns (bool);
+  event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-// File: @openzeppelin/contracts/utils/Context.sol
+contract Ownable {
+  address public owner;
 
 
+  /**
+   * @dev The Ownable constructor sets the original `owner` of the contract to the sender
+   * account.
+   */
+  function Ownable() {
+    owner = msg.sender;
+  }
 
-pragma solidity ^0.8.0;
 
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
-abstract contract Context {
-    function _msgSender() internal view virtual returns (address) {
-        return msg.sender;
+  /**
+   * @dev Throws if called by any account other than the owner.
+   */
+  modifier onlyOwner() {
+    require(msg.sender == owner);
+    _;
+  }
+
+
+  /**
+   * @dev Allows the current owner to transfer control of the contract to a newOwner.
+   * @param newOwner The address to transfer ownership to.
+   */
+  function transferOwnership(address newOwner) onlyOwner {
+    if (newOwner != address(0)) {
+      owner = newOwner;
     }
+  }
 
-    function _msgData() internal view virtual returns (bytes calldata) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
-    }
 }
 
-// File: @openzeppelin/contracts/token/ERC20/ERC20.sol
+library SafeMath {
+  function mul(uint256 a, uint256 b) internal constant returns (uint256) {
+    uint256 c = a * b;
+    assert(a == 0 || c / a == b);
+    return c;
+  }
 
+  function div(uint256 a, uint256 b) internal constant returns (uint256) {
+    // assert(b > 0); // Solidity automatically throws when dividing by 0
+    uint256 c = a / b;
+    // assert(a == b * c + a % b); // There is no case in which this doesn&#39;t hold
+    return c;
+  }
 
+  function sub(uint256 a, uint256 b) internal constant returns (uint256) {
+    assert(b <= a);
+    return a - b;
+  }
 
-pragma solidity ^0.8.0;
-
-
-
-
-/**
- * @dev Implementation of the {IERC20} interface.
- *
- * This implementation is agnostic to the way tokens are created. This means
- * that a supply mechanism has to be added in a derived contract using {_mint}.
- * For a generic mechanism see {ERC20PresetMinterPauser}.
- *
- * TIP: For a detailed writeup see our guide
- * https://forum.zeppelin.solutions/t/how-to-implement-erc20-supply-mechanisms/226[How
- * to implement supply mechanisms].
- *
- * We have followed general OpenZeppelin guidelines: functions revert instead
- * of returning `false` on failure. This behavior is nonetheless conventional
- * and does not conflict with the expectations of ERC20 applications.
- *
- * Additionally, an {Approval} event is emitted on calls to {transferFrom}.
- * This allows applications to reconstruct the allowance for all accounts just
- * by listening to said events. Other implementations of the EIP may not emit
- * these events, as it isn't required by the specification.
- *
- * Finally, the non-standard {decreaseAllowance} and {increaseAllowance}
- * functions have been added to mitigate the well-known issues around setting
- * allowances. See {IERC20-approve}.
- */
-contract ERC20 is Context, IERC20, IERC20Metadata {
-    mapping (address => uint256) private _balances;
-
-    mapping (address => mapping (address => uint256)) private _allowances;
-
-    uint256 private _totalSupply;
-
-    string private _name;
-    string private _symbol;
-
-    /**
-     * @dev Sets the values for {name} and {symbol}.
-     *
-     * The defaut value of {decimals} is 18. To select a different value for
-     * {decimals} you should overload it.
-     *
-     * All two of these values are immutable: they can only be set once during
-     * construction.
-     */
-    constructor (string memory name_, string memory symbol_) {
-        _name = name_;
-        _symbol = symbol_;
-    }
-
-    /**
-     * @dev Returns the name of the token.
-     */
-    function name() public view virtual override returns (string memory) {
-        return _name;
-    }
-
-    /**
-     * @dev Returns the symbol of the token, usually a shorter version of the
-     * name.
-     */
-    function symbol() public view virtual override returns (string memory) {
-        return _symbol;
-    }
-
-    /**
-     * @dev Returns the number of decimals used to get its user representation.
-     * For example, if `decimals` equals `2`, a balance of `505` tokens should
-     * be displayed to a user as `5,05` (`505 / 10 ** 2`).
-     *
-     * Tokens usually opt for a value of 18, imitating the relationship between
-     * Ether and Wei. This is the value {ERC20} uses, unless this function is
-     * overridden;
-     *
-     * NOTE: This information is only used for _display_ purposes: it in
-     * no way affects any of the arithmetic of the contract, including
-     * {IERC20-balanceOf} and {IERC20-transfer}.
-     */
-    function decimals() public view virtual override returns (uint8) {
-        return 18;
-    }
-
-    /**
-     * @dev See {IERC20-totalSupply}.
-     */
-    function totalSupply() public view virtual override returns (uint256) {
-        return _totalSupply;
-    }
-
-    /**
-     * @dev See {IERC20-balanceOf}.
-     */
-    function balanceOf(address account) public view virtual override returns (uint256) {
-        return _balances[account];
-    }
-
-    /**
-     * @dev See {IERC20-transfer}.
-     *
-     * Requirements:
-     *
-     * - `recipient` cannot be the zero address.
-     * - the caller must have a balance of at least `amount`.
-     */
-    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(_msgSender(), recipient, amount);
-        return true;
-    }
-
-    /**
-     * @dev See {IERC20-allowance}.
-     */
-    function allowance(address owner, address spender) public view virtual override returns (uint256) {
-        return _allowances[owner][spender];
-    }
-
-    /**
-     * @dev See {IERC20-approve}.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function approve(address spender, uint256 amount) public virtual override returns (bool) {
-        _approve(_msgSender(), spender, amount);
-        return true;
-    }
-
-    /**
-     * @dev See {IERC20-transferFrom}.
-     *
-     * Emits an {Approval} event indicating the updated allowance. This is not
-     * required by the EIP. See the note at the beginning of {ERC20}.
-     *
-     * Requirements:
-     *
-     * - `sender` and `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `amount`.
-     * - the caller must have allowance for ``sender``'s tokens of at least
-     * `amount`.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(sender, recipient, amount);
-
-        uint256 currentAllowance = _allowances[sender][_msgSender()];
-        require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
-        _approve(sender, _msgSender(), currentAllowance - amount);
-
-        return true;
-    }
-
-    /**
-     * @dev Atomically increases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender] + addedValue);
-        return true;
-    }
-
-    /**
-     * @dev Atomically decreases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     * - `spender` must have allowance for the caller of at least
-     * `subtractedValue`.
-     */
-    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
-        uint256 currentAllowance = _allowances[_msgSender()][spender];
-        require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
-        _approve(_msgSender(), spender, currentAllowance - subtractedValue);
-
-        return true;
-    }
-
-    /**
-     * @dev Moves tokens `amount` from `sender` to `recipient`.
-     *
-     * This is internal function is equivalent to {transfer}, and can be used to
-     * e.g. implement automatic token fees, slashing mechanisms, etc.
-     *
-     * Emits a {Transfer} event.
-     *
-     * Requirements:
-     *
-     * - `sender` cannot be the zero address.
-     * - `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `amount`.
-     */
-    function _transfer(address sender, address recipient, uint256 amount) internal virtual {
-        require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
-
-        _beforeTokenTransfer(sender, recipient, amount);
-
-        uint256 senderBalance = _balances[sender];
-        require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
-        _balances[sender] = senderBalance - amount;
-        _balances[recipient] += amount;
-
-        emit Transfer(sender, recipient, amount);
-    }
-
-    /** @dev Creates `amount` tokens and assigns them to `account`, increasing
-     * the total supply.
-     *
-     * Emits a {Transfer} event with `from` set to the zero address.
-     *
-     * Requirements:
-     *
-     * - `to` cannot be the zero address.
-     */
-    function _mint(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: mint to the zero address");
-
-        _beforeTokenTransfer(address(0), account, amount);
-
-        _totalSupply += amount;
-        _balances[account] += amount;
-        emit Transfer(address(0), account, amount);
-    }
-
-    /**
-     * @dev Destroys `amount` tokens from `account`, reducing the
-     * total supply.
-     *
-     * Emits a {Transfer} event with `to` set to the zero address.
-     *
-     * Requirements:
-     *
-     * - `account` cannot be the zero address.
-     * - `account` must have at least `amount` tokens.
-     */
-    function _burn(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: burn from the zero address");
-
-        _beforeTokenTransfer(account, address(0), amount);
-
-        uint256 accountBalance = _balances[account];
-        require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
-        _balances[account] = accountBalance - amount;
-        _totalSupply -= amount;
-
-        emit Transfer(account, address(0), amount);
-    }
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the `owner` s tokens.
-     *
-     * This internal function is equivalent to `approve`, and can be used to
-     * e.g. set automatic allowances for certain subsystems, etc.
-     *
-     * Emits an {Approval} event.
-     *
-     * Requirements:
-     *
-     * - `owner` cannot be the zero address.
-     * - `spender` cannot be the zero address.
-     */
-    function _approve(address owner, address spender, uint256 amount) internal virtual {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
-
-        _allowances[owner][spender] = amount;
-        emit Approval(owner, spender, amount);
-    }
-
-    /**
-     * @dev Hook that is called before any transfer of tokens. This includes
-     * minting and burning.
-     *
-     * Calling conditions:
-     *
-     * - when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
-     * will be to transferred to `to`.
-     * - when `from` is zero, `amount` tokens will be minted for `to`.
-     * - when `to` is zero, `amount` of ``from``'s tokens will be burned.
-     * - `from` and `to` are never both zero.
-     *
-     * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
-     */
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
+  function add(uint256 a, uint256 b) internal constant returns (uint256) {
+    uint256 c = a + b;
+    assert(c >= a);
+    return c;
+  }
 }
 
-// File: contracts/service/ServicePayer.sol
+contract Crowdsale {
+  using SafeMath for uint256;
+
+  // The token being sold
+  MintableToken public token;
+
+  // start and end block where investments are allowed (both inclusive)
+  uint256 public startBlock;
+  uint256 public endBlock;
+
+  // address where funds are collected
+  address public wallet;
+
+  // how many token units a buyer gets per wei
+  uint256 public rate;
+
+  // amount of raised money in wei
+  uint256 public weiRaised;
+
+  /**
+   * event for token purchase logging
+   * @param purchaser who paid for the tokens
+   * @param beneficiary who got the tokens
+   * @param value weis paid for purchase
+   * @param amount amount of tokens purchased
+   */ 
+  event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint256 value, uint256 amount);
 
 
+  function Crowdsale(uint256 _startBlock, uint256 _endBlock, uint256 _rate, address _wallet) {
+    require(_startBlock >= block.number);
+    require(_endBlock >= _startBlock);
+    require(_rate > 0);
+    require(_wallet != 0x0);
 
-pragma solidity ^0.8.0;
+    token = createTokenContract();
+    startBlock = _startBlock;
+    endBlock = _endBlock;
+    rate = _rate;
+    wallet = _wallet;
+  }
 
-interface IPayable {
-    function pay(string memory serviceName) external payable;
+  // creates the token to be sold. 
+  // override this method to have crowdsale of a specific mintable token.
+  function createTokenContract() internal returns (MintableToken) {
+    return new MintableToken();
+  }
+
+
+  // fallback function can be used to buy tokens
+  function () payable {
+    buyTokens(msg.sender);
+  }
+
+  // low level token purchase function
+  function buyTokens(address beneficiary) payable {
+    require(beneficiary != 0x0);
+    require(validPurchase());
+
+    uint256 weiAmount = msg.value;
+
+    // calculate token amount to be created
+    uint256 tokens = weiAmount.mul(rate);
+
+    // update state
+    weiRaised = weiRaised.add(weiAmount);
+
+    token.mint(beneficiary, tokens);
+    TokenPurchase(msg.sender, beneficiary, weiAmount, tokens);
+
+    forwardFunds();
+  }
+
+  // send ether to the fund collection wallet
+  // override to create custom fund forwarding mechanisms
+  function forwardFunds() internal {
+    wallet.transfer(msg.value);
+  }
+
+  // @return true if the transaction can buy tokens
+  function validPurchase() internal constant returns (bool) {
+    uint256 current = block.number;
+    bool withinPeriod = current >= startBlock && current <= endBlock;
+    bool nonZeroPurchase = msg.value != 0;
+    return withinPeriod && nonZeroPurchase;
+  }
+
+  // @return true if crowdsale event has ended
+  function hasEnded() public constant returns (bool) {
+    return block.number > endBlock;
+  }
+
+
 }
 
-/**
- * @title ServicePayer
- * @dev Implementation of the ServicePayer
- */
-abstract contract ServicePayer {
+contract BasicToken is ERC20Basic {
+  using SafeMath for uint256;
 
-    constructor (address payable receiver, string memory serviceName) payable {
-        IPayable(receiver).pay{value: msg.value}(serviceName);
+  mapping(address => uint256) balances;
+
+  /**
+  * @dev transfer token for a specified address
+  * @param _to The address to transfer to.
+  * @param _value The amount to be transferred.
+  */
+  function transfer(address _to, uint256 _value) returns (bool) {
+    balances[msg.sender] = balances[msg.sender].sub(_value);
+    balances[_to] = balances[_to].add(_value);
+    Transfer(msg.sender, _to, _value);
+    return true;
+  }
+
+  /**
+  * @dev Gets the balance of the specified address.
+  * @param _owner The address to query the the balance of. 
+  * @return An uint256 representing the amount owned by the passed address.
+  */
+  function balanceOf(address _owner) constant returns (uint256 balance) {
+    return balances[_owner];
+  }
+
+}
+
+contract WhitelistedCrowdsale is Crowdsale, Ownable {
+    using SafeMath for uint256;
+
+    // list of addresses that can purchase before crowdsale opens
+    mapping (address => bool) public whitelist;
+
+    function addToWhitelist(address buyer) public onlyOwner {
+        require(buyer != 0x0);
+        whitelist[buyer] = true; 
+    }
+
+    // @return true if buyer is whitelisted
+    function isWhitelisted(address buyer) public constant returns (bool) {
+        return whitelist[buyer];
+    }
+
+    // overriding Crowdsale#validPurchase to add whitelist logic
+    // @return true if buyers can buy at the moment
+    function validPurchase() internal constant returns (bool) {
+        // [TODO] issue with overriding and associativity of logical operators
+        return super.validPurchase() || (!hasEnded() && isWhitelisted(msg.sender)); 
+    }
+
+}
+
+contract ContinuousSale {
+    using SafeMath for uint256;
+
+    // time bucket size
+    uint256 public constant BUCKET_SIZE = 12 hours;
+
+    // the token being sold
+    MintableToken public token;
+
+    // address where funds are collected
+    address public wallet;
+
+    // amount of tokens emitted per wei
+    uint256 public rate;
+
+    // amount of raised money in wei
+    uint256 public weiRaised;
+
+    // max amount of tokens to mint per time bucket
+    uint256 public issuance;
+
+    // last time bucket from which tokens have been purchased
+    uint256 public lastBucket = 0;
+
+    // amount issued in the last bucket
+    uint256 public bucketAmount = 0;
+
+    event TokenPurchase(address indexed investor, address indexed beneficiary, uint256 weiAmount, uint256 tokens);
+
+    function ContinuousSale(
+        uint256 _rate,
+        address _wallet,
+        MintableToken _token
+    ) {
+        require(_rate != 0);
+        require(_wallet != 0);
+        // require(address(token) != 0x0);
+
+        rate = _rate;
+        wallet = _wallet;
+        token = _token;
+    }
+
+    function() payable {
+        buyTokens(msg.sender);
+    }
+
+    function buyTokens(address beneficiary) public payable {
+        require(beneficiary != 0x0);
+        require(msg.value != 0);
+
+        prepareContinuousPurchase();
+        uint256 tokens = processPurchase(beneficiary);
+        checkContinuousPurchase(tokens);
+    }
+
+    function prepareContinuousPurchase() internal {
+        uint256 timestamp = block.timestamp;
+        uint256 bucket = timestamp - (timestamp % BUCKET_SIZE);
+
+        if (bucket > lastBucket) {
+            lastBucket = bucket;
+            bucketAmount = 0;
+        }
+    }
+
+    function checkContinuousPurchase(uint256 tokens) internal {
+        uint256 updatedBucketAmount = bucketAmount.add(tokens);
+        require(updatedBucketAmount <= issuance);
+
+        bucketAmount = updatedBucketAmount;
+    }
+
+    function processPurchase(address beneficiary) internal returns(uint256) {
+        uint256 weiAmount = msg.value;
+
+        // calculate token amount to be created
+        uint256 tokens = weiAmount.mul(rate);
+
+        // update state
+        weiRaised = weiRaised.add(weiAmount);
+
+        token.mint(beneficiary, tokens);
+        TokenPurchase(msg.sender, beneficiary, weiAmount, tokens);
+
+        forwardFunds();
+
+        return tokens;
+    }
+
+    function forwardFunds() internal {
+        wallet.transfer(msg.value);
     }
 }
 
-// File: contracts/utils/GeneratorCopyright.sol
+contract CappedCrowdsale is Crowdsale {
+  using SafeMath for uint256;
 
+  uint256 public cap;
 
+  function CappedCrowdsale(uint256 _cap) {
+    require(_cap > 0);
+    cap = _cap;
+  }
 
-pragma solidity ^0.8.0;
+  // overriding Crowdsale#validPurchase to add extra cap logic
+  // @return true if investors can buy at the moment
+  function validPurchase() internal constant returns (bool) {
+    bool withinCap = weiRaised.add(msg.value) <= cap;
+    return super.validPurchase() && withinCap;
+  }
 
-/**
- * @title GeneratorCopyright
- * @author ERC20 Generator (https://vittominacori.github.io/erc20-generator)
- * @dev Implementation of the GeneratorCopyright
- */
-contract GeneratorCopyright {
+  // overriding Crowdsale#hasEnded to add cap logic
+  // @return true if crowdsale event has ended
+  function hasEnded() public constant returns (bool) {
+    bool capReached = weiRaised >= cap;
+    return super.hasEnded() || capReached;
+  }
 
-    string private constant _GENERATOR = "https://vittominacori.github.io/erc20-generator";
-    string private _version;
+}
 
-    constructor (string memory version_) {
-        _version = version_;
+contract MANAContinuousSale is ContinuousSale, Ownable {
+
+    uint256 public constant INFLATION = 8;
+
+    bool public started = false;
+
+    event RateChange(uint256 amount);
+
+    event WalletChange(address wallet);
+
+    function MANAContinuousSale(
+        uint256 _rate,
+        address _wallet,
+        MintableToken _token
+    ) ContinuousSale(_rate, _wallet, _token) {
     }
 
-    /**
-     * @dev Returns the token generator tool.
-     */
-    function generator() public pure returns (string memory) {
-        return _GENERATOR;
+    modifier whenStarted() {
+        require(started);
+        _;
     }
 
-    /**
-     * @dev Returns the token generator version.
-     */
-    function version() public view returns (string memory) {
-        return _version;
+    function start() onlyOwner {
+        require(!started);
+
+        // initialize issuance
+        uint256 finalSupply = token.totalSupply();
+        uint256 annualIssuance = finalSupply.mul(INFLATION).div(100);
+        issuance = annualIssuance.mul(BUCKET_SIZE).div(1 years);
+
+        started = true;
+    }
+
+    function buyTokens(address beneficiary) whenStarted public payable {
+        super.buyTokens(beneficiary);
+    }
+
+    function setWallet(address _wallet) onlyOwner {
+        require(_wallet != 0x0);
+        wallet = _wallet;
+        WalletChange(_wallet);
+    }
+
+    function setRate(uint256 _rate) onlyOwner {
+        rate = _rate;
+        RateChange(_rate);
+    }
+
+    function unpauseToken() onlyOwner {
+        MANAToken(token).unpause();
+    }
+
+    function pauseToken() onlyOwner {
+        MANAToken(token).pause();
     }
 }
 
-// File: contracts/token/ERC20/SimpleERC20.sol
+contract FinalizableCrowdsale is Crowdsale, Ownable {
+  using SafeMath for uint256;
+
+  bool public isFinalized = false;
+
+  event Finalized();
+
+  // should be called after crowdsale ends, to do
+  // some extra finalization work
+  function finalize() onlyOwner {
+    require(!isFinalized);
+    require(hasEnded());
+
+    finalization();
+    Finalized();
+    
+    isFinalized = true;
+  }
+
+  // end token minting on finalization
+  // override this with custom logic if needed
+  function finalization() internal {
+    token.finishMinting();
+  }
 
 
 
-pragma solidity ^0.8.0;
+}
+
+contract StandardToken is ERC20, BasicToken {
+
+  mapping (address => mapping (address => uint256)) allowed;
 
 
+  /**
+   * @dev Transfer tokens from one address to another
+   * @param _from address The address which you want to send tokens from
+   * @param _to address The address which you want to transfer to
+   * @param _value uint256 the amout of tokens to be transfered
+   */
+  function transferFrom(address _from, address _to, uint256 _value) returns (bool) {
+    var _allowance = allowed[_from][msg.sender];
+
+    // Check is not needed because sub(_allowance, _value) will already throw if this condition is not met
+    // require (_value <= _allowance);
+
+    balances[_to] = balances[_to].add(_value);
+    balances[_from] = balances[_from].sub(_value);
+    allowed[_from][msg.sender] = _allowance.sub(_value);
+    Transfer(_from, _to, _value);
+    return true;
+  }
+
+  /**
+   * @dev Aprove the passed address to spend the specified amount of tokens on behalf of msg.sender.
+   * @param _spender The address which will spend the funds.
+   * @param _value The amount of tokens to be spent.
+   */
+  function approve(address _spender, uint256 _value) returns (bool) {
+
+    // To change the approve amount you first have to reduce the addresses`
+    //  allowance to zero by calling `approve(_spender, 0)` if it is not
+    //  already 0 to mitigate the race condition described here:
+    //  https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+    require((_value == 0) || (allowed[msg.sender][_spender] == 0));
+
+    allowed[msg.sender][_spender] = _value;
+    Approval(msg.sender, _spender, _value);
+    return true;
+  }
+
+  /**
+   * @dev Function to check the amount of tokens that an owner allowed to a spender.
+   * @param _owner address The address which owns the funds.
+   * @param _spender address The address which will spend the funds.
+   * @return A uint256 specifing the amount of tokens still avaible for the spender.
+   */
+  function allowance(address _owner, address _spender) constant returns (uint256 remaining) {
+    return allowed[_owner][_spender];
+  }
+
+}
+
+contract BurnableToken is StandardToken {
+
+    event Burn(address indexed burner, uint256 value);
+
+    /**
+     * @dev Burns a specified amount of tokens.
+     * @param _value The amount of tokens to burn. 
+     */
+    function burn(uint256 _value) public {
+        require(_value > 0);
+
+        address burner = msg.sender;
+        balances[burner] = balances[burner].sub(_value);
+        totalSupply = totalSupply.sub(_value);
+        Burn(msg.sender, _value);
+    }
+
+}
+
+contract Pausable is Ownable {
+  event Pause();
+  event Unpause();
+
+  bool public paused = false;
 
 
-/**
- * @title SimpleERC20
- * @author ERC20 Generator (https://vittominacori.github.io/erc20-generator)
- * @dev Implementation of the SimpleERC20
- */
-contract SimpleERC20 is ERC20, ServicePayer, GeneratorCopyright("v5.0.1") {
+  /**
+   * @dev modifier to allow actions only when the contract IS paused
+   */
+  modifier whenNotPaused() {
+    require(!paused);
+    _;
+  }
 
-    constructor (
-        string memory name_,
-        string memory symbol_,
-        uint256 initialBalance_,
-        address payable feeReceiver_
+  /**
+   * @dev modifier to allow actions only when the contract IS NOT paused
+   */
+  modifier whenPaused {
+    require(paused);
+    _;
+  }
+
+  /**
+   * @dev called by the owner to pause, triggers stopped state
+   */
+  function pause() onlyOwner whenNotPaused returns (bool) {
+    paused = true;
+    Pause();
+    return true;
+  }
+
+  /**
+   * @dev called by the owner to unpause, returns to normal state
+   */
+  function unpause() onlyOwner whenPaused returns (bool) {
+    paused = false;
+    Unpause();
+    return true;
+  }
+}
+
+contract PausableToken is StandardToken, Pausable {
+
+  function transfer(address _to, uint _value) whenNotPaused returns (bool) {
+    return super.transfer(_to, _value);
+  }
+
+  function transferFrom(address _from, address _to, uint _value) whenNotPaused returns (bool) {
+    return super.transferFrom(_from, _to, _value);
+  }
+}
+
+contract MintableToken is StandardToken, Ownable {
+  event Mint(address indexed to, uint256 amount);
+  event MintFinished();
+
+  bool public mintingFinished = false;
+
+
+  modifier canMint() {
+    require(!mintingFinished);
+    _;
+  }
+
+  /**
+   * @dev Function to mint tokens
+   * @param _to The address that will recieve the minted tokens.
+   * @param _amount The amount of tokens to mint.
+   * @return A boolean that indicates if the operation was successful.
+   */
+  function mint(address _to, uint256 _amount) onlyOwner canMint returns (bool) {
+    totalSupply = totalSupply.add(_amount);
+    balances[_to] = balances[_to].add(_amount);
+    Mint(_to, _amount);
+    return true;
+  }
+
+  /**
+   * @dev Function to stop minting new tokens.
+   * @return True if the operation was successful.
+   */
+  function finishMinting() onlyOwner returns (bool) {
+    mintingFinished = true;
+    MintFinished();
+    return true;
+  }
+}
+
+contract MANAToken is BurnableToken, PausableToken, MintableToken {
+
+    string public constant symbol = "MANA";
+
+    string public constant name = "Decentraland MANA";
+
+    uint8 public constant decimals = 18;
+
+    function burn(uint256 _value) whenNotPaused public {
+        super.burn(_value);
+    }
+}
+
+contract MANACrowdsale is WhitelistedCrowdsale, CappedCrowdsale, FinalizableCrowdsale {
+
+    uint256 public constant TOTAL_SHARE = 100;
+    uint256 public constant CROWDSALE_SHARE = 40;
+    uint256 public constant FOUNDATION_SHARE = 60;
+
+    // price at which whitelisted buyers will be able to buy tokens
+    uint256 public preferentialRate;
+
+    // customize the rate for each whitelisted buyer
+    mapping (address => uint256) public buyerRate;
+
+    // initial rate at which tokens are offered
+    uint256 public initialRate;
+
+    // end rate at which tokens are offered
+    uint256 public endRate;
+
+    // continuous crowdsale contract
+    MANAContinuousSale public continuousSale;
+
+    event WalletChange(address wallet);
+
+    event PreferentialRateChange(address indexed buyer, uint256 rate);
+
+    event InitialRateChange(uint256 rate);
+
+    event EndRateChange(uint256 rate);
+
+    function MANACrowdsale(
+        uint256 _startBlock,
+        uint256 _endBlock,
+        uint256 _initialRate,
+        uint256 _endRate,
+        uint256 _preferentialRate,
+        address _wallet
     )
-        ERC20(name_, symbol_)
-        ServicePayer(feeReceiver_, "SimpleERC20")
-        payable
+        CappedCrowdsale(82888 ether)
+        WhitelistedCrowdsale()
+        FinalizableCrowdsale()
+        Crowdsale(_startBlock, _endBlock, _initialRate, _wallet)
     {
-        require(initialBalance_ > 0, "SimpleERC20: supply cannot be zero");
+        require(_initialRate > 0);
+        require(_endRate > 0);
+        require(_preferentialRate > 0);
 
-        _mint(_msgSender(), initialBalance_);
+        initialRate = _initialRate;
+        endRate = _endRate;
+        preferentialRate = _preferentialRate;
+
+        continuousSale = createContinuousSaleContract();
+
+        MANAToken(token).pause();
     }
+
+    function createTokenContract() internal returns(MintableToken) {
+        return new MANAToken();
+    }
+
+    function createContinuousSaleContract() internal returns(MANAContinuousSale) {
+        return new MANAContinuousSale(rate, wallet, token);
+    }
+
+    function setBuyerRate(address buyer, uint256 rate) onlyOwner public {
+        require(rate != 0);
+        require(isWhitelisted(buyer));
+        require(block.number < startBlock);
+
+        buyerRate[buyer] = rate;
+
+        PreferentialRateChange(buyer, rate);
+    }
+
+    function setInitialRate(uint256 rate) onlyOwner public {
+        require(rate != 0);
+        require(block.number < startBlock);
+
+        initialRate = rate;
+
+        InitialRateChange(rate);
+    }
+
+    function setEndRate(uint256 rate) onlyOwner public {
+        require(rate != 0);
+        require(block.number < startBlock);
+
+        endRate = rate;
+
+        EndRateChange(rate);
+    }
+
+    function getRate() internal returns(uint256) {
+        // some early buyers are offered a discount on the crowdsale price
+        if (buyerRate[msg.sender] != 0) {
+            return buyerRate[msg.sender];
+        }
+
+        // whitelisted buyers can purchase at preferential price before crowdsale ends
+        if (isWhitelisted(msg.sender)) {
+            return preferentialRate;
+        }
+
+        // otherwise compute the price for the auction
+        uint256 elapsed = block.number - startBlock;
+        uint256 rateRange = initialRate - endRate;
+        uint256 blockRange = endBlock - startBlock;
+
+        return initialRate.sub(rateRange.mul(elapsed).div(blockRange));
+    }
+
+    // low level token purchase function
+    function buyTokens(address beneficiary) payable {
+        require(beneficiary != 0x0);
+        require(validPurchase());
+
+        uint256 weiAmount = msg.value;
+        uint256 updatedWeiRaised = weiRaised.add(weiAmount);
+
+        uint256 rate = getRate();
+        // calculate token amount to be created
+        uint256 tokens = weiAmount.mul(rate);
+
+        // update state
+        weiRaised = updatedWeiRaised;
+
+        token.mint(beneficiary, tokens);
+        TokenPurchase(msg.sender, beneficiary, weiAmount, tokens);
+
+        forwardFunds();
+    }
+
+    function setWallet(address _wallet) onlyOwner public {
+        require(_wallet != 0x0);
+        wallet = _wallet;
+        continuousSale.setWallet(_wallet);
+        WalletChange(_wallet);
+    }
+
+    function unpauseToken() onlyOwner {
+        require(isFinalized);
+        MANAToken(token).unpause();
+    }
+
+    function pauseToken() onlyOwner {
+        require(isFinalized);
+        MANAToken(token).pause();
+    }
+
+
+    function beginContinuousSale() onlyOwner public {
+        require(isFinalized);
+
+        token.transferOwnership(continuousSale);
+
+        continuousSale.start();
+        continuousSale.transferOwnership(owner);
+    }
+
+    function finalization() internal {
+        uint256 totalSupply = token.totalSupply();
+        uint256 finalSupply = TOTAL_SHARE.mul(totalSupply).div(CROWDSALE_SHARE);
+
+        // emit tokens for the foundation
+        token.mint(wallet, FOUNDATION_SHARE.mul(finalSupply).div(TOTAL_SHARE));
+
+        // NOTE: cannot call super here because it would finish minting and
+        // the continuous sale would not be able to proceed
+    }
+
 }

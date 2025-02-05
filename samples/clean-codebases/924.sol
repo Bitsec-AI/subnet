@@ -1,882 +1,292 @@
-/**
- *Submitted for verification at Etherscan.io on 2021-03-11
-*/
+pragma solidity ^0.4.21;
 
-// File: @openzeppelin/contracts/math/SafeMath.sol
-// SPDX-License-Identifier: AGPL-3.0-or-later
-pragma solidity 0.6.11;
-
-/**
- * @dev Wrappers over Solidity's arithmetic operations with added overflow
- * checks.
- *
- * Arithmetic operations in Solidity wrap on overflow. This can easily result
- * in bugs, because programmers usually assume that an overflow raises an
- * error, which is the standard behavior in high level programming languages.
- * `SafeMath` restores this intuition by reverting the transaction when an
- * operation overflows.
- *
- * Using this library instead of the unchecked operations eliminates an entire
- * class of bugs, so it's recommended to use it always.
- */
-library SafeMath {
-    /**
-     * @dev Returns the addition of two unsigned integers, with an overflow flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryAdd(uint a, uint b) internal pure returns (bool, uint) {
-        uint c = a + b;
-        if (c < a) return (false, 0);
-        return (true, c);
+contract Owned {
+    
+    /// &#39;owner&#39; is the only address that can call a function with 
+    /// this modifier
+    address public owner;
+    address internal newOwner;
+    
+    ///@notice The constructor assigns the message sender to be &#39;owner&#39;
+    function Owned() public {
+        owner = msg.sender;
     }
-
-    /**
-     * @dev Returns the substraction of two unsigned integers, with an overflow flag.
-     *
-     * _Available since v3.4._
-     */
-    function trySub(uint a, uint b) internal pure returns (bool, uint) {
-        if (b > a) return (false, 0);
-        return (true, a - b);
+    
+    modifier onlyOwner() {
+        require(msg.sender == owner);
+        _;
     }
+    
+    event updateOwner(address _oldOwner, address _newOwner);
+    
+    ///change the owner
+    function changeOwner(address _newOwner) public onlyOwner returns(bool) {
+        require(owner != _newOwner);
+        newOwner = _newOwner;
+        return true;
+    }
+    
+    /// accept the ownership
+    function acceptNewOwner() public returns(bool) {
+        require(msg.sender == newOwner);
+        emit updateOwner(owner, newOwner);
+        owner = newOwner;
+        return true;
+    }
+}
 
-    /**
-     * @dev Returns the multiplication of two unsigned integers, with an overflow flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryMul(uint a, uint b) internal pure returns (bool, uint) {
-        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-        // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
-        if (a == 0) return (true, 0);
+contract SafeMath {
+    function safeMul(uint a, uint b) pure internal returns (uint) {
         uint c = a * b;
-        if (c / a != b) return (false, 0);
-        return (true, c);
+        assert(a == 0 || c / a == b);
+        return c;
     }
-
-    /**
-     * @dev Returns the division of two unsigned integers, with a division by zero flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryDiv(uint a, uint b) internal pure returns (bool, uint) {
-        if (b == 0) return (false, 0);
-        return (true, a / b);
+    
+    function safeSub(uint a, uint b) pure internal returns (uint) {
+        assert(b <= a);
+        return a - b;
     }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers, with a division by zero flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryMod(uint a, uint b) internal pure returns (bool, uint) {
-        if (b == 0) return (false, 0);
-        return (true, a % b);
-    }
-
-    /**
-     * @dev Returns the addition of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `+` operator.
-     *
-     * Requirements:
-     *
-     * - Addition cannot overflow.
-     */
-    function add(uint a, uint b) internal pure returns (uint) {
+    
+    function safeAdd(uint a, uint b) pure internal returns (uint) {
         uint c = a + b;
-        require(c >= a, "SafeMath: addition overflow");
+        assert(c>=a && c>=b);
         return c;
     }
 
-    /**
-     * @dev Returns the subtraction of two unsigned integers, reverting on
-     * overflow (when the result is negative).
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
-     */
-    function sub(uint a, uint b) internal pure returns (uint) {
-        require(b <= a, "SafeMath: subtraction overflow");
-        return a - b;
+}
+
+contract ERC20Token {
+    /* This is a slight change to the ERC20 base standard.
+    function totalSupply() constant returns (uint256 supply);
+    is replaced with:
+    uint256 public totalSupply;
+    This automatically creates a getter function for the totalSupply.
+    This is moved to the base contract since public getter functions are not
+    currently recognised as an implementation of the matching abstract
+    function by the compiler.
+    */
+    /// total amount of tokens
+    uint256 public totalSupply;
+    
+    /// user tokens
+    mapping (address => uint256) public balances;
+    
+    /// @param _owner The address from which the balance will be retrieved
+    /// @return The balance
+    function balanceOf(address _owner) constant public returns (uint256 balance);
+
+    /// @notice send `_value` token to `_to` from `msg.sender`
+    /// @param _to The address of the recipient
+    /// @param _value The amount of token to be transferred
+    /// @return Whether the transfer was successful or not
+    function transfer(address _to, uint256 _value) public returns (bool success);
+    
+    /// @notice send `_value` token to `_to` from `_from` on the condition it is approved by `_from`
+    /// @param _from The address of the sender
+    /// @param _to The address of the recipient
+    /// @param _value The amount of token to be transferred
+    /// @return Whether the transfer was successful or not
+    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success);
+
+    /// @notice `msg.sender` approves `_spender` to spend `_value` tokens
+    /// @param _spender The address of the account able to transfer the tokens
+    /// @param _value The amount of tokens to be approved for transfer
+    /// @return Whether the approval was successful or not
+    function approve(address _spender, uint256 _value) public returns (bool success);
+
+    /// @param _owner The address of the account owning tokens
+    /// @param _spender The address of the account able to transfer the tokens
+    /// @return Amount of remaining tokens allowed to spent
+    function allowance(address _owner, address _spender) constant public returns (uint256 remaining);
+
+    event Transfer(address indexed _from, address indexed _to, uint256 _value);
+    event Approval(address indexed _owner, address indexed _spender, uint256 _value);
+}
+
+contract PUST is ERC20Token {
+    
+    string public name = "UST Put Option";
+    string public symbol = "PUST9";
+    uint public decimals = 0;
+    
+    uint256 public totalSupply = 0;
+    uint256 public topTotalSupply = 1000 * 130000;
+    
+    function transfer(address _to, uint256 _value) public returns (bool success) {
+    //Default assumes totalSupply can&#39;t be over max (2^256 - 1).
+    //If your token leaves out totalSupply and can issue more tokens as time goes on, you need to check if it doesn&#39;t wrap.
+    //Replace the if with this one instead.
+        if (balances[msg.sender] >= _value && balances[_to] + _value >= balances[_to]) {
+            balances[msg.sender] -= _value;
+            balances[_to] += _value;
+            emit Transfer(msg.sender, _to, _value);
+            return true;
+        } else { return false; }
+    }
+    
+    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
+    //same as above. Replace this line with the following if you want to protect against wrapping uints.
+        if (balances[_from] >= _value && allowances[_from][msg.sender] >= _value && balances[_to] + _value >= balances[_to]) {
+          balances[_to] += _value;
+          balances[_from] -= _value;
+          allowances[_from][msg.sender] -= _value;
+          emit Transfer(_from, _to, _value);
+          return true;
+        } else { return false; }
+    }
+    
+    function balanceOf(address _owner) constant public returns (uint256 balance) {
+        return balances[_owner];
+    }
+    
+    function approve(address _spender, uint256 _value) public returns (bool success) {
+        allowances[msg.sender][_spender] = _value;
+        emit Approval(msg.sender, _spender, _value);
+        return true;
+    }
+    
+    function allowance(address _owner, address _spender) constant public returns (uint256 remaining) {
+        return allowances[_owner][_spender];
+    }
+    
+    mapping(address => uint256) public balances;
+    
+    mapping (address => mapping (address => uint256)) allowances;
+}
+
+
+contract ExchangeUST is SafeMath, Owned, PUST {
+    
+    // Exercise End Time 10/1/2018 0:0:0
+    uint public ExerciseEndTime = 1538323200;
+    uint public exchangeRate = 130000; //percentage times (1 ether)
+    //mapping (address => uint) ustValue; //mapping of token addresses to mapping of account balances (token=0 means Ether)
+    
+    // UST address
+    address public ustAddress = address(0xFa55951f84Bfbe2E6F95aA74B58cc7047f9F0644);
+   
+    // offical Address
+    address public officialAddress = address(0x472fc5B96afDbD1ebC5Ae22Ea10bafe45225Bdc6);
+    
+    event Cancel(address tokenGet, uint amountGet, address tokenGive, uint amountGive, uint expires, uint nonce, address user, uint8 v, bytes32 r, bytes32 s);
+    event Deposit(address token, address user, uint amount, uint balance);
+    event Withdraw(address token, address user, uint amount, uint balance);
+    event exchange(address contractAddr, address reciverAddr, uint _pustBalance);
+    event changeFeeAt(uint _exchangeRate);
+
+    function chgExchangeRate(uint _exchangeRate) public onlyOwner {
+        require (_exchangeRate != exchangeRate);
+        require (_exchangeRate != 0);
+        exchangeRate = _exchangeRate;
     }
 
-    /**
-     * @dev Returns the multiplication of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `*` operator.
-     *
-     * Requirements:
-     *
-     * - Multiplication cannot overflow.
-     */
-    function mul(uint a, uint b) internal pure returns (uint) {
-        if (a == 0) return 0;
-        uint c = a * b;
-        require(c / a == b, "SafeMath: multiplication overflow");
-        return c;
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers, reverting on
-     * division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function div(uint a, uint b) internal pure returns (uint) {
-        require(b > 0, "SafeMath: division by zero");
-        return a / b;
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * reverting when dividing by zero.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function mod(uint a, uint b) internal pure returns (uint) {
-        require(b > 0, "SafeMath: modulo by zero");
-        return a % b;
-    }
-
-    /**
-     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
-     * overflow (when the result is negative).
-     *
-     * CAUTION: This function is deprecated because it requires allocating memory for the error
-     * message unnecessarily. For custom revert reasons use {trySub}.
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
-     */
-    function sub(
-        uint a,
-        uint b,
-        string memory errorMessage
-    ) internal pure returns (uint) {
-        require(b <= a, errorMessage);
-        return a - b;
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers, reverting with custom message on
-     * division by zero. The result is rounded towards zero.
-     *
-     * CAUTION: This function is deprecated because it requires allocating memory for the error
-     * message unnecessarily. For custom revert reasons use {tryDiv}.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function div(
-        uint a,
-        uint b,
-        string memory errorMessage
-    ) internal pure returns (uint) {
-        require(b > 0, errorMessage);
-        return a / b;
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * reverting with custom message when dividing by zero.
-     *
-     * CAUTION: This function is deprecated because it requires allocating memory for the error
-     * message unnecessarily. For custom revert reasons use {tryMod}.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function mod(
-        uint a,
-        uint b,
-        string memory errorMessage
-    ) internal pure returns (uint) {
-        require(b > 0, errorMessage);
-        return a % b;
+    function exerciseOption(uint _pustBalance) public returns (bool) {
+        require (now < ExerciseEndTime);
+        require (_pustBalance <= balances[msg.sender]);
+        
+        // convert units from ether to wei
+        uint _ether = safeMul(_pustBalance, 7 * 10 ** 12);
+        require (address(this).balance >= _ether); 
+        
+        // UST amount
+        uint _amount = safeMul(_pustBalance, 10 ** 18);
+        require (PUST(ustAddress).transferFrom(msg.sender, officialAddress, _amount) == true);
+        
+        balances[msg.sender] = safeSub(balances[msg.sender], _pustBalance);
+        balances[officialAddress] = safeAdd(balances[officialAddress], _pustBalance);
+        msg.sender.transfer(_ether);
+        emit exchange(address(this), msg.sender, _pustBalance);
     }
 }
 
-// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
+contract USTputOption is ExchangeUST {
+    
+    // constant 
+    uint public initBlockEpoch = 40;
+    uint public eachUserWeight = 10;
+    uint public lastEpochBlock = block.number + initBlockEpoch;
+    uint public price1=1750 * 9991 * 10**9/10000;
+    uint public price2=250 * 99993 * 10**9/100000;
+    uint public initEachPUST = 2 * 10**12 wei;
+    uint public eachPUSTprice = initEachPUST;
+    uint public epochLast = 0;
+
+    event buyPUST (address caller, uint PUST);
+    event Reward (address indexed _from, address indexed _to, uint256 _value);
+    
+    function () payable public {
+        require (now < ExerciseEndTime);
+        //require (topTotalSupply > totalSupply);
+        //bool firstCallReward = false;
+        uint epochNow = whichEpoch(block.number);
+    
+        if(epochNow != epochLast) {
+            
+            lastEpochBlock = safeAdd(lastEpochBlock, ((block.number - lastEpochBlock)/initBlockEpoch + 1)* initBlockEpoch);
+            eachPUSTprice = calcpustprice(epochNow, epochLast);
+            epochLast = epochNow;
 
-/**
- * @dev Interface of the ERC20 standard as defined in the EIP.
- */
-interface IERC20 {
-    /**
-     * @dev Returns the amount of tokens in existence.
-     */
-    function totalSupply() external view returns (uint);
-
-    /**
-     * @dev Returns the amount of tokens owned by `account`.
-     */
-    function balanceOf(address account) external view returns (uint);
-
-    /**
-     * @dev Moves `amount` tokens from the caller's account to `recipient`.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transfer(address recipient, uint amount) external returns (bool);
-
-    /**
-     * @dev Returns the remaining number of tokens that `spender` will be
-     * allowed to spend on behalf of `owner` through {transferFrom}. This is
-     * zero by default.
-     *
-     * This value changes when {approve} or {transferFrom} are called.
-     */
-    function allowance(address owner, address spender) external view returns (uint);
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * IMPORTANT: Beware that changing an allowance with this method brings the risk
-     * that someone may use both the old and the new allowance by unfortunate
-     * transaction ordering. One possible solution to mitigate this race
-     * condition is to first reduce the spender's allowance to 0 and set the
-     * desired value afterwards:
-     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-     *
-     * Emits an {Approval} event.
-     */
-    function approve(address spender, uint amount) external returns (bool);
-
-    /**
-     * @dev Moves `amount` tokens from `sender` to `recipient` using the
-     * allowance mechanism. `amount` is then deducted from the caller's
-     * allowance.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint amount
-    ) external returns (bool);
-
-    /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
-     *
-     * Note that `value` may be zero.
-     */
-    event Transfer(address indexed from, address indexed to, uint value);
-
-    /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to {approve}. `value` is the new allowance.
-     */
-    event Approval(address indexed owner, address indexed spender, uint value);
-}
-
-// File: contracts/protocol/IController.sol
-
-interface IController {
-    function ADMIN_ROLE() external view returns (bytes32);
-
-    function HARVESTER_ROLE() external view returns (bytes32);
-
-    function admin() external view returns (address);
-
-    function treasury() external view returns (address);
-
-    function setAdmin(address _admin) external;
-
-    function setTreasury(address _treasury) external;
-
-    function grantRole(bytes32 _role, address _addr) external;
-
-    function revokeRole(bytes32 _role, address _addr) external;
-
-    /*
-    @notice Set strategy for vault
-    @param _vault Address of vault
-    @param _strategy Address of strategy
-    @param _min Minimum undelying token current strategy must return. Prevents slippage
-    */
-    function setStrategy(
-        address _vault,
-        address _strategy,
-        uint _min
-    ) external;
-
-    // calls to strategy
-    /*
-    @notice Invest token in vault into strategy
-    @param _vault Address of vault
-    */
-    function invest(address _vault) external;
-
-    function harvest(address _strategy) external;
-
-    function skim(address _strategy) external;
-
-    /*
-    @notice Withdraw from strategy to vault
-    @param _strategy Address of strategy
-    @param _amount Amount of underlying token to withdraw
-    @param _min Minimum amount of underlying token to withdraw
-    */
-    function withdraw(
-        address _strategy,
-        uint _amount,
-        uint _min
-    ) external;
-
-    /*
-    @notice Withdraw all from strategy to vault
-    @param _strategy Address of strategy
-    @param _min Minimum amount of underlying token to withdraw
-    */
-    function withdrawAll(address _strategy, uint _min) external;
-
-    /*
-    @notice Exit from strategy
-    @param _strategy Address of strategy
-    @param _min Minimum amount of underlying token to withdraw
-    */
-    function exit(address _strategy, uint _min) external;
-}
-
-// File: contracts/protocol/IVault.sol
-
-/*
-version 1.2.0
-
-Changes
-- function deposit(uint) declared in IERC20Vault
-*/
-
-interface IVault {
-    function admin() external view returns (address);
-
-    function controller() external view returns (address);
-
-    function timeLock() external view returns (address);
-
-    /*
-    @notice For EthVault, must return 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
-    */
-    function token() external view returns (address);
-
-    function strategy() external view returns (address);
-
-    function strategies(address _strategy) external view returns (bool);
-
-    function reserveMin() external view returns (uint);
-
-    function withdrawFee() external view returns (uint);
-
-    function paused() external view returns (bool);
-
-    function whitelist(address _addr) external view returns (bool);
-
-    function setWhitelist(address _addr, bool _approve) external;
-
-    function setAdmin(address _admin) external;
-
-    function setController(address _controller) external;
-
-    function setTimeLock(address _timeLock) external;
-
-    function setPause(bool _paused) external;
-
-    function setReserveMin(uint _reserveMin) external;
-
-    function setWithdrawFee(uint _fee) external;
-
-    /*
-    @notice Returns the amount of asset (ETH or ERC20) in the vault
-    */
-    function balanceInVault() external view returns (uint);
-
-    /*
-    @notice Returns the estimate amount of asset in strategy
-    @dev Output may vary depending on price of liquidity provider token
-         where the underlying asset is invested
-    */
-    function balanceInStrategy() external view returns (uint);
-
-    /*
-    @notice Returns amount of tokens invested strategy
-    */
-    function totalDebtInStrategy() external view returns (uint);
-
-    /*
-    @notice Returns the total amount of asset in vault + total debt
-    */
-    function totalAssets() external view returns (uint);
-
-    /*
-    @notice Returns minimum amount of tokens that should be kept in vault for
-            cheap withdraw
-    @return Reserve amount
-    */
-    function minReserve() external view returns (uint);
-
-    /*
-    @notice Returns the amount of tokens available to be invested
-    */
-    function availableToInvest() external view returns (uint);
-
-    /*
-    @notice Approve strategy
-    @param _strategy Address of strategy
-    */
-    function approveStrategy(address _strategy) external;
-
-    /*
-    @notice Revoke strategy
-    @param _strategy Address of strategy
-    */
-    function revokeStrategy(address _strategy) external;
-
-    /*
-    @notice Set strategy
-    @param _min Minimum undelying asset current strategy must return. Prevents slippage
-    */
-    function setStrategy(address _strategy, uint _min) external;
-
-    /*
-    @notice Transfers asset in vault to strategy
-    */
-    function invest() external;
-
-    /*
-    @notice Calculate amount of asset that can be withdrawn
-    @param _shares Amount of shares
-    @return Amount of asset that can be withdrawn
-    */
-    function getExpectedReturn(uint _shares) external view returns (uint);
-
-    /*
-    @notice Withdraw asset
-    @param _shares Amount of shares to burn
-    @param _min Minimum amount of asset expected to return
-    */
-    function withdraw(uint _shares, uint _min) external;
-
-    /*
-    @notice Transfer asset in vault to admin
-    @param _token Address of asset to transfer
-    @dev _token must not be equal to vault asset
-    */
-    function sweep(address _token) external;
-}
-
-// File: contracts/protocol/IStrategy.sol
-
-/*
-version 1.2.0
-
-Changes
-
-Changes listed here do not affect interaction with other contracts (Vault and Controller)
-- removed function assets(address _token) external view returns (bool);
-- remove function deposit(uint), declared in IStrategyERC20
-- add function setSlippage(uint _slippage);
-- add function setDelta(uint _delta);
-*/
-
-interface IStrategy {
-    function admin() external view returns (address);
-
-    function controller() external view returns (address);
-
-    function vault() external view returns (address);
-
-    /*
-    @notice Returns address of underlying asset (ETH or ERC20)
-    @dev Must return 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE for ETH strategy
-    */
-    function underlying() external view returns (address);
-
-    /*
-    @notice Returns total amount of underlying transferred from vault
-    */
-    function totalDebt() external view returns (uint);
-
-    function performanceFee() external view returns (uint);
-
-    function slippage() external view returns (uint);
-
-    /* 
-    @notice Multiplier used to check total underlying <= total debt * delta / DELTA_MIN
-    */
-    function delta() external view returns (uint);
-
-    /*
-    @dev Flag to force exit in case normal exit fails
-    */
-    function forceExit() external view returns (bool);
-
-    function setAdmin(address _admin) external;
-
-    function setController(address _controller) external;
-
-    function setPerformanceFee(uint _fee) external;
-
-    function setSlippage(uint _slippage) external;
-
-    function setDelta(uint _delta) external;
-
-    function setForceExit(bool _forceExit) external;
-
-    /*
-    @notice Returns amount of underlying asset locked in this contract
-    @dev Output may vary depending on price of liquidity provider token
-         where the underlying asset is invested
-    */
-    function totalAssets() external view returns (uint);
-
-    /*
-    @notice Withdraw `_amount` underlying asset
-    @param amount Amount of underlying asset to withdraw
-    */
-    function withdraw(uint _amount) external;
-
-    /*
-    @notice Withdraw all underlying asset from strategy
-    */
-    function withdrawAll() external;
-
-    /*
-    @notice Sell any staking rewards for underlying and then deposit undelying
-    */
-    function harvest() external;
-
-    /*
-    @notice Increase total debt if profit > 0 and total assets <= max,
-            otherwise transfers profit to vault.
-    @dev Guard against manipulation of external price feed by checking that
-         total assets is below factor of total debt
-    */
-    function skim() external;
-
-    /*
-    @notice Exit from strategy
-    @dev Must transfer all underlying tokens back to vault
-    */
-    function exit() external;
-
-    /*
-    @notice Transfer token accidentally sent here to admin
-    @param _token Address of token to transfer
-    @dev _token must not be equal to underlying token
-    */
-    function sweep(address _token) external;
-}
-
-// File: contracts/AccessControl.sol
-
-contract AccessControl {
-    event GrantRole(bytes32 indexed role, address indexed addr);
-    event RevokeRole(bytes32 indexed role, address indexed addr);
-
-    mapping(bytes32 => mapping(address => bool)) public hasRole;
-
-    modifier onlyAuthorized(bytes32 _role) {
-        require(hasRole[_role][msg.sender], "!authorized");
-        _;
-    }
-
-    function _grantRole(bytes32 _role, address _addr) internal {
-        require(_addr != address(0), "address = zero");
-
-        hasRole[_role][_addr] = true;
-
-        emit GrantRole(_role, _addr);
-    }
-
-    function _revokeRole(bytes32 _role, address _addr) internal {
-        require(_addr != address(0), "address = zero");
-
-        hasRole[_role][_addr] = false;
-
-        emit RevokeRole(_role, _addr);
-    }
-}
-
-// File: contracts/Controller.sol
-
-/*
-version 1.2.0
-
-Changes from Controller 1.1.0
-- Check vault and strategy are approved by admin.
-  Protect from arbitrary contract to be passed into invest, harvest, skim, etc...
-- compatible with ERC20 and ETH vault / strategy
-  (checks withdraw min for ERC20 and ETH strategies)
-- add setStrategyAndInvest
-*/
-
-contract Controller is IController, AccessControl {
-    using SafeMath for uint;
-
-    event ApproveVault(address vault, bool approved);
-    event ApproveStrategy(address strategy, bool approved);
-
-    // WARNING: not address of ETH, used as placeholder
-    address private constant ETH = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
-
-    // keccak256(abi.encodePacked("ADMIN"));
-    bytes32 public constant override ADMIN_ROLE =
-        0xdf8b4c520ffe197c5343c6f5aec59570151ef9a492f2c624fd45ddde6135ec42;
-    // keccak256(abi.encodePacked("HARVESTER"));
-    bytes32 public constant override HARVESTER_ROLE =
-        0x27e3e4d29d60af3ae6456513164bb5db737d6fc8610aa36ad458736c9efb884c;
-
-    address public override admin;
-    // treasury must be able to receive ETH from ETH vault and strategy
-    address public override treasury;
-
-    // approved vaults
-    mapping(address => bool) public vaults;
-    // approved strategies
-    mapping(address => bool) public strategies;
-
-    constructor(address _treasury) public {
-        require(_treasury != address(0), "treasury = zero address");
-
-        admin = msg.sender;
-        treasury = _treasury;
-
-        _grantRole(ADMIN_ROLE, admin);
-        _grantRole(HARVESTER_ROLE, admin);
-    }
-
-    modifier onlyAdmin() {
-        require(msg.sender == admin, "!admin");
-        _;
-    }
-
-    modifier onlyApprovedVault(address _vault) {
-        require(vaults[_vault], "!approved vault");
-        _;
-    }
-
-    modifier onlyApprovedStrategy(address _strategy) {
-        require(strategies[_strategy], "!approved strategy");
-        _;
-    }
-
-    modifier isCurrentStrategy(address _strategy) {
-        address vault = IStrategy(_strategy).vault();
-        /*
-        Check that _strategy is the current strategy used by the vault.
-        */
-        require(IVault(vault).strategy() == _strategy, "!strategy");
-        _;
-    }
-
-    function setAdmin(address _admin) external override onlyAdmin {
-        require(_admin != address(0), "admin = zero address");
-
-        _revokeRole(ADMIN_ROLE, admin);
-        _revokeRole(HARVESTER_ROLE, admin);
-
-        _grantRole(ADMIN_ROLE, _admin);
-        _grantRole(HARVESTER_ROLE, _admin);
-
-        admin = _admin;
-    }
-
-    function setTreasury(address _treasury) external override onlyAdmin {
-        require(_treasury != address(0), "treasury = zero address");
-        treasury = _treasury;
-    }
-
-    function grantRole(bytes32 _role, address _addr) external override onlyAdmin {
-        require(_role == ADMIN_ROLE || _role == HARVESTER_ROLE, "invalid role");
-        _grantRole(_role, _addr);
-    }
-
-    function revokeRole(bytes32 _role, address _addr) external override onlyAdmin {
-        require(_role == ADMIN_ROLE || _role == HARVESTER_ROLE, "invalid role");
-        _revokeRole(_role, _addr);
-    }
-
-    function approveVault(address _vault) external onlyAdmin {
-        require(!vaults[_vault], "already approved vault");
-        vaults[_vault] = true;
-        emit ApproveVault(_vault, true);
-    }
-
-    function revokeVault(address _vault) external onlyAdmin {
-        require(vaults[_vault], "!approved vault");
-        vaults[_vault] = false;
-        emit ApproveVault(_vault, false);
-    }
-
-    function approveStrategy(address _strategy) external onlyAdmin {
-        require(!strategies[_strategy], "already approved strategy");
-        strategies[_strategy] = true;
-        emit ApproveStrategy(_strategy, true);
-    }
-
-    function revokeStrategy(address _strategy) external onlyAdmin {
-        require(strategies[_strategy], "!approved strategy");
-        strategies[_strategy] = false;
-        emit ApproveStrategy(_strategy, false);
-    }
-
-    function setStrategy(
-        address _vault,
-        address _strategy,
-        uint _min
-    )
-        external
-        override
-        onlyAuthorized(ADMIN_ROLE)
-        onlyApprovedVault(_vault)
-        onlyApprovedStrategy(_strategy)
-    {
-        IVault(_vault).setStrategy(_strategy, _min);
-    }
-
-    function invest(address _vault)
-        external
-        override
-        onlyAuthorized(HARVESTER_ROLE)
-        onlyApprovedVault(_vault)
-    {
-        IVault(_vault).invest();
-    }
-
-    /*
-    @notice Set strategy for vault and invest
-    @param _vault Address of vault
-    @param _strategy Address of strategy
-    @param _min Minimum undelying token current strategy must return. Prevents slippage
-    @dev Set strategy and invest in single transaction to avoid front running
-    */
-    function setStrategyAndInvest(
-        address _vault,
-        address _strategy,
-        uint _min
-    )
-        external
-        onlyAuthorized(ADMIN_ROLE)
-        onlyApprovedVault(_vault)
-        onlyApprovedStrategy(_strategy)
-    {
-        IVault(_vault).setStrategy(_strategy, _min);
-        IVault(_vault).invest();
-    }
-
-    function harvest(address _strategy)
-        external
-        override
-        onlyAuthorized(HARVESTER_ROLE)
-        onlyApprovedStrategy(_strategy)
-        isCurrentStrategy(_strategy)
-    {
-        IStrategy(_strategy).harvest();
-    }
-
-    function skim(address _strategy)
-        external
-        override
-        onlyAuthorized(HARVESTER_ROLE)
-        onlyApprovedStrategy(_strategy)
-        isCurrentStrategy(_strategy)
-    {
-        IStrategy(_strategy).skim();
-    }
-
-    modifier checkWithdraw(address _strategy, uint _min) {
-        address vault = IStrategy(_strategy).vault();
-        address token = IVault(vault).token();
-
-        uint balBefore;
-        uint balAfter;
-        if (token == ETH) {
-            balBefore = address(vault).balance;
-            _;
-            balAfter = address(vault).balance;
-        } else {
-            balBefore = IERC20(token).balanceOf(vault);
-            _;
-            balAfter = IERC20(token).balanceOf(vault);
         }
 
-        require(balAfter.sub(balBefore) >= _min, "withdraw < min");
+        uint _value = msg.value;
+        require(_value >= 1 finney);
+        uint _PUST = _value / eachPUSTprice;
+        require(safeMul(_PUST, eachPUSTprice) <= _value);
+        if (safeAdd(totalSupply, _PUST) > topTotalSupply) {
+            _PUST = safeSub(topTotalSupply, totalSupply);
+        }
+        
+        uint _refound = safeSub(_value, safeMul(_PUST, eachPUSTprice));
+        
+        if(_refound > 0) {
+            msg.sender.transfer(_refound);
+        }
+        
+        officialAddress.transfer(safeSub(_value, _refound));
+        
+        balances[msg.sender] = safeAdd(balances[msg.sender], _PUST);
+        totalSupply = safeAdd(totalSupply, _PUST);
+        emit Transfer(address(this), msg.sender, _PUST);
+        
+        // calc last epoch
+        lastEpochBlock = safeAdd(lastEpochBlock, eachUserWeight);
     }
-
-    function withdraw(
-        address _strategy,
-        uint _amount,
-        uint _min
-    )
-        external
-        override
-        onlyAuthorized(HARVESTER_ROLE)
-        onlyApprovedStrategy(_strategy)
-        isCurrentStrategy(_strategy)
-        checkWithdraw(_strategy, _min)
-    {
-        IStrategy(_strategy).withdraw(_amount);
+    
+    // 
+    function whichEpoch(uint _blocknumber) internal view returns (uint _epochNow) {
+        if (lastEpochBlock >= _blocknumber ) {
+            _epochNow = epochLast;
+        } else {
+            _epochNow = epochLast + (_blocknumber - lastEpochBlock) / initBlockEpoch + 1;
+        }
     }
-
-    function withdrawAll(address _strategy, uint _min)
-        external
-        override
-        onlyAuthorized(HARVESTER_ROLE)
-        onlyApprovedStrategy(_strategy)
-        isCurrentStrategy(_strategy)
-        checkWithdraw(_strategy, _min)
-    {
-        IStrategy(_strategy).withdrawAll();
+    
+    function calcpustprice(uint _epochNow, uint _epochLast) public returns (uint _eachPUSTprice) {
+        require (_epochNow - _epochLast > 0);    
+        uint dif = _epochNow - _epochLast;
+        uint dif100 = dif/100;
+        dif = dif - dif100*100;        
+        for(uint i=0;i<dif100;i++)
+        {
+            price1 = price1-price1*5/100;
+            price2 = price2-price2*7/1000;
+        }
+        price1 = price1 - price1*5*dif/10000;
+        price2 = price2 - price2*7*dif/100000;
+        
+        _eachPUSTprice = price1+price2;  
     }
-
-    function exit(address _strategy, uint _min)
-        external
-        override
-        onlyAuthorized(ADMIN_ROLE)
-        onlyApprovedStrategy(_strategy)
-        isCurrentStrategy(_strategy)
-        checkWithdraw(_strategy, _min)
-    {
-        IStrategy(_strategy).exit();
+    
+    // only owner can deposit ether into put option contract
+    function DepositETH(uint _PUST) payable public {
+        // deposit ether
+        require (msg.sender == officialAddress);
+        topTotalSupply += _PUST;
     }
+    
+    // only end time, onwer can transfer contract&#39;s ether out.
+    function WithdrawETH() payable public onlyOwner {
+        officialAddress.transfer(address(this).balance);
+    } 
+    
 }

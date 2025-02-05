@@ -45,8 +45,8 @@ Analyze the following text describing vulnerabilities in smart contract code. Cr
 1. 'prediction': A float between 0 and 1 representing the overall probability of vulnerability. Base this on the severity and number of vulnerabilities found.
 
 2. 'vulnerabilities': A list of dictionaries, each representing a Vulnerability object with these keys:
-   - 'int_ranges': A list of integer tuples representing affected code line ranges. Use an empty list if no specific lines are mentioned.
-   - 'vulnerability_type': A concise string summarizing the vulnerability type.
+   - 'line_ranges': A list of integer tuples representing affected code line ranges. Use an empty list if no specific lines are mentioned.
+   - 'category': A concise string summarizing the vulnerability category.
 
 Provide only the JSON object in your response, without any additional explanation. Ensure the output can be directly parsed into the PredictionResponse class.
 

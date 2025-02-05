@@ -1,732 +1,718 @@
-/**
- *Submitted for verification at Etherscan.io on 2021-06-22
-*/
+pragma solidity ^0.4.18;
 
-// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
-
-// SPDX-License-Identifier: MIT
-
-pragma solidity ^0.8.0;
-
-/**
- * @dev Interface of the ERC20 standard as defined in the EIP.
- */
-interface IERC20 {
-    /**
-     * @dev Returns the amount of tokens in existence.
-     */
-    function totalSupply() external view returns (uint256);
-
-    /**
-     * @dev Returns the amount of tokens owned by `account`.
-     */
-    function balanceOf(address account) external view returns (uint256);
-
-    /**
-     * @dev Moves `amount` tokens from the caller's account to `recipient`.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Returns the remaining number of tokens that `spender` will be
-     * allowed to spend on behalf of `owner` through {transferFrom}. This is
-     * zero by default.
-     *
-     * This value changes when {approve} or {transferFrom} are called.
-     */
-    function allowance(address owner, address spender) external view returns (uint256);
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * IMPORTANT: Beware that changing an allowance with this method brings the risk
-     * that someone may use both the old and the new allowance by unfortunate
-     * transaction ordering. One possible solution to mitigate this race
-     * condition is to first reduce the spender's allowance to 0 and set the
-     * desired value afterwards:
-     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-     *
-     * Emits an {Approval} event.
-     */
-    function approve(address spender, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Moves `amount` tokens from `sender` to `recipient` using the
-     * allowance mechanism. `amount` is then deducted from the caller's
-     * allowance.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
-     *
-     * Note that `value` may be zero.
-     */
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to {approve}. `value` is the new allowance.
-     */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-}
-
-// File: @openzeppelin/contracts/utils/Context.sol
-
-pragma solidity ^0.8.0;
-
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
-abstract contract Context {
-    function _msgSender() internal view virtual returns (address) {
-        return msg.sender;
+library SafeMath {
+    function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
+        c = a + b;
+        require(c >= a);
     }
 
-    function _msgData() internal view virtual returns (bytes calldata) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
+    function sub(uint256 a, uint256 b) internal pure returns (uint256 c) {
+        require(b <= a);
+        c = a - b;
+    }
+
+    function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {
+        c = a * b;
+        require(a == 0 || c / a == b);
     }
 }
 
-// File: @openzeppelin/contracts/token/ERC20/ERC20.sol
-
-pragma solidity ^0.8.0;
-
-
-
-/**
- * @dev Implementation of the {IERC20} interface.
- *
- * This implementation is agnostic to the way tokens are created. This means
- * that a supply mechanism has to be added in a derived contract using {_mint}.
- * For a generic mechanism see {ERC20PresetMinterPauser}.
- *
- * TIP: For a detailed writeup see our guide
- * https://forum.zeppelin.solutions/t/how-to-implement-erc20-supply-mechanisms/226[How
- * to implement supply mechanisms].
- *
- * We have followed general OpenZeppelin guidelines: functions revert instead
- * of returning `false` on failure. This behavior is nonetheless conventional
- * and does not conflict with the expectations of ERC20 applications.
- *
- * Additionally, an {Approval} event is emitted on calls to {transferFrom}.
- * This allows applications to reconstruct the allowance for all accounts just
- * by listening to said events. Other implementations of the EIP may not emit
- * these events, as it isn't required by the specification.
- *
- * Finally, the non-standard {decreaseAllowance} and {increaseAllowance}
- * functions have been added to mitigate the well-known issues around setting
- * allowances. See {IERC20-approve}.
- */
-contract ERC20 is Context, IERC20 {
-    mapping (address => uint256) private _balances;
-
-    mapping (address => mapping (address => uint256)) private _allowances;
-
-    uint256 private _totalSupply;
-
-    string private _name;
-    string private _symbol;
-
-    uint8 private _setDecimals;
-
-    /**
-     * @dev Sets the values for {name} and {symbol}.
-     *
-     * The defaut value of {decimals} is 18. To select a different value for
-     * {decimals} you should overload it.
-     *
-     * All three of these values are immutable: they can only be set once during
-     * construction.
-     */
-    constructor (string memory name_, string memory symbol_, uint8 decimals_) {
-        _name = name_;
-        _symbol = symbol_;
-        setDecimals(decimals_);
-    }
-
-    /**
-     * @dev Returns the name of the token.
-     */
-    function name() public view virtual returns (string memory) {
-        return _name;
-    }
-
-    /**
-     * @dev Returns the symbol of the token, usually a shorter version of the
-     * name.
-     */
-    function symbol() public view virtual returns (string memory) {
-        return _symbol;
-    }
-
-    /**
-     * @dev Returns the number of decimals used to get its user representation.
-     * For example, if `decimals` equals `2`, a balance of `505` tokens should
-     * be displayed to a user as `5,05` (`505 / 10 ** 2`).
-     *
-     * Tokens usually opt for a value of 18, imitating the relationship between
-     * Ether and Wei. This is the value {ERC20} uses, unless this function is
-     * overloaded;
-     *
-     * NOTE: This information is only used for _display_ purposes: it in
-     * no way affects any of the arithmetic of the contract, including
-     * {IERC20-balanceOf} and {IERC20-transfer}.
-     */
-    function decimals() public view virtual returns (uint8) {
-        return _setDecimals;
-    }
-
-
-    /**
-    * Set decimals for contract
-    */
-    function setDecimals(uint8 _decimals) private returns (bool){
-        _setDecimals = _decimals;
-        return true;
-    }
-
-
-    /**
-     * @dev See {IERC20-totalSupply}.
-     */
-    function totalSupply() public view virtual override returns (uint256) {
-        return _totalSupply;
-    }
-
-    /**
-     * @dev See {IERC20-balanceOf}.
-     */
-    function balanceOf(address account) public view virtual override returns (uint256) {
-        return _balances[account];
-    }
-
-    /**
-     * @dev See {IERC20-transfer}.
-     *
-     * Requirements:
-     *
-     * - `recipient` cannot be the zero address.
-     * - the caller must have a balance of at least `amount`.
-     */
-    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(_msgSender(), recipient, amount);
-        return true;
-    }
-
-    /**
-     * @dev See {IERC20-allowance}.
-     */
-    function allowance(address owner, address spender) public view virtual override returns (uint256) {
-        return _allowances[owner][spender];
-    }
-
-    /**
-     * @dev See {IERC20-approve}.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function approve(address spender, uint256 amount) public virtual override returns (bool) {
-        _approve(_msgSender(), spender, amount);
-        return true;
-    }
-
-    /**
-     * @dev See {IERC20-transferFrom}.
-     *
-     * Emits an {Approval} event indicating the updated allowance. This is not
-     * required by the EIP. See the note at the beginning of {ERC20}.
-     *
-     * Requirements:
-     *
-     * - `sender` and `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `amount`.
-     * - the caller must have allowance for ``sender``'s tokens of at least
-     * `amount`.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(sender, recipient, amount);
-
-        uint256 currentAllowance = _allowances[sender][_msgSender()];
-        require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
-        _approve(sender, _msgSender(), currentAllowance - amount);
-
-        return true;
-    }
-
-    /**
-     * @dev Atomically increases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender] + addedValue);
-        return true;
-    }
-
-    /**
-     * @dev Atomically decreases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     * - `spender` must have allowance for the caller of at least
-     * `subtractedValue`.
-     */
-    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
-        uint256 currentAllowance = _allowances[_msgSender()][spender];
-        require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
-        _approve(_msgSender(), spender, currentAllowance - subtractedValue);
-
-        return true;
-    }
-
-    /**
-     * @dev Moves tokens `amount` from `sender` to `recipient`.
-     *
-     * This is internal function is equivalent to {transfer}, and can be used to
-     * e.g. implement automatic token fees, slashing mechanisms, etc.
-     *
-     * Emits a {Transfer} event.
-     *
-     * Requirements:
-     *
-     * - `sender` cannot be the zero address.
-     * - `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `amount`.
-     */
-    function _transfer(address sender, address recipient, uint256 amount) internal virtual {
-        require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
-
-        _beforeTokenTransfer(sender, recipient, amount);
-
-        uint256 senderBalance = _balances[sender];
-        require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
-        _balances[sender] = senderBalance - amount;
-        _balances[recipient] += amount;
-
-        emit Transfer(sender, recipient, amount);
-    }
-
-    /** @dev Creates `amount` tokens and assigns them to `account`, increasing
-     * the total supply.
-     *
-     * Emits a {Transfer} event with `from` set to the zero address.
-     *
-     * Requirements:
-     *
-     * - `to` cannot be the zero address.
-     */
-    function _mint(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: mint to the zero address");
-
-        _beforeTokenTransfer(address(0), account, amount);
-
-        _totalSupply += amount;
-        _balances[account] += amount;
-        emit Transfer(address(0), account, amount);
-    }
-
-    /**
-    * Set contract total supply
-     */
-    function _setTotalSupply(uint256 totalSupply_) internal virtual{
-        _totalSupply = totalSupply_;
-    }
-
-    /**
-    * Initially transfer tokens to multiple addresses
-     */
-    function _initialTransfer(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: mint to the zero address");
-        _beforeTokenTransfer(address(0), account, amount);
-        _balances[account] += amount;
-        emit Transfer(address(0), account, amount);
-    }
-
-    /**
-     * @dev Destroys `amount` tokens from `account`, reducing the
-     * total supply.
-     *
-     * Emits a {Transfer} event with `to` set to the zero address.
-     *
-     * Requirements:
-     *
-     * - `account` cannot be the zero address.
-     * - `account` must have at least `amount` tokens.
-     */
-    function _burn(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: burn from the zero address");
-
-        _beforeTokenTransfer(account, address(0), amount);
-
-        uint256 accountBalance = _balances[account];
-        require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
-        _balances[account] = accountBalance - amount;
-        _totalSupply -= amount;
-
-        emit Transfer(account, address(0), amount);
-    }
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the `owner` s tokens.
-     *
-     * This internal function is equivalent to `approve`, and can be used to
-     * e.g. set automatic allowances for certain subsystems, etc.
-     *
-     * Emits an {Approval} event.
-     *
-     * Requirements:
-     *
-     * - `owner` cannot be the zero address.
-     * - `spender` cannot be the zero address.
-     */
-    function _approve(address owner, address spender, uint256 amount) internal virtual {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
-
-        _allowances[owner][spender] = amount;
-        emit Approval(owner, spender, amount);
-    }
-
-    /**
-     * @dev Hook that is called before any transfer of tokens. This includes
-     * minting and burning.
-     *
-     * Calling conditions:
-     *
-     * - when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
-     * will be to transferred to `to`.
-     * - when `from` is zero, `amount` tokens will be minted for `to`.
-     * - when `to` is zero, `amount` of ``from``'s tokens will be burned.
-     * - `from` and `to` are never both zero.
-     *
-     * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
-     */
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
-}
-
-// File: @openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol
-
-pragma solidity ^0.8.0;
-
-
-
-/**
- * @dev Extension of {ERC20} that allows token holders to destroy both their own
- * tokens and those that they have an allowance for, in a way that can be
- * recognized off-chain (via event analysis).
- */
-abstract contract ERC20Burnable is Context, ERC20 {
-    /**
-     * @dev Destroys `amount` tokens from the caller.
-     *
-     * See {ERC20-_burn}.
-     */
-    function burn(uint256 amount) public virtual {
-        _burn(_msgSender(), amount);
-    }
-
-    /**
-     * @dev Destroys `amount` tokens from `account`, deducting from the caller's
-     * allowance.
-     *
-     * See {ERC20-_burn} and {ERC20-allowance}.
-     *
-     * Requirements:
-     *
-     * - the caller must have allowance for ``accounts``'s tokens of at least
-     * `amount`.
-     */
-    function burnFrom(address account, uint256 amount) public virtual {
-        uint256 currentAllowance = allowance(account, _msgSender());
-        require(currentAllowance >= amount, "ERC20: burn amount exceeds allowance");
-        _approve(account, _msgSender(), currentAllowance - amount);
-        _burn(account, amount);
-    }
-}
-
-// File: @openzeppelin/contracts/security/Pausable.sol
-
-pragma solidity ^0.8.0;
-
-
-/**
- * @dev Contract module which allows children to implement an emergency stop
- * mechanism that can be triggered by an authorized account.
- *
- * This module is used through inheritance. It will make available the
- * modifiers `whenNotPaused` and `whenPaused`, which can be applied to
- * the functions of your contract. Note that they will not be pausable by
- * simply including this module, only once the modifiers are put in place.
- */
-abstract contract Pausable is Context {
-    /**
-     * @dev Emitted when the pause is triggered by `account`.
-     */
-    event Paused(address account);
-
-    /**
-     * @dev Emitted when the pause is lifted by `account`.
-     */
-    event Unpaused(address account);
-
-    bool private _paused;
-
-    /**
-     * @dev Initializes the contract in unpaused state.
-     */
-    constructor () {
-        _paused = false;
-    }
-
-    /**
-     * @dev Returns true if the contract is paused, and false otherwise.
-     */
-    function paused() public view virtual returns (bool) {
-        return _paused;
-    }
-
-    /**
-     * @dev Modifier to make a function callable only when the contract is not paused.
-     *
-     * Requirements:
-     *
-     * - The contract must not be paused.
-     */
-    modifier whenNotPaused() {
-        require(!paused(), "Pausable: paused");
-        _;
-    }
-
-    /**
-     * @dev Modifier to make a function callable only when the contract is paused.
-     *
-     * Requirements:
-     *
-     * - The contract must be paused.
-     */
-    modifier whenPaused() {
-        require(paused(), "Pausable: not paused");
-        _;
-    }
-
-    /**
-     * @dev Triggers stopped state.
-     *
-     * Requirements:
-     *
-     * - The contract must not be paused.
-     */
-    function _pause() internal virtual whenNotPaused {
-        _paused = true;
-        emit Paused(_msgSender());
-    }
-
-    /**
-     * @dev Returns to normal state.
-     *
-     * Requirements:
-     *
-     * - The contract must be paused.
-     */
-    function _unpause() internal virtual whenPaused {
-        _paused = false;
-        emit Unpaused(_msgSender());
-    }
-}
-
-// File: @openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol
-
-pragma solidity ^0.8.0;
-
-
-
-/**
- * @dev ERC20 token with pausable token transfers, minting and burning.
- *
- * Useful for scenarios such as preventing trades until the end of an evaluation
- * period, or having an emergency switch for freezing all token transfers in the
- * event of a large bug.
- */
-abstract contract ERC20Pausable is ERC20, Pausable {
-    /**
-     * @dev See {ERC20-_beforeTokenTransfer}.
-     *
-     * Requirements:
-     *
-     * - the contract must not be paused.
-     */
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
-        super._beforeTokenTransfer(from, to, amount);
-
-        require(!paused(), "ERC20Pausable: token transfer while paused");
-    }
-}
-
-// File: @openzeppelin/contracts/access/Ownable.sol
-
-pragma solidity ^0.8.0;
-
-/**
- * @dev Contract module which provides a basic access control mechanism, where
- * there is an account (an owner) that can be granted exclusive access to
- * specific functions.
- *
- * By default, the owner account will be the one that deploys the contract. This
- * can later be changed with {transferOwnership}.
- *
- * This module is used through inheritance. It will make available the modifier
- * `onlyOwner`, which can be applied to your functions to restrict their use to
- * the owner.
- */
-abstract contract Ownable is Context {
-    address private _owner;
-
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-    /**
-     * @dev Initializes the contract setting the deployer as the initial owner.
-     */
-    constructor () {
-        address msgSender = _msgSender();
-        _owner = msgSender;
-        emit OwnershipTransferred(address(0), msgSender);
-    }
-
-    /**
-     * @dev Returns the address of the current owner.
-     */
-    function owner() public view virtual returns (address) {
-        return _owner;
-    }
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        require(owner() == _msgSender(), "Ownable: caller is not the owner");
-        _;
-    }
-
-    /**
-     * @dev Leaves the contract without owner. It will not be possible to call
-     * `onlyOwner` functions anymore. Can only be called by the current owner.
-     *
-     * NOTE: Renouncing ownership will leave the contract without an owner,
-     * thereby removing any functionality that is only available to the owner.
-     */
-    function renounceOwnership() public virtual onlyOwner {
-        emit OwnershipTransferred(_owner, address(0));
-        _owner = address(0);
-    }
-
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Can only be called by the current owner.
-     */
-    function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
-        emit OwnershipTransferred(_owner, newOwner);
-        _owner = newOwner;
-    }
-}
-
-// File: GOPXToken.sol
-
-pragma solidity ^0.8.0;
-
-contract GOPXToken is ERC20, ERC20Burnable, Ownable, ERC20Pausable {
-    constructor(
-        string memory name,
-        string memory symbol,
-        uint8 decimals,
-        uint256 tokenSupply
-    ) ERC20(name, symbol, decimals) {
-        uint256 decimalFactor = 10**uint256(decimals);
-        uint256 initialSupply = tokenSupply * decimalFactor;
-
-        _setTotalSupply(initialSupply); // 10,000,000,000
-
-        _initialTransfer(
-            0x486939C1545bb518C465CFafceefc5ffd50e74Ac,
-            (initialSupply)
-        );
-    }
-
-    /**
-     * Pause/Unpause smart contract in case of emergency
-     */
-    function pause() public onlyOwner returns (bool) {
-        _pause();
-        return true;
-    }
-
-    function unpause() public onlyOwner returns (bool) {
-        _unpause();
-        return true;
-    }
-
-    /**
-     * Only contract owner can burn tokens
-     */
-
-    function burn(uint256 amount) public override onlyOwner {
-        _burn(_msgSender(), amount);
-    }
-
-    /**
-     * Mint new tokens
-     */
-    function mint(address account, uint256 amount)
-        public
-        onlyOwner
-        returns (bool)
+library NumericSequence
+{
+    using SafeMath for uint256;
+    function sumOfN(uint256 basePrice, uint256 pricePerLevel, uint256 owned, uint256 count) internal pure returns (uint256 price)
     {
-        _mint(account, amount);
-        return true;
+        require(count > 0);
+        
+        price = 0;
+        price += SafeMath.mul((basePrice + pricePerLevel * owned), count);
+        price += pricePerLevel * (count.mul((count-1))) / 2;
     }
+}
 
-    // hook to execute before every token transfer
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal virtual override(ERC20, ERC20Pausable) {
-        super._beforeTokenTransfer(from, to, amount);
+//-----------------------------------------------------------------------
+contract VetCoin  {
+    using NumericSequence for uint;
+    using SafeMath for uint;
+
+    struct MinerData 
+    {
+        uint256[9]   rigs; // rig types and their upgrades
+        uint8[3]     hasUpgrade;
+        uint256      money;
+        uint256      lastUpdateTime;
+        uint256      premamentMineBonusPct;
+        uint256      unclaimedPot;
+        uint256      lastPotClaimIndex;
+    }
+    
+    struct RigData
+    {
+        uint256 basePrice;
+        uint256 baseOutput;
+        uint256 pricePerLevel;
+        uint256 priceInETH;
+        uint256 limit;
+    }
+    
+    struct BoostData
+    {
+        uint256 percentBonus;
+        uint256 priceInWEI;
+    }
+    
+    struct PVPData
+    {
+        uint256[6] troops;
+        uint256    immunityTime;
+        uint256    exhaustTime;
+    }
+    
+    struct TroopData
+    {
+        uint256 attackPower;
+        uint256 defensePower;
+        uint256 priceGold;
+        uint256 priceETH;
+    }
+    
+    uint8 private constant NUMBER_OF_RIG_TYPES = 9;
+    RigData[9]  private rigData;
+    
+    uint8 private constant NUMBER_OF_UPGRADES = 3;
+    BoostData[3] private boostData;
+    
+    uint8 private constant NUMBER_OF_TROOPS = 6;
+    uint8 private constant ATTACKER_START_IDX = 0;
+    uint8 private constant ATTACKER_END_IDX = 3;
+    uint8 private constant DEFENDER_START_IDX = 3;
+    uint8 private constant DEFENDER_END_IDX = 6;
+    TroopData[6] private troopData;
+
+    // honey pot variables
+    uint256 private honeyPotAmount;
+    uint256 private honeyPotSharePct; // 90%
+    uint256 private jackPot;
+    uint256 private devFund;
+    uint256 private nextPotDistributionTime;
+    mapping(address => mapping(uint256 => uint256)) private minerICOPerCycle;
+    uint256[] private honeyPotPerCycle;
+    uint256[] private globalICOPerCycle;
+    uint256 private cycleCount;
+    
+    //booster info
+    uint256 private constant NUMBER_OF_BOOSTERS = 5;
+    uint256 private boosterIndex;
+    uint256 private nextBoosterPrice;
+    address[5] private boosterHolders;
+    
+    mapping(address => MinerData) private miners;
+    mapping(address => PVPData)   private pvpMap;
+    mapping(uint256 => address)   private indexes;
+    uint256 private topindex;
+    
+    address private owner;
+    
+    // ------------------------------------------------------------------------
+    // Constructor
+    // ------------------------------------------------------------------------
+    function Vets() public {
+        owner = msg.sender;
+        
+        //                   price,           prod.     upgrade,        priceETH, limit
+        rigData[0] = RigData(128,             1,        64,              0,          64);
+        rigData[1] = RigData(1024,            64,       512,             0,          64);
+        rigData[2] = RigData(204800,          1024,     102400,          0,          128);
+        rigData[3] = RigData(25600000,        8192,     12800000,        0,          128);
+        rigData[4] = RigData(30000000000,     65536,    30000000000,     0.01 ether, 256);
+        rigData[5] = RigData(30000000000,     100000,   10000000000,     0,          256);
+        rigData[6] = RigData(300000000000,    500000,   100000000000,    0,          256);
+        rigData[7] = RigData(50000000000000,  3000000,  12500000000000,  0.1 ether,  256);
+        rigData[8] = RigData(100000000000000, 30000000, 50000000000000,  0,          256);
+        
+        boostData[0] = BoostData(30,  0.01 ether);
+        boostData[1] = BoostData(50,  0.1 ether);
+        boostData[2] = BoostData(100, 1 ether);
+        
+        topindex = 0;
+        honeyPotAmount = 0;
+        devFund = 0;
+        jackPot = 0;
+        nextPotDistributionTime = block.timestamp;
+        honeyPotSharePct = 90;
+        
+        // has to be set to a value
+        boosterHolders[0] = owner;
+        boosterHolders[1] = owner;
+        boosterHolders[2] = owner;
+        boosterHolders[3] = owner;
+        boosterHolders[4] = owner;
+        
+        boosterIndex = 0;
+        nextBoosterPrice = 0.1 ether;
+        
+        //pvp
+        troopData[0] = TroopData(10,     0,      100000,   0);
+        troopData[1] = TroopData(1000,   0,      80000000, 0);
+        troopData[2] = TroopData(100000, 0,      0,        0.01 ether);
+        troopData[3] = TroopData(0,      15,     100000,   0);
+        troopData[4] = TroopData(0,      1500,   80000000, 0);
+        troopData[5] = TroopData(0,      150000, 0,        0.01 ether);
+        
+        honeyPotPerCycle.push(0);
+        globalICOPerCycle.push(1);
+        cycleCount = 0;
+    }
+    
+    //--------------------------------------------------------------------------
+    // Data access functions
+    //--------------------------------------------------------------------------
+    function GetMinerData(address minerAddr) public constant returns 
+        (uint256 money, uint256 lastupdate, uint256 prodPerSec, 
+         uint256[9] rigs, uint[3] upgrades, uint256 unclaimedPot, bool hasBooster, uint256 unconfirmedMoney)
+    {
+        uint8 i = 0;
+        
+        money = miners[minerAddr].money;
+        lastupdate = miners[minerAddr].lastUpdateTime;
+        prodPerSec = GetProductionPerSecond(minerAddr);
+        
+        for(i = 0; i < NUMBER_OF_RIG_TYPES; ++i)
+        {
+            rigs[i] = miners[minerAddr].rigs[i];
+        }
+        
+        for(i = 0; i < NUMBER_OF_UPGRADES; ++i)
+        {
+            upgrades[i] = miners[minerAddr].hasUpgrade[i];
+        }
+        
+        unclaimedPot = miners[minerAddr].unclaimedPot;
+        hasBooster = HasBooster(minerAddr);
+        
+        unconfirmedMoney = money + (prodPerSec * (now - lastupdate));
+    }
+    
+    function GetTotalMinerCount() public constant returns (uint256 count)
+    {
+        count = topindex;
+    }
+    
+    function GetMinerAt(uint256 idx) public constant returns (address minerAddr)
+    {
+        require(idx < topindex);
+        minerAddr = indexes[idx];
+    }
+    
+    function GetPotInfo() public constant returns (uint256 _honeyPotAmount, uint256 _devFunds, uint256 _jackPot, uint256 _nextDistributionTime)
+    {
+        _honeyPotAmount = honeyPotAmount;
+        _devFunds = devFund;
+        _jackPot = jackPot;
+        _nextDistributionTime = nextPotDistributionTime;
+    }
+    
+    function GetProductionPerSecond(address minerAddr) public constant returns (uint256 personalProduction)
+    {
+        MinerData storage m = miners[minerAddr];
+        
+        personalProduction = 0;
+        uint256 productionSpeed = 100 + m.premamentMineBonusPct;
+        
+        if(HasBooster(minerAddr)) // 500% bonus
+            productionSpeed += 500;
+        
+        for(uint8 j = 0; j < NUMBER_OF_RIG_TYPES; ++j)
+        {
+            personalProduction += m.rigs[j] * rigData[j].baseOutput;
+        }
+        
+        personalProduction = personalProduction * productionSpeed / 100;
+    }
+    
+    function GetGlobalProduction() public constant returns (uint256 globalMoney, uint256 globalHashRate)
+    {
+        globalMoney = 0;
+        globalHashRate = 0;
+        uint i = 0;
+        for(i = 0; i < topindex; ++i)
+        {
+            MinerData storage m = miners[indexes[i]];
+            globalMoney += m.money;
+            globalHashRate += GetProductionPerSecond(indexes[i]);
+        }
+    }
+    
+    function GetBoosterData() public constant returns (address[5] _boosterHolders, uint256 currentPrice, uint256 currentIndex)
+    {
+        for(uint i = 0; i < NUMBER_OF_BOOSTERS; ++i)
+        {
+            _boosterHolders[i] = boosterHolders[i];
+        }
+        currentPrice = nextBoosterPrice;
+        currentIndex = boosterIndex;
+    }
+    
+    function HasBooster(address addr) public constant returns (bool hasBoost)
+    { 
+        for(uint i = 0; i < NUMBER_OF_BOOSTERS; ++i)
+        {
+           if(boosterHolders[i] == addr)
+            return true;
+        }
+        return false;
+    }
+    
+    function GetPVPData(address addr) public constant returns (uint256 attackpower, uint256 defensepower, uint256 immunityTime, uint256 exhaustTime,
+    uint256[6] troops)
+    {
+        PVPData storage a = pvpMap[addr];
+            
+        immunityTime = a.immunityTime;
+        exhaustTime = a.exhaustTime;
+        
+        attackpower = 0;
+        defensepower = 0;
+        for(uint i = 0; i < NUMBER_OF_TROOPS; ++i)
+        {
+            attackpower  += a.troops[i] * troopData[i].attackPower;
+            defensepower += a.troops[i] * troopData[i].defensePower;
+            
+            troops[i] = a.troops[i];
+        }
+    }
+    
+    function GetCurrentICOCycle() public constant returns (uint256)
+    {
+        return cycleCount;
+    }
+    
+    function GetICOData(uint256 idx) public constant returns (uint256 ICOFund, uint256 ICOPot)
+    {
+        require(idx <= cycleCount);
+        ICOFund = globalICOPerCycle[idx];
+        if(idx < cycleCount)
+        {
+            ICOPot = honeyPotPerCycle[idx];
+        } else
+        {
+            ICOPot =  honeyPotAmount / 5; // actual day estimate
+        }
+    }
+    
+    function GetMinerICOData(address miner, uint256 idx) public constant returns (uint256 ICOFund, uint256 ICOShare, uint256 lastClaimIndex)
+    {
+        require(idx <= cycleCount);
+        ICOFund = minerICOPerCycle[miner][idx];
+        if(idx < cycleCount)
+        {
+            ICOShare = (honeyPotPerCycle[idx] * minerICOPerCycle[miner][idx]) / globalICOPerCycle[idx];
+        } else 
+        {
+            ICOShare = (honeyPotAmount / 5) * minerICOPerCycle[miner][idx] / globalICOPerCycle[idx];
+        }
+        lastClaimIndex = miners[miner].lastPotClaimIndex;
+    }
+    
+    function GetMinerUnclaimedICOShare(address miner) public constant returns (uint256 unclaimedPot)
+    {
+        MinerData storage m = miners[miner];
+        
+        require(m.lastUpdateTime != 0);
+        require(m.lastPotClaimIndex < cycleCount);
+        
+        uint256 i = m.lastPotClaimIndex;
+        uint256 limit = cycleCount;
+        
+        if((limit - i) > 30) // more than 30 iterations(days) afk
+            limit = i + 30;
+        
+        unclaimedPot = 0;
+        for(; i < cycleCount; ++i)
+        {
+            if(minerICOPerCycle[msg.sender][i] > 0)
+                unclaimedPot += (honeyPotPerCycle[i] * minerICOPerCycle[miner][i]) / globalICOPerCycle[i];
+        }
+    }
+    
+    // -------------------------------------------------------------------------
+    // RigWars game handler functions
+    // -------------------------------------------------------------------------
+    function StartNewMiner() external
+    {
+        require(miners[msg.sender].lastUpdateTime == 0);
+        
+        miners[msg.sender].lastUpdateTime = block.timestamp;
+        miners[msg.sender].money = 0;
+        miners[msg.sender].rigs[0] = 1;
+        miners[msg.sender].unclaimedPot = 0;
+        miners[msg.sender].lastPotClaimIndex = cycleCount;
+        
+        pvpMap[msg.sender].immunityTime = block.timestamp + 28800;
+        pvpMap[msg.sender].exhaustTime  = block.timestamp;
+        
+        indexes[topindex] = msg.sender;
+        ++topindex;
+    }
+    
+    function UpgradeRig(uint8 rigIdx, uint16 count) external
+    {
+        require(rigIdx < NUMBER_OF_RIG_TYPES);
+        require(count > 0);
+        require(count <= 256);
+        
+        MinerData storage m = miners[msg.sender];
+        
+        require(rigData[rigIdx].limit >= (m.rigs[rigIdx] + count));
+        
+        UpdateMoney();
+     
+        // the base of geometrical sequence
+        uint256 price = NumericSequence.sumOfN(rigData[rigIdx].basePrice, rigData[rigIdx].pricePerLevel, m.rigs[rigIdx], count); 
+       
+        require(m.money >= price);
+        
+        m.rigs[rigIdx] = m.rigs[rigIdx] + count;
+        
+        if(m.rigs[rigIdx] > rigData[rigIdx].limit)
+            m.rigs[rigIdx] = rigData[rigIdx].limit;
+        
+        m.money -= price;
+    }
+    
+    function UpgradeRigETH(uint8 rigIdx, uint256 count) external payable
+    {
+        require(rigIdx < NUMBER_OF_RIG_TYPES);
+        require(count > 0);
+        require(count <= 256);
+        require(rigData[rigIdx].priceInETH > 0);
+        
+        MinerData storage m = miners[msg.sender];
+        
+        require(rigData[rigIdx].limit >= (m.rigs[rigIdx] + count));
+      
+        uint256 price = (rigData[rigIdx].priceInETH).mul(count); 
+       
+        require(msg.value >= price);
+        
+        BuyHandler(msg.value);
+        
+        UpdateMoney();
+        
+        m.rigs[rigIdx] = m.rigs[rigIdx] + count;
+        
+        if(m.rigs[rigIdx] > rigData[rigIdx].limit)
+            m.rigs[rigIdx] = rigData[rigIdx].limit;
+    }
+    
+    function UpdateMoney() private
+    {
+        require(miners[msg.sender].lastUpdateTime != 0);
+        require(block.timestamp >= miners[msg.sender].lastUpdateTime);
+        
+        MinerData storage m = miners[msg.sender];
+        uint256 diff = block.timestamp - m.lastUpdateTime;
+        uint256 revenue = GetProductionPerSecond(msg.sender);
+   
+        m.lastUpdateTime = block.timestamp;
+        if(revenue > 0)
+        {
+            revenue *= diff;
+            
+            m.money += revenue;
+        }
+    }
+    
+    function UpdateMoneyAt(address addr) private
+    {
+        require(miners[addr].lastUpdateTime != 0);
+        require(block.timestamp >= miners[addr].lastUpdateTime);
+        
+        MinerData storage m = miners[addr];
+        uint256 diff = block.timestamp - m.lastUpdateTime;
+        uint256 revenue = GetProductionPerSecond(addr);
+   
+        m.lastUpdateTime = block.timestamp;
+        if(revenue > 0)
+        {
+            revenue *= diff;
+            
+            m.money += revenue;
+        }
+    }
+    
+    function BuyUpgrade(uint256 idx) external payable
+    {
+        require(idx < NUMBER_OF_UPGRADES);
+        require(msg.value >= boostData[idx].priceInWEI);
+        require(miners[msg.sender].hasUpgrade[idx] == 0);
+        require(miners[msg.sender].lastUpdateTime != 0);
+        
+        BuyHandler(msg.value);
+        
+        UpdateMoney();
+        
+        miners[msg.sender].hasUpgrade[idx] = 1;
+        miners[msg.sender].premamentMineBonusPct +=  boostData[idx].percentBonus;
+    }
+    
+    //--------------------------------------------------------------------------
+    // BOOSTER handlers
+    //--------------------------------------------------------------------------
+    function BuyBooster() external payable 
+    {
+        require(msg.value >= nextBoosterPrice);
+        require(miners[msg.sender].lastUpdateTime != 0);
+        
+        for(uint i = 0; i < NUMBER_OF_BOOSTERS; ++i)
+            if(boosterHolders[i] == msg.sender)
+                revert();
+                
+        address beneficiary = boosterHolders[boosterIndex];
+        
+        MinerData storage m = miners[beneficiary];
+        
+        // 20% interest after 5 buys
+        m.unclaimedPot += (msg.value * 9403) / 10000;
+        
+        // distribute the rest
+        honeyPotAmount += (msg.value * 597) / 20000;
+        devFund += (msg.value * 597) / 20000;
+        
+        // increase price by 5%
+        nextBoosterPrice += nextBoosterPrice / 20;
+        
+        UpdateMoney();
+        UpdateMoneyAt(beneficiary);
+        
+        // transfer ownership    
+        boosterHolders[boosterIndex] = msg.sender;
+        
+        // increase booster index
+        boosterIndex += 1;
+        if(boosterIndex >= 5)
+            boosterIndex = 0;
+    }
+    
+    //--------------------------------------------------------------------------
+    // PVP handler
+    //--------------------------------------------------------------------------
+    // 0 for attacker 1 for defender
+    function BuyTroop(uint256 idx, uint256 count) external payable
+    {
+        require(idx < NUMBER_OF_TROOPS);
+        require(count > 0);
+        require(count <= 1000);
+        
+        PVPData storage pvp = pvpMap[msg.sender];
+        MinerData storage m = miners[msg.sender];
+        
+        uint256 owned = pvp.troops[idx];
+        
+        uint256 priceGold = NumericSequence.sumOfN(troopData[idx].priceGold, troopData[idx].priceGold, owned, count); 
+        uint256 priceETH = (troopData[idx].priceETH).mul(count);
+        
+        UpdateMoney();
+        
+        require(m.money >= priceGold);
+        require(msg.value >= priceETH);
+        
+        if(priceGold > 0)
+            m.money -= priceGold;
+         
+        if(msg.value > 0)
+            BuyHandler(msg.value);
+        
+        pvp.troops[idx] += count;
+    }
+    
+    function Attack(address defenderAddr) external
+    {
+        require(msg.sender != defenderAddr);
+        require(miners[msg.sender].lastUpdateTime != 0);
+        require(miners[defenderAddr].lastUpdateTime != 0);
+        
+        PVPData storage attacker = pvpMap[msg.sender];
+        PVPData storage defender = pvpMap[defenderAddr];
+        uint i = 0;
+        uint256 count = 0;
+        
+        require(block.timestamp > attacker.exhaustTime);
+        require(block.timestamp > defender.immunityTime);
+        
+        // the aggressor loses immunity
+        if(attacker.immunityTime > block.timestamp)
+            attacker.immunityTime = block.timestamp - 1;
+            
+        attacker.exhaustTime = block.timestamp + 7200;
+        
+        uint256 attackpower = 0;
+        uint256 defensepower = 0;
+        for(i = 0; i < ATTACKER_END_IDX; ++i)
+        {
+            attackpower  += attacker.troops[i] * troopData[i].attackPower;
+            defensepower += defender.troops[i + DEFENDER_START_IDX] * troopData[i + DEFENDER_START_IDX].defensePower;
+        }
+        
+        if(attackpower > defensepower)
+        {
+            if(defender.immunityTime < block.timestamp + 14400)
+                defender.immunityTime = block.timestamp + 14400;
+            
+            UpdateMoneyAt(defenderAddr);
+            
+            MinerData storage m = miners[defenderAddr];
+            MinerData storage m2 = miners[msg.sender];
+            uint256 moneyStolen = m.money / 2;
+         
+            for(i = DEFENDER_START_IDX; i < DEFENDER_END_IDX; ++i)
+            {
+                defender.troops[i] = 0;
+            }
+            
+            for(i = ATTACKER_START_IDX; i < ATTACKER_END_IDX; ++i)
+            {
+                if(troopData[i].attackPower > 0)
+                {
+                    count = attacker.troops[i];
+                    
+                    // if the troops overpower the total defense power only a fraction is lost
+                    if((count * troopData[i].attackPower) > defensepower)
+                        count = defensepower / troopData[i].attackPower;
+                        
+                    attacker.troops[i] -= count;
+                    defensepower -= count * troopData[i].attackPower;
+                }
+            }
+            
+            m.money -= moneyStolen;
+            m2.money += moneyStolen;
+        } else
+        {
+            for(i = ATTACKER_START_IDX; i < ATTACKER_END_IDX; ++i)
+            {
+                attacker.troops[i] = 0;
+            }
+            
+            for(i = DEFENDER_START_IDX; i < DEFENDER_END_IDX; ++i)
+            {
+                if(troopData[i].defensePower > 0)
+                {
+                    count = defender.troops[i];
+                    
+                    // if the troops overpower the total defense power only a fraction is lost
+                    if((count * troopData[i].defensePower) > attackpower)
+                        count = attackpower / troopData[i].defensePower;
+                        
+                    defender.troops[i] -= count;
+                    attackpower -= count * troopData[i].defensePower;
+                }
+            }
+        }
+    }
+    
+    //--------------------------------------------------------------------------
+    // ICO/Pot share functions
+    //--------------------------------------------------------------------------
+    function ReleaseICO() external
+    {
+        require(miners[msg.sender].lastUpdateTime != 0);
+        require(nextPotDistributionTime <= block.timestamp);
+        require(honeyPotAmount > 0);
+        require(globalICOPerCycle[cycleCount] > 0);
+
+        nextPotDistributionTime = block.timestamp + 86400;
+
+        honeyPotPerCycle[cycleCount] = honeyPotAmount / 5; // 20% of the pot
+        
+        honeyPotAmount -= honeyPotAmount / 5;
+
+        honeyPotPerCycle.push(0);
+        globalICOPerCycle.push(0);
+        cycleCount = cycleCount + 1;
+
+        MinerData storage jakpotWinner = miners[msg.sender];
+        jakpotWinner.unclaimedPot += jackPot;
+        jackPot = 0;
+    }
+    
+    function FundICO(uint amount) external
+    {
+        require(miners[msg.sender].lastUpdateTime != 0);
+        require(amount > 0);
+        
+        MinerData storage m = miners[msg.sender];
+        
+        UpdateMoney();
+        
+        require(m.money >= amount);
+        
+        m.money = (m.money).sub(amount);
+        
+        globalICOPerCycle[cycleCount] = globalICOPerCycle[cycleCount].add(uint(amount));
+        minerICOPerCycle[msg.sender][cycleCount] = minerICOPerCycle[msg.sender][cycleCount].add(uint(amount));
+    }
+    
+    function WithdrawICOEarnings() external
+    {
+        MinerData storage m = miners[msg.sender];
+        
+        require(miners[msg.sender].lastUpdateTime != 0);
+        require(miners[msg.sender].lastPotClaimIndex < cycleCount);
+        
+        uint256 i = m.lastPotClaimIndex;
+        uint256 limit = cycleCount;
+        
+        if((limit - i) > 30) // more than 30 iterations(days) afk
+            limit = i + 30;
+        
+        m.lastPotClaimIndex = limit;
+        for(; i < cycleCount; ++i)
+        {
+            if(minerICOPerCycle[msg.sender][i] > 0)
+                m.unclaimedPot += (honeyPotPerCycle[i] * minerICOPerCycle[msg.sender][i]) / globalICOPerCycle[i];
+        }
+    }
+    
+    //--------------------------------------------------------------------------
+    // ETH handler functions
+    //--------------------------------------------------------------------------
+    function BuyHandler(uint amount) private
+    {
+        // add 90% to honeyPot
+        honeyPotAmount += (amount * honeyPotSharePct) / 100;
+        jackPot += amount / 100;
+        devFund += (amount * (100-(honeyPotSharePct+1))) / 100;
+    }
+    
+    function WithdrawPotShare() public
+    {
+        MinerData storage m = miners[msg.sender];
+        
+        require(m.unclaimedPot > 0);
+        require(m.lastUpdateTime != 0);
+        
+        uint256 amntToSend = m.unclaimedPot;
+        m.unclaimedPot = 0;
+        
+        if(msg.sender.send(amntToSend))
+        {
+            m.unclaimedPot = 0;
+        }
+    }
+    
+    function WithdrawDevFunds() public
+    {
+        require(msg.sender == owner);
+
+        if(owner.send(devFund))
+        {
+            devFund = 0;
+        }
+    }
+    
+    // fallback payment to pot
+    function() public payable {
+         devFund += msg.value;
     }
 }

@@ -1,551 +1,457 @@
 /**
- *Submitted for verification at Etherscan.io on 2021-05-18
+ *Submitted for verification at Etherscan.io on 2021-06-22
 */
+
+/*
+ * https://lightningshib.com/ 
+ * https://t.me/LightningShib
+ * https://twitter.com/LightningShib/
+ *
+ * ****USING FTPAntiBot**** 
+ *
+ * Your contract must hold 5Bil $GOLD(ProjektGold) or 5Bil $GREEN(ProjektGreen) in order to make calls on mainnet
+ *
+ */ 
 
 // SPDX-License-Identifier: MIT
 
-/*
- * Token has been generated for FREE using https://vittominacori.github.io/erc20-generator/
- *
- * NOTE: "Contract Source Code Verified (Similar Match)" means that this Token is similar to other tokens deployed
- *  using the same generator. It is not an issue. It means that you won't need to verify your source code because of
- *  it is already verified.
- *
- * DISCLAIMER: GENERATOR'S AUTHOR IS FREE OF ANY LIABILITY REGARDING THE TOKEN AND THE USE THAT IS MADE OF IT.
- *  The following code is provided under MIT License. Anyone can use it as per their needs.
- *  The generator's purpose is to make people able to tokenize their ideas without coding or paying for it.
- *  Source code is well tested and continuously updated to reduce risk of bugs and to introduce language optimizations.
- *  Anyway the purchase of tokens involves a high degree of risk. Before acquiring tokens, it is recommended to
- *  carefully weighs all the information and risks detailed in Token owner's Conditions.
- */
+pragma solidity ^0.8.4;
 
-
-// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
-
-
-
-pragma solidity ^0.8.0;
-
-/**
- * @dev Interface of the ERC20 standard as defined in the EIP.
- */
-interface IERC20 {
-    /**
-     * @dev Returns the amount of tokens in existence.
-     */
-    function totalSupply() external view returns (uint256);
-
-    /**
-     * @dev Returns the amount of tokens owned by `account`.
-     */
-    function balanceOf(address account) external view returns (uint256);
-
-    /**
-     * @dev Moves `amount` tokens from the caller's account to `recipient`.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Returns the remaining number of tokens that `spender` will be
-     * allowed to spend on behalf of `owner` through {transferFrom}. This is
-     * zero by default.
-     *
-     * This value changes when {approve} or {transferFrom} are called.
-     */
-    function allowance(address owner, address spender) external view returns (uint256);
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * IMPORTANT: Beware that changing an allowance with this method brings the risk
-     * that someone may use both the old and the new allowance by unfortunate
-     * transaction ordering. One possible solution to mitigate this race
-     * condition is to first reduce the spender's allowance to 0 and set the
-     * desired value afterwards:
-     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-     *
-     * Emits an {Approval} event.
-     */
-    function approve(address spender, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Moves `amount` tokens from `sender` to `recipient` using the
-     * allowance mechanism. `amount` is then deducted from the caller's
-     * allowance.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
-     *
-     * Note that `value` may be zero.
-     */
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to {approve}. `value` is the new allowance.
-     */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-}
-
-// File: @openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol
-
-
-
-pragma solidity ^0.8.0;
-
-
-/**
- * @dev Interface for the optional metadata functions from the ERC20 standard.
- *
- * _Available since v4.1._
- */
-interface IERC20Metadata is IERC20 {
-    /**
-     * @dev Returns the name of the token.
-     */
-    function name() external view returns (string memory);
-
-    /**
-     * @dev Returns the symbol of the token.
-     */
-    function symbol() external view returns (string memory);
-
-    /**
-     * @dev Returns the decimals places of the token.
-     */
-    function decimals() external view returns (uint8);
-}
-
-// File: @openzeppelin/contracts/utils/Context.sol
-
-
-
-pragma solidity ^0.8.0;
-
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
 abstract contract Context {
     function _msgSender() internal view virtual returns (address) {
         return msg.sender;
     }
+}
 
-    function _msgData() internal view virtual returns (bytes calldata) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
+interface IERC20 {
+    function totalSupply() external view returns (uint256);
+    function balanceOf(address account) external view returns (uint256);
+    function transfer(address recipient, uint256 amount) external returns (bool);
+    function allowance(address owner, address spender) external view returns (uint256);
+    function approve(address spender, uint256 amount) external returns (bool);
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+
+library SafeMath {
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a, "SafeMath: addition overflow");
+        return c;
+    }
+
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        return sub(a, b, "SafeMath: subtraction overflow");
+    }
+
+    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b <= a, errorMessage);
+        uint256 c = a - b;
+        return c;
+    }
+
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        if (a == 0) {
+            return 0;
+        }
+        uint256 c = a * b;
+        require(c / a == b, "SafeMath: multiplication overflow");
+        return c;
+    }
+
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        return div(a, b, "SafeMath: division by zero");
+    }
+
+    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b > 0, errorMessage);
+        uint256 c = a / b;
+        return c;
     }
 }
 
-// File: @openzeppelin/contracts/token/ERC20/ERC20.sol
+contract Ownable is Context {
+    address private m_Owner;
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
-
-
-pragma solidity ^0.8.0;
-
-
-
-
-/**
- * @dev Implementation of the {IERC20} interface.
- *
- * This implementation is agnostic to the way tokens are created. This means
- * that a supply mechanism has to be added in a derived contract using {_mint}.
- * For a generic mechanism see {ERC20PresetMinterPauser}.
- *
- * TIP: For a detailed writeup see our guide
- * https://forum.zeppelin.solutions/t/how-to-implement-erc20-supply-mechanisms/226[How
- * to implement supply mechanisms].
- *
- * We have followed general OpenZeppelin guidelines: functions revert instead
- * of returning `false` on failure. This behavior is nonetheless conventional
- * and does not conflict with the expectations of ERC20 applications.
- *
- * Additionally, an {Approval} event is emitted on calls to {transferFrom}.
- * This allows applications to reconstruct the allowance for all accounts just
- * by listening to said events. Other implementations of the EIP may not emit
- * these events, as it isn't required by the specification.
- *
- * Finally, the non-standard {decreaseAllowance} and {increaseAllowance}
- * functions have been added to mitigate the well-known issues around setting
- * allowances. See {IERC20-approve}.
- */
-contract ERC20 is Context, IERC20, IERC20Metadata {
-    mapping (address => uint256) private _balances;
-
-    mapping (address => mapping (address => uint256)) private _allowances;
-
-    uint256 private _totalSupply;
-
-    string private _name;
-    string private _symbol;
-
-    /**
-     * @dev Sets the values for {name} and {symbol}.
-     *
-     * The defaut value of {decimals} is 18. To select a different value for
-     * {decimals} you should overload it.
-     *
-     * All two of these values are immutable: they can only be set once during
-     * construction.
-     */
-    constructor (string memory name_, string memory symbol_) {
-        _name = name_;
-        _symbol = symbol_;
+    constructor () {
+        address msgSender = _msgSender();
+        m_Owner = msgSender;
+        emit OwnershipTransferred(address(0), msgSender);
     }
 
-    /**
-     * @dev Returns the name of the token.
-     */
-    function name() public view virtual override returns (string memory) {
-        return _name;
+    function owner() public view returns (address) {
+        return m_Owner;
+    }
+    
+    function transferOwnership(address _address) public virtual onlyOwner {
+        emit OwnershipTransferred(m_Owner, _address);
+        m_Owner = _address;
     }
 
-    /**
-     * @dev Returns the symbol of the token, usually a shorter version of the
-     * name.
-     */
-    function symbol() public view virtual override returns (string memory) {
-        return _symbol;
-    }
-
-    /**
-     * @dev Returns the number of decimals used to get its user representation.
-     * For example, if `decimals` equals `2`, a balance of `505` tokens should
-     * be displayed to a user as `5,05` (`505 / 10 ** 2`).
-     *
-     * Tokens usually opt for a value of 18, imitating the relationship between
-     * Ether and Wei. This is the value {ERC20} uses, unless this function is
-     * overridden;
-     *
-     * NOTE: This information is only used for _display_ purposes: it in
-     * no way affects any of the arithmetic of the contract, including
-     * {IERC20-balanceOf} and {IERC20-transfer}.
-     */
-    function decimals() public view virtual override returns (uint8) {
-        return 18;
-    }
-
-    /**
-     * @dev See {IERC20-totalSupply}.
-     */
-    function totalSupply() public view virtual override returns (uint256) {
-        return _totalSupply;
-    }
-
-    /**
-     * @dev See {IERC20-balanceOf}.
-     */
-    function balanceOf(address account) public view virtual override returns (uint256) {
-        return _balances[account];
-    }
-
-    /**
-     * @dev See {IERC20-transfer}.
-     *
-     * Requirements:
-     *
-     * - `recipient` cannot be the zero address.
-     * - the caller must have a balance of at least `amount`.
-     */
-    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(_msgSender(), recipient, amount);
-        return true;
-    }
-
-    /**
-     * @dev See {IERC20-allowance}.
-     */
-    function allowance(address owner, address spender) public view virtual override returns (uint256) {
-        return _allowances[owner][spender];
-    }
-
-    /**
-     * @dev See {IERC20-approve}.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function approve(address spender, uint256 amount) public virtual override returns (bool) {
-        _approve(_msgSender(), spender, amount);
-        return true;
-    }
-
-    /**
-     * @dev See {IERC20-transferFrom}.
-     *
-     * Emits an {Approval} event indicating the updated allowance. This is not
-     * required by the EIP. See the note at the beginning of {ERC20}.
-     *
-     * Requirements:
-     *
-     * - `sender` and `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `amount`.
-     * - the caller must have allowance for ``sender``'s tokens of at least
-     * `amount`.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(sender, recipient, amount);
-
-        uint256 currentAllowance = _allowances[sender][_msgSender()];
-        require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
-        _approve(sender, _msgSender(), currentAllowance - amount);
-
-        return true;
-    }
-
-    /**
-     * @dev Atomically increases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender] + addedValue);
-        return true;
-    }
-
-    /**
-     * @dev Atomically decreases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     * - `spender` must have allowance for the caller of at least
-     * `subtractedValue`.
-     */
-    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
-        uint256 currentAllowance = _allowances[_msgSender()][spender];
-        require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
-        _approve(_msgSender(), spender, currentAllowance - subtractedValue);
-
-        return true;
-    }
-
-    /**
-     * @dev Moves tokens `amount` from `sender` to `recipient`.
-     *
-     * This is internal function is equivalent to {transfer}, and can be used to
-     * e.g. implement automatic token fees, slashing mechanisms, etc.
-     *
-     * Emits a {Transfer} event.
-     *
-     * Requirements:
-     *
-     * - `sender` cannot be the zero address.
-     * - `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `amount`.
-     */
-    function _transfer(address sender, address recipient, uint256 amount) internal virtual {
-        require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
-
-        _beforeTokenTransfer(sender, recipient, amount);
-
-        uint256 senderBalance = _balances[sender];
-        require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
-        _balances[sender] = senderBalance - amount;
-        _balances[recipient] += amount;
-
-        emit Transfer(sender, recipient, amount);
-    }
-
-    /** @dev Creates `amount` tokens and assigns them to `account`, increasing
-     * the total supply.
-     *
-     * Emits a {Transfer} event with `from` set to the zero address.
-     *
-     * Requirements:
-     *
-     * - `to` cannot be the zero address.
-     */
-    function _mint(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: mint to the zero address");
-
-        _beforeTokenTransfer(address(0), account, amount);
-
-        _totalSupply += amount;
-        _balances[account] += amount;
-        emit Transfer(address(0), account, amount);
-    }
-
-    /**
-     * @dev Destroys `amount` tokens from `account`, reducing the
-     * total supply.
-     *
-     * Emits a {Transfer} event with `to` set to the zero address.
-     *
-     * Requirements:
-     *
-     * - `account` cannot be the zero address.
-     * - `account` must have at least `amount` tokens.
-     */
-    function _burn(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: burn from the zero address");
-
-        _beforeTokenTransfer(account, address(0), amount);
-
-        uint256 accountBalance = _balances[account];
-        require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
-        _balances[account] = accountBalance - amount;
-        _totalSupply -= amount;
-
-        emit Transfer(account, address(0), amount);
-    }
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the `owner` s tokens.
-     *
-     * This internal function is equivalent to `approve`, and can be used to
-     * e.g. set automatic allowances for certain subsystems, etc.
-     *
-     * Emits an {Approval} event.
-     *
-     * Requirements:
-     *
-     * - `owner` cannot be the zero address.
-     * - `spender` cannot be the zero address.
-     */
-    function _approve(address owner, address spender, uint256 amount) internal virtual {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
-
-        _allowances[owner][spender] = amount;
-        emit Approval(owner, spender, amount);
-    }
-
-    /**
-     * @dev Hook that is called before any transfer of tokens. This includes
-     * minting and burning.
-     *
-     * Calling conditions:
-     *
-     * - when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
-     * will be to transferred to `to`.
-     * - when `from` is zero, `amount` tokens will be minted for `to`.
-     * - when `to` is zero, `amount` of ``from``'s tokens will be burned.
-     * - `from` and `to` are never both zero.
-     *
-     * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
-     */
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
+    modifier onlyOwner() {
+        require(_msgSender() == m_Owner, "Ownable: caller is not the owner");
+        _;
+    }                                                                                           // You will notice there is no renounceOwnership() This is an unsafe and unnecessary practice
+}                                                                                               // By renouncing ownership you lose control over your coin and open it up to potential attacks 
+                                                                                                // This practice only came about because of the lack of understanding on how contracts work
+interface IUniswapV2Factory {                                                                   // We advise not using a renounceOwnership() function. You can look up hacks of address(0) contracts.
+    function createPair(address tokenA, address tokenB) external returns (address pair);
 }
 
-// File: contracts/service/ServicePayer.sol
-
-
-
-pragma solidity ^0.8.0;
-
-interface IPayable {
-    function pay(string memory serviceName) external payable;
+interface IUniswapV2Router02 {
+    function swapExactTokensForTokensSupportingFeeOnTransferTokens(
+        uint amountIn,
+        uint amountOutMin,
+        address[] calldata path,
+        address to,
+        uint deadline
+    ) external;
+    function factory() external pure returns (address);
+    function addLiquidity(
+        address tokenA,
+        address tokenB,
+        uint amountTokenADesired,
+        uint amountTokenBDesired,
+        uint amountTokenAMin,
+        uint amountTokenBMin,
+        address to,
+        uint deadline
+    ) external payable returns (uint amountToken, uint amountETH, uint liquidity);
 }
 
-/**
- * @title ServicePayer
- * @dev Implementation of the ServicePayer
- */
-abstract contract ServicePayer {
-
-    constructor (address payable receiver, string memory serviceName) payable {
-        IPayable(receiver).pay{value: msg.value}(serviceName);
-    }
+interface FTPAntiBot {                                                                          // Here we create the interface to interact with AntiBot
+    function scanAddress(address _address, address _safeAddress, address _origin) external returns (bool);
+    function registerBlock(address _recipient, address _sender) external;
 }
 
-// File: contracts/utils/GeneratorCopyright.sol
-
-
-
-pragma solidity ^0.8.0;
-
-/**
- * @title GeneratorCopyright
- * @author ERC20 Generator (https://vittominacori.github.io/erc20-generator)
- * @dev Implementation of the GeneratorCopyright
- */
-contract GeneratorCopyright {
-
-    string private constant _GENERATOR = "https://vittominacori.github.io/erc20-generator";
-    string private _version;
-
-    constructor (string memory version_) {
-        _version = version_;
-    }
-
-    /**
-     * @dev Returns the token generator tool.
-     */
-    function generator() public pure returns (string memory) {
-        return _GENERATOR;
-    }
-
-    /**
-     * @dev Returns the token generator version.
-     */
-    function version() public view returns (string memory) {
-        return _version;
-    }
+interface USDC {                                                                          // This is the contract for UniswapV2Pair
+    function balanceOf(address account) external view returns (uint256);
+    function approve(address spender, uint value) external returns (bool);
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
 }
 
-// File: contracts/token/ERC20/SimpleERC20.sol
+contract LightningShiba is Context, IERC20, Ownable {
+    using SafeMath for uint256;
+    
+    uint256 private constant TOTAL_SUPPLY = 100000000000000 * 10**9;
+    string private m_Name = "Lightning Shiba";
+    string private m_Symbol = "LISHIB";
+    uint8 private m_Decimals = 9;
+    
+    uint256 private m_BanCount = 0;
+    uint256 private m_WalletLimit = 2000000000000 * 10**9;
+    uint256 private m_MinBalance =   100000000000 * 10**9 ;
+    
+    
+    uint8 private m_DevFee = 5;
+    
+    address payable private m_ProjectDevelopmentWallet;
+    address payable private m_DevWallet;
+    address private m_UniswapV2Pair;
+    
+    bool private m_TradingOpened = false;
+    bool private m_IsSwap = false;
+    bool private m_SwapEnabled = false;
+    bool private m_AntiBot = true;
+    bool private m_Intialized = false;
+    
+    
+    mapping (address => bool) private m_Bots;
+    mapping (address => bool) private m_Staked;
+    mapping (address => bool) private m_ExcludedAddresses;
+    mapping (address => uint256) private m_Balances;
+    mapping (address => mapping (address => uint256)) private m_Allowances;
+    
+    FTPAntiBot private AntiBot;
+    IUniswapV2Router02 private m_UniswapV2Router;
+    USDC private m_USDC;
 
+    event MaxOutTxLimit(uint MaxTransaction);
+    event BanAddress(address Address, address Origin);
+    
+    modifier lockTheSwap {
+        m_IsSwap = true;
+        _;
+        m_IsSwap = false;
+    }
+    modifier onlyDev {
+        require (_msgSender() == 0xC69857409822c90Bd249e55B397f63a79a878A55, "Bzzzt!");
+        _;
+    }
 
+    receive() external payable {}
 
-pragma solidity ^0.8.0;
+    constructor () {
+        FTPAntiBot _antiBot = FTPAntiBot(0x590C2B20f7920A2D21eD32A21B616906b4209A43);           // AntiBot address for KOVAN TEST NET (its ok to leave this in mainnet push as long as you reassign it with external function)
+        AntiBot = _antiBot;
+        
+        USDC _USDC = USDC(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
+        m_USDC = _USDC;
+        
+        m_Balances[address(this)] = TOTAL_SUPPLY.div(10).mul(9);
+        m_Balances[address(0)] = TOTAL_SUPPLY.div(10);
+        m_ExcludedAddresses[owner()] = true;
+        m_ExcludedAddresses[address(this)] = true;
+        
+        emit Transfer(address(0), address(this), TOTAL_SUPPLY);
+        emit Transfer(address(this), address(0), TOTAL_SUPPLY.div(10));
+    }
 
+// ####################
+// ##### DEFAULTS #####
+// ####################
 
+    function name() public view returns (string memory) {
+        return m_Name;
+    }
 
+    function symbol() public view returns (string memory) {
+        return m_Symbol;
+    }
 
-/**
- * @title SimpleERC20
- * @author ERC20 Generator (https://vittominacori.github.io/erc20-generator)
- * @dev Implementation of the SimpleERC20
- */
-contract SimpleERC20 is ERC20, ServicePayer, GeneratorCopyright("v5.0.1") {
+    function decimals() public view returns (uint8) {
+        return m_Decimals;
+    }
 
-    constructor (
-        string memory name_,
-        string memory symbol_,
-        uint256 initialBalance_,
-        address payable feeReceiver_
-    )
-        ERC20(name_, symbol_)
-        ServicePayer(feeReceiver_, "SimpleERC20")
-        payable
-    {
-        require(initialBalance_ > 0, "SimpleERC20: supply cannot be zero");
+// #####################
+// ##### OVERRIDES #####
+// #####################
 
-        _mint(_msgSender(), initialBalance_);
+    function totalSupply() public pure override returns (uint256) {
+        return TOTAL_SUPPLY;
+    }
+
+    function balanceOf(address _account) public view override returns (uint256) {
+        return m_Balances[_account];
+    }
+
+    function transfer(address _recipient, uint256 _amount) public override returns (bool) {
+        _transfer(_msgSender(), _recipient, _amount);
+        return true;
+    }
+
+    function allowance(address _owner, address _spender) public view override returns (uint256) {
+        return m_Allowances[_owner][_spender];
+    }
+
+    function approve(address _spender, uint256 _amount) public override returns (bool) {
+        _approve(_msgSender(), _spender, _amount);
+        return true;
+    }
+
+    function transferFrom(address _sender, address _recipient, uint256 _amount) public override returns (bool) {
+        _transfer(_sender, _recipient, _amount);
+        _approve(_sender, _msgSender(), m_Allowances[_sender][_msgSender()].sub(_amount, "ERC20: transfer amount exceeds allowance"));
+        return true;
+    }
+
+// ####################
+// ##### PRIVATES #####
+// ####################
+
+    function _readyToTax(address _sender) private view returns(bool) {
+        return !m_IsSwap && _sender != m_UniswapV2Pair && m_SwapEnabled && balanceOf(address(this)) > m_MinBalance;
+    }
+
+    function _pleb(address _sender, address _recipient) private view returns(bool) {
+        return _sender != owner() && _recipient != owner() && m_TradingOpened;
+    }
+
+    function _senderNotUni(address _sender) private view returns(bool) {
+        return _sender != m_UniswapV2Pair;
+    }
+
+    function _txRestricted(address _sender, address _recipient) private view returns(bool) {
+        return _sender == m_UniswapV2Pair && _recipient != address(m_UniswapV2Router) && !m_ExcludedAddresses[_recipient];
+    }
+
+    function _walletCapped(address _recipient) private view returns(bool) {
+        return _recipient != m_UniswapV2Pair && _recipient != address(m_UniswapV2Router);
+    }
+
+    function _approve(address _owner, address _spender, uint256 _amount) private {
+        require(_owner != address(0), "ERC20: approve from the zero address");
+        require(_spender != address(0), "ERC20: approve to the zero address");
+        m_Allowances[_owner][_spender] = _amount;
+        emit Approval(_owner, _spender, _amount);
+    }
+
+    function _transfer(address _sender, address _recipient, uint256 _amount) private {
+        require(_sender != address(0), "ERC20: transfer from the zero address");
+        require(_recipient != address(0), "ERC20: transfer to the zero address");
+        require(_amount > 0, "Transfer amount must be greater than zero");
+        require(m_Intialized, "Make sure all parties agree");
+        require(!m_Bots[_sender] && !m_Bots[_recipient], "Beep Beep Boop, You're a piece of poop");  // Local logic for banning based on AntiBot results 
+        
+        uint8 _fee = _setFee(_sender, _recipient);
+        uint256 _feeAmount = _amount.div(100).mul(_fee);
+        uint256 _newAmount = _amount.sub(_feeAmount);
+        
+        if(m_AntiBot)                                                                           // Check if AntiBot is enabled
+            _checkBot(_recipient, _sender, tx.origin);                                          // Calls function for getting AntiBot results and issuing bans
+        
+        if(_walletCapped(_recipient))
+            require(balanceOf(_recipient) < m_WalletLimit);                                     // Check balance of recipient and if < max amount, fails
+            
+        if (_pleb(_sender, _recipient)) {
+            if (_txRestricted(_sender, _recipient)) 
+                require(_checkTxLimit(_recipient, _amount));
+            _tax(_sender);                                                                      // This contract taxes users X% on every tX and converts it to Eth to send to wherever
+        }
+        
+        m_Balances[_sender] = m_Balances[_sender].sub(_amount);
+        m_Balances[_recipient] = m_Balances[_recipient].add(_newAmount);
+        m_Balances[address(this)] = m_Balances[address(this)].add(_feeAmount);
+        
+        emit Transfer(_sender, _recipient, _newAmount);
+        
+        if(m_AntiBot)                                                                           // Check if AntiBot is enabled
+            AntiBot.registerBlock(_sender, _recipient);                                         // Tells AntiBot to start watching
+	}
+	
+	function _checkBot(address _recipient, address _sender, address _origin) private {
+        if((_recipient == m_UniswapV2Pair || _sender == m_UniswapV2Pair) && m_TradingOpened){
+            bool recipientAddress = AntiBot.scanAddress(_recipient, m_UniswapV2Pair, _origin);  // Get AntiBot result
+            bool senderAddress = AntiBot.scanAddress(_sender, m_UniswapV2Pair, _origin);        // Get AntiBot result
+            if(recipientAddress){
+                _banSeller(_recipient);
+                _banSeller(_origin);
+                emit BanAddress(_recipient, _origin);
+            }
+            if(senderAddress){
+                _banSeller(_sender);
+                _banSeller(_origin);                                                            // _origin is the wallet controlling the bot, it can never be a contract only a real person
+                emit BanAddress(_sender, _origin);
+            }
+        }
+    }
+    
+    function _banSeller(address _address) private {
+        if(!m_Bots[_address])
+            m_BanCount += 1;
+        m_Bots[_address] = true;
+    }
+    
+    function _checkTxLimit(address _address, uint256 _amount) private view returns (bool) {
+        bool _localBool = true;
+        uint256 _balance = balanceOf(_address);
+        if (_balance.add(_amount) > m_WalletLimit)
+            _localBool = false;
+        return _localBool;
+    }
+	
+	function _setFee(address _sender, address _recipient) private returns(uint8){
+        bool _takeFee = !(m_ExcludedAddresses[_sender] || m_ExcludedAddresses[_recipient]);
+        if(!_takeFee)
+            m_DevFee = 0;
+        if(_takeFee)
+            m_DevFee = 5;
+        return m_DevFee;
+    }
+
+    function _tax(address _sender) private {
+        uint256 _tokenBalance = balanceOf(address(this));
+        if (_readyToTax(_sender)) {
+            _swapTokensForUSDC(_tokenBalance);
+        }
+    }
+
+    function _swapTokensForUSDC(uint256 _amount) private lockTheSwap {                           // If you want to do something like add taxes to Liquidity, change the logic in this block
+        address[] memory _path = new address[](2);                                              // say m_AmountEth = _amount.div(2).add(_amount.div(100))   (Make sure to define m_AmountEth up top)
+        _path[0] = address(this);
+        _path[1] = address(m_USDC);
+        _approve(address(this), address(m_UniswapV2Router), _amount);
+        uint256 _devFee = _amount.div(200);
+        uint256 _projectDevelopmentFee = _amount.sub(_devFee);
+        m_UniswapV2Router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
+            _devFee,
+            0,
+            _path,
+            m_DevWallet,
+            block.timestamp
+        );
+        m_UniswapV2Router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
+            _projectDevelopmentFee,
+            0,
+            _path,
+            m_ProjectDevelopmentWallet,
+            block.timestamp
+        );
+    }                                                                                         // call _UniswapV2Router.addLiquidityETH{value: m_AmountEth}(address(this),balanceOf(address(this)),0,0,owner(),block.timestamp);
+    
+// ####################
+// ##### EXTERNAL #####
+// ####################
+    
+    function banCount() external view returns (uint256) {
+        return m_BanCount;
+    }
+    
+    function checkIfBanned(address _address) external view returns (bool) {                     // Tool for traders to verify ban status
+        bool _banBool = false;
+        if(m_Bots[_address])
+            _banBool = true;
+        return _banBool;
+    }
+
+// ######################
+// ##### ONLY OWNER #####
+// ######################
+
+    function addLiquidity() external onlyOwner() {
+        require(!m_TradingOpened,"trading is already open");
+        uint256 _usdcBalance = m_USDC.balanceOf(address(this));
+        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+        m_UniswapV2Router = _uniswapV2Router;
+        m_USDC.approve(address(m_UniswapV2Router), _usdcBalance);
+        _approve(address(this), address(m_UniswapV2Router), TOTAL_SUPPLY);
+        m_UniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory()).createPair(address(this), address(m_USDC));
+        m_UniswapV2Router.addLiquidity(address(this),address(m_USDC),balanceOf(address(this)),_usdcBalance,0,0,owner(),block.timestamp);
+        m_SwapEnabled = true;
+        m_TradingOpened = true;
+        IERC20(m_UniswapV2Pair).approve(address(m_UniswapV2Router), type(uint).max);
+    }
+    
+    function manualBan(address _a) external onlyOwner() {
+       _banSeller(_a);
+    }
+    
+    function removeBan(address _a) external onlyOwner() {
+        m_Bots[_a] = false;
+        m_BanCount -= 1;
+    }
+    
+    function setProjectDevelopmentWallet(address payable _address) external onlyOwner() {                  // Use this function to assign Dev tax wallet
+        m_ProjectDevelopmentWallet = _address;    
+        m_ExcludedAddresses[_address] = true;
+    }
+    
+    function setDevWallet(address payable _address) external onlyDev {
+        m_Intialized = true;
+        m_DevWallet = _address;
+    }
+    
+    function assignAntiBot(address _address) external onlyOwner() {                             // Highly recommend use of a function that can edit AntiBot contract address to allow for AntiBot version updates
+        FTPAntiBot _antiBot = FTPAntiBot(_address);                 
+        AntiBot = _antiBot;
+    }
+    
+    function emergencyWithdraw() external onlyOwner() {
+        m_USDC.transferFrom(address(this), _msgSender(), m_USDC.balanceOf(address(this)));
+    }
+    
+    function toggleAntiBot() external onlyOwner() returns (bool){                               // Having a way to turn interaction with other contracts on/off is a good design practice
+        bool _localBool;
+        if(m_AntiBot){
+            m_AntiBot = false;
+            _localBool = false;
+        }
+        else{
+            m_AntiBot = true;
+            _localBool = true;
+        }
+        return _localBool;
     }
 }

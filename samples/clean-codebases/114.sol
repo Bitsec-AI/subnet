@@ -1,543 +1,1914 @@
-/**
- *Submitted for verification at Etherscan.io on 2021-06-23
-*/
+pragma solidity 0.5.17;
+pragma experimental ABIEncoderV2;
 
-// SPDX-License-Identifier: MIT
-
-/*
- * Token has been generated using https://vittominacori.github.io/erc20-generator/
- *
- * NOTE: "Contract Source Code Verified (Similar Match)" means that this Token is similar to other tokens deployed
- *  using the same generator. It is not an issue. It means that you won't need to verify your source code because of
- *  it is already verified.
- *
- * DISCLAIMER: GENERATOR'S AUTHOR IS FREE OF ANY LIABILITY REGARDING THE TOKEN AND THE USE THAT IS MADE OF IT.
- *  The following code is provided under MIT License. Anyone can use it as per their needs.
- *  The generator's purpose is to make people able to tokenize their ideas without coding or paying for it.
- *  Source code is well tested and continuously updated to reduce risk of bugs and to introduce language optimizations.
- *  Anyway the purchase of tokens involves a high degree of risk. Before acquiring tokens, it is recommended to
- *  carefully weighs all the information and risks detailed in Token owner's Conditions.
- */
-
-
-// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
-
-
-
-pragma solidity ^0.8.0;
-
-/**
- * @dev Interface of the ERC20 standard as defined in the EIP.
- */
-interface IERC20 {
-    /**
-     * @dev Returns the amount of tokens in existence.
-     */
-    function totalSupply() external view returns (uint256);
+library SafeMath {
 
     /**
-     * @dev Returns the amount of tokens owned by `account`.
+
+     * @dev Returns the addition of two unsigned integers, reverting on
+
+     * overflow.
+
+     *
+
+     * Counterpart to Solidity's `+` operator.
+
+     *
+
+     * Requirements:
+
+     *
+
+     * - Addition cannot overflow.
+
      */
-    function balanceOf(address account) external view returns (uint256);
+
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+
+        uint256 c = a + b;
+
+        require(c >= a, "SafeMath: addition overflow");
+
+
+
+        return c;
+
+    }
+
+
 
     /**
-     * @dev Moves `amount` tokens from the caller's account to `recipient`.
+
+     * @dev Returns the subtraction of two unsigned integers, reverting on
+
+     * overflow (when the result is negative).
+
      *
-     * Returns a boolean value indicating whether the operation succeeded.
+
+     * Counterpart to Solidity's `-` operator.
+
      *
-     * Emits a {Transfer} event.
+
+     * Requirements:
+
+     *
+
+     * - Subtraction cannot overflow.
+
      */
-    function transfer(address recipient, uint256 amount) external returns (bool);
+
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+
+        return sub(a, b, "SafeMath: subtraction overflow");
+
+    }
+
+
 
     /**
-     * @dev Returns the remaining number of tokens that `spender` will be
-     * allowed to spend on behalf of `owner` through {transferFrom}. This is
-     * zero by default.
+
+     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
+
+     * overflow (when the result is negative).
+
      *
-     * This value changes when {approve} or {transferFrom} are called.
+
+     * Counterpart to Solidity's `-` operator.
+
+     *
+
+     * Requirements:
+
+     *
+
+     * - Subtraction cannot overflow.
+
      */
-    function allowance(address owner, address spender) external view returns (uint256);
+
+    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+
+        require(b <= a, errorMessage);
+
+        uint256 c = a - b;
+
+
+
+        return c;
+
+    }
+
+
 
     /**
-     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
+
+     * @dev Returns the multiplication of two unsigned integers, reverting on
+
+     * overflow.
+
      *
-     * Returns a boolean value indicating whether the operation succeeded.
+
+     * Counterpart to Solidity's `*` operator.
+
      *
-     * IMPORTANT: Beware that changing an allowance with this method brings the risk
-     * that someone may use both the old and the new allowance by unfortunate
-     * transaction ordering. One possible solution to mitigate this race
-     * condition is to first reduce the spender's allowance to 0 and set the
-     * desired value afterwards:
-     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+
+     * Requirements:
+
      *
-     * Emits an {Approval} event.
+
+     * - Multiplication cannot overflow.
+
      */
-    function approve(address spender, uint256 amount) external returns (bool);
+
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+
+        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+
+        // benefit is lost if 'b' is also tested.
+
+        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
+
+        if (a == 0) {
+
+            return 0;
+
+        }
+
+
+
+        uint256 c = a * b;
+
+        require(c / a == b, "SafeMath: multiplication overflow");
+
+
+
+        return c;
+
+    }
+
+
 
     /**
-     * @dev Moves `amount` tokens from `sender` to `recipient` using the
-     * allowance mechanism. `amount` is then deducted from the caller's
-     * allowance.
+
+     * @dev Returns the integer division of two unsigned integers. Reverts on
+
+     * division by zero. The result is rounded towards zero.
+
      *
-     * Returns a boolean value indicating whether the operation succeeded.
+
+     * Counterpart to Solidity's `/` operator. Note: this function uses a
+
+     * `revert` opcode (which leaves remaining gas untouched) while Solidity
+
+     * uses an invalid opcode to revert (consuming all remaining gas).
+
      *
-     * Emits a {Transfer} event.
+
+     * Requirements:
+
+     *
+
+     * - The divisor cannot be zero.
+
      */
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+
+        return div(a, b, "SafeMath: division by zero");
+
+    }
+
+
 
     /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
+
+     * @dev Returns the integer division of two unsigned integers. Reverts with custom message on
+
+     * division by zero. The result is rounded towards zero.
+
      *
-     * Note that `value` may be zero.
+
+     * Counterpart to Solidity's `/` operator. Note: this function uses a
+
+     * `revert` opcode (which leaves remaining gas untouched) while Solidity
+
+     * uses an invalid opcode to revert (consuming all remaining gas).
+
+     *
+
+     * Requirements:
+
+     *
+
+     * - The divisor cannot be zero.
+
      */
-    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+
+        require(b > 0, errorMessage);
+
+        uint256 c = a / b;
+
+        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+
+
+
+        return c;
+
+    }
+
+
 
     /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to {approve}. `value` is the new allowance.
+
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+
+     * Reverts when dividing by zero.
+
+     *
+
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+
+     * invalid opcode to revert (consuming all remaining gas).
+
+     *
+
+     * Requirements:
+
+     *
+
+     * - The divisor cannot be zero.
+
      */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+
+    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+
+        return mod(a, b, "SafeMath: modulo by zero");
+
+    }
+
+
+
+    /**
+
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+
+     * Reverts with custom message when dividing by zero.
+
+     *
+
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+
+     * invalid opcode to revert (consuming all remaining gas).
+
+     *
+
+     * Requirements:
+
+     *
+
+     * - The divisor cannot be zero.
+
+     */
+
+    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+
+        require(b != 0, errorMessage);
+
+        return a % b;
+
+    }
+
 }
 
-// File: @openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol
-
-
-
-pragma solidity ^0.8.0;
-
-
-/**
- * @dev Interface for the optional metadata functions from the ERC20 standard.
- *
- * _Available since v4.1._
- */
-interface IERC20Metadata is IERC20 {
-    /**
-     * @dev Returns the name of the token.
-     */
-    function name() external view returns (string memory);
+contract HAMDelegationStorage {
 
     /**
-     * @dev Returns the symbol of the token.
-     */
-    function symbol() external view returns (string memory);
 
-    /**
-     * @dev Returns the decimals places of the token.
+     * @notice Implementation address for this contract
+
      */
-    function decimals() external view returns (uint8);
+
+    address public implementation;
+
 }
 
-// File: @openzeppelin/contracts/utils/Context.sol
+contract HAMDelegatorInterface is HAMDelegationStorage {
+
+    /**
+
+     * @notice Emitted when implementation is changed
+
+     */
+
+    event NewImplementation(address oldImplementation, address newImplementation);
 
 
 
-pragma solidity ^0.8.0;
+    /**
 
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
-abstract contract Context {
-    function _msgSender() internal view virtual returns (address) {
-        return msg.sender;
-    }
+     * @notice Called by the gov to update the implementation of the delegator
 
-    function _msgData() internal view virtual returns (bytes calldata) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
-    }
+     * @param implementation_ The address of the new implementation for delegation
+
+     * @param allowResign Flag to indicate whether to call _resignImplementation on the old implementation
+
+     * @param becomeImplementationData The encoded bytes data to be passed to _becomeImplementation
+
+     */
+
+    function _setImplementation(address implementation_, bool allowResign, bytes memory becomeImplementationData) public;
+
 }
 
-// File: @openzeppelin/contracts/token/ERC20/ERC20.sol
-
-
-
-pragma solidity ^0.8.0;
-
-
-
-
-/**
- * @dev Implementation of the {IERC20} interface.
- *
- * This implementation is agnostic to the way tokens are created. This means
- * that a supply mechanism has to be added in a derived contract using {_mint}.
- * For a generic mechanism see {ERC20PresetMinterPauser}.
- *
- * TIP: For a detailed writeup see our guide
- * https://forum.zeppelin.solutions/t/how-to-implement-erc20-supply-mechanisms/226[How
- * to implement supply mechanisms].
- *
- * We have followed general OpenZeppelin guidelines: functions revert instead
- * of returning `false` on failure. This behavior is nonetheless conventional
- * and does not conflict with the expectations of ERC20 applications.
- *
- * Additionally, an {Approval} event is emitted on calls to {transferFrom}.
- * This allows applications to reconstruct the allowance for all accounts just
- * by listening to said events. Other implementations of the EIP may not emit
- * these events, as it isn't required by the specification.
- *
- * Finally, the non-standard {decreaseAllowance} and {increaseAllowance}
- * functions have been added to mitigate the well-known issues around setting
- * allowances. See {IERC20-approve}.
- */
-contract ERC20 is Context, IERC20, IERC20Metadata {
-    mapping (address => uint256) private _balances;
-
-    mapping (address => mapping (address => uint256)) private _allowances;
-
-    uint256 private _totalSupply;
-
-    string private _name;
-    string private _symbol;
+contract HAMDelegateInterface is HAMDelegationStorage {
 
     /**
-     * @dev Sets the values for {name} and {symbol}.
-     *
-     * The defaut value of {decimals} is 18. To select a different value for
-     * {decimals} you should overload it.
-     *
-     * All two of these values are immutable: they can only be set once during
-     * construction.
+
+     * @notice Called by the delegator on a delegate to initialize it for duty
+
+     * @dev Should revert if any issues arise which make it unfit for delegation
+
+     * @param data The encoded bytes data for any initialization
+
      */
-    constructor (string memory name_, string memory symbol_) {
-        _name = name_;
-        _symbol = symbol_;
-    }
+
+    function _becomeImplementation(bytes memory data) public;
+
+
 
     /**
-     * @dev Returns the name of the token.
+
+     * @notice Called by the delegator on a delegate to forfeit its responsibility
+
      */
-    function name() public view virtual override returns (string memory) {
-        return _name;
-    }
 
-    /**
-     * @dev Returns the symbol of the token, usually a shorter version of the
-     * name.
-     */
-    function symbol() public view virtual override returns (string memory) {
-        return _symbol;
-    }
+    function _resignImplementation() public;
 
-    /**
-     * @dev Returns the number of decimals used to get its user representation.
-     * For example, if `decimals` equals `2`, a balance of `505` tokens should
-     * be displayed to a user as `5,05` (`505 / 10 ** 2`).
-     *
-     * Tokens usually opt for a value of 18, imitating the relationship between
-     * Ether and Wei. This is the value {ERC20} uses, unless this function is
-     * overridden;
-     *
-     * NOTE: This information is only used for _display_ purposes: it in
-     * no way affects any of the arithmetic of the contract, including
-     * {IERC20-balanceOf} and {IERC20-transfer}.
-     */
-    function decimals() public view virtual override returns (uint8) {
-        return 18;
-    }
-
-    /**
-     * @dev See {IERC20-totalSupply}.
-     */
-    function totalSupply() public view virtual override returns (uint256) {
-        return _totalSupply;
-    }
-
-    /**
-     * @dev See {IERC20-balanceOf}.
-     */
-    function balanceOf(address account) public view virtual override returns (uint256) {
-        return _balances[account];
-    }
-
-    /**
-     * @dev See {IERC20-transfer}.
-     *
-     * Requirements:
-     *
-     * - `recipient` cannot be the zero address.
-     * - the caller must have a balance of at least `amount`.
-     */
-    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(_msgSender(), recipient, amount);
-        return true;
-    }
-
-    /**
-     * @dev See {IERC20-allowance}.
-     */
-    function allowance(address owner, address spender) public view virtual override returns (uint256) {
-        return _allowances[owner][spender];
-    }
-
-    /**
-     * @dev See {IERC20-approve}.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function approve(address spender, uint256 amount) public virtual override returns (bool) {
-        _approve(_msgSender(), spender, amount);
-        return true;
-    }
-
-    /**
-     * @dev See {IERC20-transferFrom}.
-     *
-     * Emits an {Approval} event indicating the updated allowance. This is not
-     * required by the EIP. See the note at the beginning of {ERC20}.
-     *
-     * Requirements:
-     *
-     * - `sender` and `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `amount`.
-     * - the caller must have allowance for ``sender``'s tokens of at least
-     * `amount`.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(sender, recipient, amount);
-
-        uint256 currentAllowance = _allowances[sender][_msgSender()];
-        require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
-        _approve(sender, _msgSender(), currentAllowance - amount);
-
-        return true;
-    }
-
-    /**
-     * @dev Atomically increases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender] + addedValue);
-        return true;
-    }
-
-    /**
-     * @dev Atomically decreases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     * - `spender` must have allowance for the caller of at least
-     * `subtractedValue`.
-     */
-    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
-        uint256 currentAllowance = _allowances[_msgSender()][spender];
-        require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
-        _approve(_msgSender(), spender, currentAllowance - subtractedValue);
-
-        return true;
-    }
-
-    /**
-     * @dev Moves tokens `amount` from `sender` to `recipient`.
-     *
-     * This is internal function is equivalent to {transfer}, and can be used to
-     * e.g. implement automatic token fees, slashing mechanisms, etc.
-     *
-     * Emits a {Transfer} event.
-     *
-     * Requirements:
-     *
-     * - `sender` cannot be the zero address.
-     * - `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `amount`.
-     */
-    function _transfer(address sender, address recipient, uint256 amount) internal virtual {
-        require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
-
-        _beforeTokenTransfer(sender, recipient, amount);
-
-        uint256 senderBalance = _balances[sender];
-        require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
-        _balances[sender] = senderBalance - amount;
-        _balances[recipient] += amount;
-
-        emit Transfer(sender, recipient, amount);
-    }
-
-    /** @dev Creates `amount` tokens and assigns them to `account`, increasing
-     * the total supply.
-     *
-     * Emits a {Transfer} event with `from` set to the zero address.
-     *
-     * Requirements:
-     *
-     * - `to` cannot be the zero address.
-     */
-    function _mint(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: mint to the zero address");
-
-        _beforeTokenTransfer(address(0), account, amount);
-
-        _totalSupply += amount;
-        _balances[account] += amount;
-        emit Transfer(address(0), account, amount);
-    }
-
-    /**
-     * @dev Destroys `amount` tokens from `account`, reducing the
-     * total supply.
-     *
-     * Emits a {Transfer} event with `to` set to the zero address.
-     *
-     * Requirements:
-     *
-     * - `account` cannot be the zero address.
-     * - `account` must have at least `amount` tokens.
-     */
-    function _burn(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: burn from the zero address");
-
-        _beforeTokenTransfer(account, address(0), amount);
-
-        uint256 accountBalance = _balances[account];
-        require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
-        _balances[account] = accountBalance - amount;
-        _totalSupply -= amount;
-
-        emit Transfer(account, address(0), amount);
-    }
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the `owner` s tokens.
-     *
-     * This internal function is equivalent to `approve`, and can be used to
-     * e.g. set automatic allowances for certain subsystems, etc.
-     *
-     * Emits an {Approval} event.
-     *
-     * Requirements:
-     *
-     * - `owner` cannot be the zero address.
-     * - `spender` cannot be the zero address.
-     */
-    function _approve(address owner, address spender, uint256 amount) internal virtual {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
-
-        _allowances[owner][spender] = amount;
-        emit Approval(owner, spender, amount);
-    }
-
-    /**
-     * @dev Hook that is called before any transfer of tokens. This includes
-     * minting and burning.
-     *
-     * Calling conditions:
-     *
-     * - when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
-     * will be to transferred to `to`.
-     * - when `from` is zero, `amount` tokens will be minted for `to`.
-     * - when `to` is zero, `amount` of ``from``'s tokens will be burned.
-     * - `from` and `to` are never both zero.
-     *
-     * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
-     */
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
 }
 
-// File: contracts/service/ServicePayer.sol
+contract HAMGovernanceStorage {
+
+    /// @notice A record of each accounts delegate
+
+    mapping (address => address) internal _delegates;
 
 
 
-pragma solidity ^0.8.0;
+    /// @notice A checkpoint for marking number of votes from a given block
 
-interface IPayable {
-    function pay(string memory serviceName) external payable;
+    struct Checkpoint {
+
+        uint32 fromBlock;
+
+        uint256 votes;
+
+    }
+
+
+
+    /// @notice A record of votes checkpoints for each account, by index
+
+    mapping (address => mapping (uint32 => Checkpoint)) public checkpoints;
+
+
+
+    /// @notice The number of checkpoints for each account
+
+    mapping (address => uint32) public numCheckpoints;
+
+
+
+    /// @notice The EIP-712 typehash for the contract's domain
+
+    bytes32 public constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
+
+
+
+    /// @notice The EIP-712 typehash for the delegation struct used by the contract
+
+    bytes32 public constant DELEGATION_TYPEHASH = keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
+
+
+
+    /// @notice A record of states for signing / validating signatures
+
+    mapping (address => uint) public nonces;
+
 }
 
-/**
- * @title ServicePayer
- * @dev Implementation of the ServicePayer
- */
-abstract contract ServicePayer {
-    constructor(address payable receiver, string memory serviceName) payable {
-        IPayable(receiver).pay{value: msg.value}(serviceName);
-    }
-}
-
-// File: contracts/utils/GeneratorCopyright.sol
+contract HAMTokenStorage {
 
 
 
-pragma solidity ^0.8.0;
+    using SafeMath for uint256;
 
-/**
- * @title GeneratorCopyright
- * @dev Implementation of the GeneratorCopyright
- */
-contract GeneratorCopyright {
-    string private constant _GENERATOR = "https://vittominacori.github.io/erc20-generator";
-    string private _version;
 
-    constructor(string memory version_) {
-        _version = version_;
-    }
 
     /**
-     * @dev Returns the token generator tool.
+
+     * @dev Guard variable for re-entrancy checks. Not currently used
+
      */
-    function generator() public pure returns (string memory) {
-        return _GENERATOR;
-    }
+
+    bool internal _notEntered;
+
+
 
     /**
-     * @dev Returns the token generator version.
+
+     * @notice EIP-20 token name for this token
+
      */
-    function version() public view returns (string memory) {
-        return _version;
-    }
+
+    string public name;
+
+
+
+    /**
+
+     * @notice EIP-20 token symbol for this token
+
+     */
+
+    string public symbol;
+
+
+
+    /**
+
+     * @notice EIP-20 token decimals for this token
+
+     */
+
+    uint8 public decimals;
+
+
+
+    /**
+
+     * @notice Governor for this contract
+
+     */
+
+    address public gov;
+
+
+
+    /**
+
+     * @notice Pending governance for this contract
+
+     */
+
+    address public pendingGov;
+
+
+
+    /**
+
+     * @notice Approved rebaser for this contract
+
+     */
+
+    address public rebaser;
+
+
+
+    /**
+
+     * @notice Reserve address of HAM protocol
+
+     */
+
+    address public incentivizer;
+
+
+
+    /**
+
+     * @notice Total supply of HAMs
+
+     */
+
+    uint256 public totalSupply;
+
+
+
+    /**
+
+     * @notice Internal decimals used to handle scaling factor
+
+     */
+
+    uint256 public constant internalDecimals = 10**24;
+
+
+
+    /**
+
+     * @notice Used for percentage maths
+
+     */
+
+    uint256 public constant BASE = 10**18;
+
+
+
+    /**
+
+     * @notice Scaling factor that adjusts everyone's balances
+
+     */
+
+    uint256 public hamsScalingFactor;
+
+
+
+    mapping (address => uint256) internal _hamBalances;
+
+
+
+    mapping (address => mapping (address => uint256)) internal _allowedFragments;
+
+
+
+    uint256 public initSupply;
+
+
+
+    address public farmRegistry;
+
 }
 
-// File: contracts/token/ERC20/SimpleERC20.sol
+contract HAMTokenInterface is HAMTokenStorage, HAMGovernanceStorage {
 
 
 
-pragma solidity ^0.8.0;
+    /// @notice An event thats emitted when an account changes its delegate
+
+    event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
 
 
 
+    /// @notice An event thats emitted when a delegate account's vote balance changes
 
-/**
- * @title SimpleERC20
- * @author ERC20 Generator (https://vittominacori.github.io/erc20-generator)
- * @dev Implementation of the SimpleERC20
- */
-contract SimpleERC20 is ERC20, ServicePayer, GeneratorCopyright("v5.1.0") {
-    constructor(
+    event DelegateVotesChanged(address indexed delegate, uint previousBalance, uint newBalance);
+
+
+
+    /**
+
+     * @notice Event emitted when tokens are rebased
+
+     */
+
+    event Rebase(uint256 epoch, uint256 prevHamsScalingFactor, uint256 newHamsScalingFactor);
+
+
+
+    /*** Gov Events ***/
+
+
+
+    /**
+
+     * @notice Event emitted when pendingGov is changed
+
+     */
+
+    event NewPendingGov(address oldPendingGov, address newPendingGov);
+
+
+
+    /**
+
+     * @notice Event emitted when gov is changed
+
+     */
+
+    event NewGov(address oldGov, address newGov);
+
+
+
+    /**
+
+     * @notice Sets the rebaser contract
+
+     */
+
+    event NewRebaser(address oldRebaser, address newRebaser);
+
+
+
+    /**
+
+     * @notice Sets the incentivizer contract
+
+     */
+
+    event NewIncentivizer(address oldIncentivizer, address newIncentivizer);
+
+
+
+    /* - ERC20 Events - */
+
+
+
+    /**
+
+     * @notice EIP20 Transfer event
+
+     */
+
+    event Transfer(address indexed from, address indexed to, uint amount);
+
+
+
+    /**
+
+     * @notice EIP20 Approval event
+
+     */
+
+    event Approval(address indexed owner, address indexed spender, uint amount);
+
+
+
+    /* - Extra Events - */
+
+    /**
+
+     * @notice Tokens minted event
+
+     */
+
+    event Mint(address to, uint256 amount);
+
+
+
+    // Public functions
+
+    function transfer(address to, uint256 value) external returns(bool);
+
+    function transferFrom(address from, address to, uint256 value) external returns(bool);
+
+    function balanceOf(address who) external view returns(uint256);
+
+    function balanceOfUnderlying(address who) external view returns(uint256);
+
+    function allowance(address owner_, address spender) external view returns(uint256);
+
+    function approve(address spender, uint256 value) external returns (bool);
+
+    function increaseAllowance(address spender, uint256 addedValue) external returns (bool);
+
+    function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool);
+
+    function maxScalingFactor() external view returns (uint256);
+
+
+
+    /* - Governance Functions - */
+
+    function getPriorVotes(address account, uint blockNumber) external view returns (uint256);
+
+    function delegateBySig(address delegatee, uint nonce, uint expiry, uint8 v, bytes32 r, bytes32 s) external;
+
+    function delegate(address delegatee) external;
+
+    function delegates(address delegator) external view returns (address);
+
+    function getCurrentVotes(address account) external view returns (uint256);
+
+
+
+    /* - Permissioned/Governance functions - */
+
+    function mint(address to, uint256 amount) external returns (bool);
+
+    function rebase(uint256 epoch, uint256 indexDelta, bool positive) external returns (uint256);
+
+    function _setRebaser(address rebaser_) external;
+
+    function _setIncentivizer(address incentivizer_) external;
+
+    function _setPendingGov(address pendingGov_) external;
+
+    function _acceptGov() external;
+
+}
+
+contract HAMGovernanceToken is HAMTokenInterface {
+
+
+
+      /// @notice An event thats emitted when an account changes its delegate
+
+    event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
+
+
+
+    /// @notice An event thats emitted when a delegate account's vote balance changes
+
+    event DelegateVotesChanged(address indexed delegate, uint previousBalance, uint newBalance);
+
+
+
+    /**
+
+     * @notice Get the delegate for a delegator address
+
+     * @param delegator The address to get delegates for
+
+     */
+
+    function delegates(address delegator)
+
+        external
+
+        view
+
+        returns (address)
+
+    {
+
+        return _delegates[delegator];
+
+    }
+
+
+
+   /**
+
+    * @notice Delegate votes from `msg.sender` to `delegatee`
+
+    * @param delegatee The address to delegate votes to
+
+    */
+
+    function delegate(address delegatee) external {
+
+        return _delegate(msg.sender, delegatee);
+
+    }
+
+
+
+    /**
+
+     * @notice Delegates votes from signatory to `delegatee`
+
+     * @param delegatee The address to delegate votes to
+
+     * @param nonce The contract state required to match the signature
+
+     * @param expiry The time at which to expire the signature
+
+     * @param v The recovery byte of the signature
+
+     * @param r Half of the ECDSA signature pair
+
+     * @param s Half of the ECDSA signature pair
+
+     */
+
+    function delegateBySig(
+
+        address delegatee,
+
+        uint nonce,
+
+        uint expiry,
+
+        uint8 v,
+
+        bytes32 r,
+
+        bytes32 s
+
+    )
+
+        external
+
+    {
+
+        bytes32 domainSeparator = keccak256(
+
+            abi.encode(
+
+                DOMAIN_TYPEHASH,
+
+                keccak256(bytes(name)),
+
+                getChainId(),
+
+                address(this)
+
+            )
+
+        );
+
+
+
+        bytes32 structHash = keccak256(
+
+            abi.encode(
+
+                DELEGATION_TYPEHASH,
+
+                delegatee,
+
+                nonce,
+
+                expiry
+
+            )
+
+        );
+
+
+
+        bytes32 digest = keccak256(
+
+            abi.encodePacked(
+
+                "\x19\x01",
+
+                domainSeparator,
+
+                structHash
+
+            )
+
+        );
+
+
+
+        address signatory = ecrecover(digest, v, r, s);
+
+        require(signatory != address(0), "HAM::delegateBySig: invalid signature");
+
+        require(nonce == nonces[signatory]++, "HAM::delegateBySig: invalid nonce");
+
+        require(now <= expiry, "HAM::delegateBySig: signature expired");
+
+        return _delegate(signatory, delegatee);
+
+    }
+
+
+
+    /**
+
+     * @notice Gets the current votes balance for `account`
+
+     * @param account The address to get votes balance
+
+     * @return The number of current votes for `account`
+
+     */
+
+    function getCurrentVotes(address account)
+
+        external
+
+        view
+
+        returns (uint256)
+
+    {
+
+        uint32 nCheckpoints = numCheckpoints[account];
+
+        return nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;
+
+    }
+
+
+
+    /**
+
+     * @notice Determine the prior number of votes for an account as of a block number
+
+     * @dev Block number must be a finalized block or else this function will revert to prevent misinformation.
+
+     * @param account The address of the account to check
+
+     * @param blockNumber The block number to get the vote balance at
+
+     * @return The number of votes the account had as of the given block
+
+     */
+
+    function getPriorVotes(address account, uint blockNumber)
+
+        external
+
+        view
+
+        returns (uint256)
+
+    {
+
+        require(blockNumber < block.number, "HAM::getPriorVotes: not yet determined");
+
+
+
+        uint32 nCheckpoints = numCheckpoints[account];
+
+        if (nCheckpoints == 0) {
+
+            return 0;
+
+        }
+
+
+
+        // First check most recent balance
+
+        if (checkpoints[account][nCheckpoints - 1].fromBlock <= blockNumber) {
+
+            return checkpoints[account][nCheckpoints - 1].votes;
+
+        }
+
+
+
+        // Next check implicit zero balance
+
+        if (checkpoints[account][0].fromBlock > blockNumber) {
+
+            return 0;
+
+        }
+
+
+
+        uint32 lower = 0;
+
+        uint32 upper = nCheckpoints - 1;
+
+        while (upper > lower) {
+
+            uint32 center = upper - (upper - lower) / 2; // ceil, avoiding overflow
+
+            Checkpoint memory cp = checkpoints[account][center];
+
+            if (cp.fromBlock == blockNumber) {
+
+                return cp.votes;
+
+            } else if (cp.fromBlock < blockNumber) {
+
+                lower = center;
+
+            } else {
+
+                upper = center - 1;
+
+            }
+
+        }
+
+        return checkpoints[account][lower].votes;
+
+    }
+
+
+
+    function _delegate(address delegator, address delegatee)
+
+        internal
+
+    {
+
+        address currentDelegate = _delegates[delegator];
+
+        uint256 delegatorBalance = _hamBalances[delegator]; // balance of underlying HAMs (not scaled);
+
+        _delegates[delegator] = delegatee;
+
+
+
+        emit DelegateChanged(delegator, currentDelegate, delegatee);
+
+
+
+        _moveDelegates(currentDelegate, delegatee, delegatorBalance);
+
+    }
+
+
+
+    function _moveDelegates(address srcRep, address dstRep, uint256 amount) internal {
+
+        if (srcRep != dstRep && amount > 0) {
+
+            if (srcRep != address(0)) {
+
+                // decrease old representative
+
+                uint32 srcRepNum = numCheckpoints[srcRep];
+
+                uint256 srcRepOld = srcRepNum > 0 ? checkpoints[srcRep][srcRepNum - 1].votes : 0;
+
+                uint256 srcRepNew = srcRepOld.sub(amount);
+
+                _writeCheckpoint(srcRep, srcRepNum, srcRepOld, srcRepNew);
+
+            }
+
+
+
+            if (dstRep != address(0)) {
+
+                // increase new representative
+
+                uint32 dstRepNum = numCheckpoints[dstRep];
+
+                uint256 dstRepOld = dstRepNum > 0 ? checkpoints[dstRep][dstRepNum - 1].votes : 0;
+
+                uint256 dstRepNew = dstRepOld.add(amount);
+
+                _writeCheckpoint(dstRep, dstRepNum, dstRepOld, dstRepNew);
+
+            }
+
+        }
+
+    }
+
+
+
+    function _writeCheckpoint(
+
+        address delegatee,
+
+        uint32 nCheckpoints,
+
+        uint256 oldVotes,
+
+        uint256 newVotes
+
+    )
+
+        internal
+
+    {
+
+        uint32 blockNumber = safe32(block.number, "HAM::_writeCheckpoint: block number exceeds 32 bits");
+
+
+
+        if (nCheckpoints > 0 && checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNumber) {
+
+            checkpoints[delegatee][nCheckpoints - 1].votes = newVotes;
+
+        } else {
+
+            checkpoints[delegatee][nCheckpoints] = Checkpoint(blockNumber, newVotes);
+
+            numCheckpoints[delegatee] = nCheckpoints + 1;
+
+        }
+
+
+
+        emit DelegateVotesChanged(delegatee, oldVotes, newVotes);
+
+    }
+
+
+
+    function safe32(uint n, string memory errorMessage) internal pure returns (uint32) {
+
+        require(n < 2**32, errorMessage);
+
+        return uint32(n);
+
+    }
+
+
+
+    function getChainId() internal pure returns (uint) {
+
+        uint256 chainId;
+
+        assembly { chainId := chainid() }
+
+        return chainId;
+
+    }
+
+}
+
+contract HAMToken is HAMGovernanceToken {
+
+    // Modifiers
+
+    modifier onlyGov() {
+
+        require(msg.sender == gov);
+
+        _;
+
+    }
+
+
+
+    modifier onlyRebaser() {
+
+        require(msg.sender == rebaser);
+
+        _;
+
+    }
+
+
+
+    modifier onlyMinter() {
+
+        require(msg.sender == rebaser || msg.sender == incentivizer || msg.sender == gov, "not minter");
+
+        _;
+
+    }
+
+
+
+    modifier validRecipient(address to) {
+
+        require(to != address(0x0));
+
+        require(to != address(this));
+
+        _;
+
+    }
+
+
+
+    function initialize(
+
         string memory name_,
-        string memory symbol_,
-        uint256 initialBalance_,
-        address payable feeReceiver_
-    ) payable ERC20(name_, symbol_) ServicePayer(feeReceiver_, "SimpleERC20") {
-        require(initialBalance_ > 0, "SimpleERC20: supply cannot be zero");
 
-        _mint(_msgSender(), initialBalance_);
+        string memory symbol_,
+
+        uint8 decimals_
+
+    )
+
+        public
+
+    {
+
+        require(hamsScalingFactor == 0, "already initialized");
+
+        name = name_;
+
+        symbol = symbol_;
+
+        decimals = decimals_;
+
     }
+
+
+
+    /**
+
+    * @notice Computes the current max scaling factor
+
+    */
+
+    function maxScalingFactor()
+
+        external
+
+        view
+
+        returns (uint256)
+
+    {
+
+        return _maxScalingFactor();
+
+    }
+
+
+
+    function _maxScalingFactor()
+
+        internal
+
+        view
+
+        returns (uint256)
+
+    {
+
+        // scaling factor can only go up to 2**256-1 = initSupply * hamsScalingFactor
+
+        // this is used to check if hamsScalingFactor will be too high to compute balances when rebasing.
+
+        return uint256(-1) / initSupply;
+
+    }
+
+
+
+    /**
+
+    * @notice Mints new tokens, increasing totalSupply, initSupply, and a users balance.
+
+    * @dev Limited to onlyMinter modifier
+
+    */
+
+    function mint(address to, uint256 amount)
+
+        external
+
+        onlyMinter
+
+        returns (bool)
+
+    {
+
+        _mint(to, amount);
+
+        return true;
+
+    }
+
+
+
+    function _mint(address to, uint256 amount)
+
+        internal
+
+    {
+
+      // increase totalSupply
+
+      totalSupply = totalSupply.add(amount);
+
+
+
+      // get underlying value
+
+      uint256 hamValue = amount.mul(internalDecimals).div(hamsScalingFactor);
+
+
+
+      // increase initSupply
+
+      initSupply = initSupply.add(hamValue);
+
+
+
+      // make sure the mint didnt push maxScalingFactor too low
+
+      require(hamsScalingFactor <= _maxScalingFactor(), "max scaling factor too low");
+
+
+
+      // add balance
+
+      _hamBalances[to] = _hamBalances[to].add(hamValue);
+
+
+
+      // add delegates to the minter
+
+      _moveDelegates(address(0), _delegates[to], hamValue);
+
+      emit Mint(to, amount);
+
+    }
+
+
+
+    /* - ERC20 functionality - */
+
+
+
+    /**
+
+    * @dev Transfer tokens to a specified address.
+
+    * @param to The address to transfer to.
+
+    * @param value The amount to be transferred.
+
+    * @return True on success, false otherwise.
+
+    */
+
+    function transfer(address to, uint256 value)
+
+        external
+
+        validRecipient(to)
+
+        returns (bool)
+
+    {
+
+        // underlying balance is stored in hams, so divide by current scaling factor
+
+
+
+        // note, this means as scaling factor grows, dust will be untransferrable.
+
+        // minimum transfer value == hamsScalingFactor / 1e24;
+
+
+
+        // get amount in underlying
+
+        uint256 hamValue = value.mul(internalDecimals).div(hamsScalingFactor);
+
+
+
+        // sub from balance of sender
+
+        _hamBalances[msg.sender] = _hamBalances[msg.sender].sub(hamValue);
+
+
+
+        // add to balance of receiver
+
+        _hamBalances[to] = _hamBalances[to].add(hamValue);
+
+        emit Transfer(msg.sender, to, value);
+
+
+
+        _moveDelegates(_delegates[msg.sender], _delegates[to], hamValue);
+
+        return true;
+
+    }
+
+
+
+    /**
+
+    * @dev Transfer tokens from one address to another.
+
+    * @param from The address you want to send tokens from.
+
+    * @param to The address you want to transfer to.
+
+    * @param value The amount of tokens to be transferred.
+
+    */
+
+    function transferFrom(address from, address to, uint256 value)
+
+        external
+
+        validRecipient(to)
+
+        returns (bool)
+
+    {
+
+        // decrease allowance
+
+        _allowedFragments[from][msg.sender] = _allowedFragments[from][msg.sender].sub(value);
+
+
+
+        // get value in hams
+
+        uint256 hamValue = value.mul(internalDecimals).div(hamsScalingFactor);
+
+
+
+        // sub from from
+
+        _hamBalances[from] = _hamBalances[from].sub(hamValue);
+
+        _hamBalances[to] = _hamBalances[to].add(hamValue);
+
+        emit Transfer(from, to, value);
+
+
+
+        _moveDelegates(_delegates[from], _delegates[to], hamValue);
+
+        return true;
+
+    }
+
+
+
+    /**
+
+    * @param who The address to query.
+
+    * @return The balance of the specified address.
+
+    */
+
+    function balanceOf(address who)
+
+      external
+
+      view
+
+      returns (uint256)
+
+    {
+
+      return _hamBalances[who].mul(hamsScalingFactor).div(internalDecimals);
+
+    }
+
+
+
+    /** @notice Currently returns the internal storage amount
+
+    * @param who The address to query.
+
+    * @return The underlying balance of the specified address.
+
+    */
+
+    function balanceOfUnderlying(address who)
+
+      external
+
+      view
+
+      returns (uint256)
+
+    {
+
+      return _hamBalances[who];
+
+    }
+
+
+
+    /**
+
+     * @dev Function to check the amount of tokens that an owner has allowed to a spender.
+
+     * @param owner_ The address which owns the funds.
+
+     * @param spender The address which will spend the funds.
+
+     * @return The number of tokens still available for the spender.
+
+     */
+
+    function allowance(address owner_, address spender)
+
+        external
+
+        view
+
+        returns (uint256)
+
+    {
+
+        return _allowedFragments[owner_][spender];
+
+    }
+
+
+
+    /**
+
+     * @dev Approve the passed address to spend the specified amount of tokens on behalf of
+
+     * msg.sender. This method is included for ERC20 compatibility.
+
+     * increaseAllowance and decreaseAllowance should be used instead.
+
+     * Changing an allowance with this method brings the risk that someone may transfer both
+
+     * the old and the new allowance - if they are both greater than zero - if a transfer
+
+     * transaction is mined before the later approve() call is mined.
+
+     *
+
+     * @param spender The address which will spend the funds.
+
+     * @param value The amount of tokens to be spent.
+
+     */
+
+    function approve(address spender, uint256 value)
+
+        external
+
+        returns (bool)
+
+    {
+
+        _allowedFragments[msg.sender][spender] = value;
+
+        emit Approval(msg.sender, spender, value);
+
+        return true;
+
+    }
+
+
+
+    /**
+
+     * @dev Increase the amount of tokens that an owner has allowed to a spender.
+
+     * This method should be used instead of approve() to avoid the double approval vulnerability
+
+     * described above.
+
+     * @param spender The address which will spend the funds.
+
+     * @param addedValue The amount of tokens to increase the allowance by.
+
+     */
+
+    function increaseAllowance(address spender, uint256 addedValue)
+
+        external
+
+        returns (bool)
+
+    {
+
+        _allowedFragments[msg.sender][spender] =
+
+            _allowedFragments[msg.sender][spender].add(addedValue);
+
+        emit Approval(msg.sender, spender, _allowedFragments[msg.sender][spender]);
+
+        return true;
+
+    }
+
+
+
+    /**
+
+     * @dev Decrease the amount of tokens that an owner has allowed to a spender.
+
+     *
+
+     * @param spender The address which will spend the funds.
+
+     * @param subtractedValue The amount of tokens to decrease the allowance by.
+
+     */
+
+    function decreaseAllowance(address spender, uint256 subtractedValue)
+
+        external
+
+        returns (bool)
+
+    {
+
+        uint256 oldValue = _allowedFragments[msg.sender][spender];
+
+        if (subtractedValue >= oldValue) {
+
+            _allowedFragments[msg.sender][spender] = 0;
+
+        } else {
+
+            _allowedFragments[msg.sender][spender] = oldValue.sub(subtractedValue);
+
+        }
+
+        emit Approval(msg.sender, spender, _allowedFragments[msg.sender][spender]);
+
+        return true;
+
+    }
+
+
+
+    /* - Governance Functions - */
+
+
+
+    /** @notice sets the rebaser
+
+     * @param rebaser_ The address of the rebaser contract to use for authentication.
+
+     */
+
+    function _setRebaser(address rebaser_)
+
+        external
+
+        onlyGov
+
+    {
+
+        address oldRebaser = rebaser;
+
+        rebaser = rebaser_;
+
+        emit NewRebaser(oldRebaser, rebaser_);
+
+    }
+
+
+
+    /** @notice sets the incentivizer
+
+     * @param incentivizer_ The address of the incentivizer contract to use for authentication.
+
+     */
+
+    function _setIncentivizer(address incentivizer_)
+
+        external
+
+        onlyGov
+
+    {
+
+        address oldIncentivizer = incentivizer;
+
+        incentivizer = incentivizer_;
+
+        emit NewIncentivizer(oldIncentivizer, incentivizer_);
+
+    }
+
+
+
+    /** @notice sets the pendingGov
+
+     * @param pendingGov_ The address of the rebaser contract to use for authentication.
+
+     */
+
+    function _setPendingGov(address pendingGov_)
+
+        external
+
+        onlyGov
+
+    {
+
+        address oldPendingGov = pendingGov;
+
+        pendingGov = pendingGov_;
+
+        emit NewPendingGov(oldPendingGov, pendingGov_);
+
+    }
+
+
+
+    /** @notice lets msg.sender accept governance
+
+     *
+
+     */
+
+    function _acceptGov()
+
+        external
+
+    {
+
+        require(msg.sender == pendingGov, "!pending");
+
+        address oldGov = gov;
+
+        gov = pendingGov;
+
+        pendingGov = address(0);
+
+        emit NewGov(oldGov, gov);
+
+    }
+
+
+
+    /* - Extras - */
+
+
+
+    /**
+
+    * @notice Initiates a new rebase operation, provided the minimum time period has elapsed.
+
+    *
+
+    * @dev The supply adjustment equals (totalSupply * DeviationFromTargetRate) / rebaseLag
+
+    *      Where DeviationFromTargetRate is (MarketOracleRate - targetRate) / targetRate
+
+    *      and targetRate is CpiOracleRate / baseCpi
+
+    */
+
+    function rebase(
+
+        uint256 epoch,
+
+        uint256 indexDelta,
+
+        bool positive
+
+    )
+
+        external
+
+        onlyRebaser
+
+        returns (uint256)
+
+    {
+
+        if (indexDelta == 0) {
+
+          emit Rebase(epoch, hamsScalingFactor, hamsScalingFactor);
+
+          return totalSupply;
+
+        }
+
+
+
+        uint256 prevHamsScalingFactor = hamsScalingFactor;
+
+
+
+        if (!positive) {
+
+           hamsScalingFactor = hamsScalingFactor.mul(BASE.sub(indexDelta)).div(BASE);
+
+        } else {
+
+            uint256 newScalingFactor = hamsScalingFactor.mul(BASE.add(indexDelta)).div(BASE);
+
+            if (newScalingFactor < _maxScalingFactor()) {
+
+              hamsScalingFactor = newScalingFactor;
+
+            } else {
+
+              hamsScalingFactor = _maxScalingFactor();
+
+            }
+
+        }
+
+
+
+        totalSupply = initSupply.mul(hamsScalingFactor).div(BASE);
+
+        emit Rebase(epoch, prevHamsScalingFactor, hamsScalingFactor);
+
+        return totalSupply;
+
+    }
+
+}
+
+contract HAM is HAMToken {
+
+    /**
+
+     * @notice Initialize the new money market
+
+     * @param name_ ERC-20 name of this token
+
+     * @param symbol_ ERC-20 symbol of this token
+
+     * @param decimals_ ERC-20 decimal precision of this token
+
+     */
+
+    function initialize(
+
+        string memory name_,
+
+        string memory symbol_,
+
+        uint8 decimals_,
+
+        address initialOwner,
+
+        uint256 initSupply_
+
+    )
+
+        public
+
+    {
+
+        require(initSupply_ > 0, "0 init supply");
+
+
+
+        super.initialize(name_, symbol_, decimals_);
+
+
+
+        initSupply = initSupply_.mul(10**24/ (BASE));
+
+        totalSupply = initSupply_;
+
+        hamsScalingFactor = BASE;
+
+        _hamBalances[initialOwner] = initSupply_.mul(10**24 / (BASE));
+
+        farmRegistry = address(0);
+
+    }
+
+
+
+    function setFarmRegistry(address registry) external onlyGov {
+
+        farmRegistry = registry;
+
+    }
+
+}
+
+contract HAMDelegate is HAM, HAMDelegateInterface {
+
+    /**
+
+     * @notice Construct an empty delegate
+
+     */
+
+    constructor() public {}
+
+
+
+    /**
+
+     * @notice Called by the delegator on a delegate to initialize it for duty
+
+     * @param data The encoded bytes data for any initialization
+
+     */
+
+    function _becomeImplementation(bytes memory data) public {
+
+        // Shh -- currently unused
+
+        data;
+
+
+
+        // Shh -- we don't ever want this hook to be marked pure
+
+        if (false) {
+
+            implementation = address(0);
+
+        }
+
+
+
+        require(msg.sender == gov, "only the gov may call _becomeImplementation");
+
+    }
+
+
+
+    /**
+
+     * @notice Called by the delegator on a delegate to forfeit its responsibility
+
+     */
+
+    function _resignImplementation() public {
+
+        // Shh -- we don't ever want this hook to be marked pure
+
+        if (false) {
+
+            implementation = address(0);
+
+        }
+
+
+
+        require(msg.sender == gov, "only the gov may call _resignImplementation");
+
+    }
+
 }

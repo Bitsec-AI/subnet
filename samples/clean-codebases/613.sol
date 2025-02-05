@@ -1,551 +1,242 @@
 /**
- *Submitted for verification at Etherscan.io on 2021-06-06
+ *Submitted for verification at Etherscan.io on 2021-06-25
 */
 
 // SPDX-License-Identifier: MIT
 
-/*
- * Token has been generated for FREE using https://vittominacori.github.io/erc20-generator/
- *
- * NOTE: "Contract Source Code Verified (Similar Match)" means that this Token is similar to other tokens deployed
- *  using the same generator. It is not an issue. It means that you won't need to verify your source code because of
- *  it is already verified.
- *
- * DISCLAIMER: GENERATOR'S AUTHOR IS FREE OF ANY LIABILITY REGARDING THE TOKEN AND THE USE THAT IS MADE OF IT.
- *  The following code is provided under MIT License. Anyone can use it as per their needs.
- *  The generator's purpose is to make people able to tokenize their ideas without coding or paying for it.
- *  Source code is well tested and continuously updated to reduce risk of bugs and to introduce language optimizations.
- *  Anyway the purchase of tokens involves a high degree of risk. Before acquiring tokens, it is recommended to
- *  carefully weighs all the information and risks detailed in Token owner's Conditions.
- */
+pragma solidity 0.8.2;
 
-
-// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
-
-
-
-pragma solidity ^0.8.0;
-
-/**
- * @dev Interface of the ERC20 standard as defined in the EIP.
- */
-interface IERC20 {
-    /**
-     * @dev Returns the amount of tokens in existence.
-     */
-    function totalSupply() external view returns (uint256);
-
-    /**
-     * @dev Returns the amount of tokens owned by `account`.
-     */
-    function balanceOf(address account) external view returns (uint256);
-
-    /**
-     * @dev Moves `amount` tokens from the caller's account to `recipient`.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Returns the remaining number of tokens that `spender` will be
-     * allowed to spend on behalf of `owner` through {transferFrom}. This is
-     * zero by default.
-     *
-     * This value changes when {approve} or {transferFrom} are called.
-     */
-    function allowance(address owner, address spender) external view returns (uint256);
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * IMPORTANT: Beware that changing an allowance with this method brings the risk
-     * that someone may use both the old and the new allowance by unfortunate
-     * transaction ordering. One possible solution to mitigate this race
-     * condition is to first reduce the spender's allowance to 0 and set the
-     * desired value afterwards:
-     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-     *
-     * Emits an {Approval} event.
-     */
-    function approve(address spender, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Moves `amount` tokens from `sender` to `recipient` using the
-     * allowance mechanism. `amount` is then deducted from the caller's
-     * allowance.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
-     *
-     * Note that `value` may be zero.
-     */
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to {approve}. `value` is the new allowance.
-     */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+interface IERC20Token {
+    function transferFrom(address _from, address _to, uint256 _value) external returns (bool success);
 }
 
-// File: @openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol
+interface IERC721 {
 
-
-
-pragma solidity ^0.8.0;
-
-
-/**
- * @dev Interface for the optional metadata functions from the ERC20 standard.
- *
- * _Available since v4.1._
- */
-interface IERC20Metadata is IERC20 {
-    /**
-     * @dev Returns the name of the token.
-     */
-    function name() external view returns (string memory);
-
-    /**
-     * @dev Returns the symbol of the token.
-     */
-    function symbol() external view returns (string memory);
-
-    /**
-     * @dev Returns the decimals places of the token.
-     */
-    function decimals() external view returns (uint8);
+    function setPaymentDate(uint256 _asset) external;
+    function getTokenDetails(uint256 index) external view returns (uint128 lastvalue, uint32 aType, uint32 customDetails, uint32 lastTx, uint32 lastPayment);
+    function polkaCitizens() external view returns(uint256 _citizens);
+    function assetsByType(uint256 _assetType) external view returns (uint64 maxAmount, uint64 mintedAmount, uint128 baseValue);
+    function ownerOf(uint256 tokenId) external view returns (address owner);
+    function balanceOf(address _owner) external view returns (uint256);
 }
 
-// File: @openzeppelin/contracts/utils/Context.sol
+contract Ownable {
 
-
-
-pragma solidity ^0.8.0;
-
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
-abstract contract Context {
-    function _msgSender() internal view virtual returns (address) {
-        return msg.sender;
+    address private owner;
+    
+    event OwnerSet(address indexed oldOwner, address indexed newOwner);
+    
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Caller is not owner");
+        _;
     }
 
-    function _msgData() internal view virtual returns (bytes calldata) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
+    constructor() {
+        owner = msg.sender; // 'msg.sender' is sender of current call, contract deployer for a constructor
+        emit OwnerSet(address(0), owner);
+    }
+
+
+    function changeOwner(address newOwner) public onlyOwner {
+        emit OwnerSet(owner, newOwner);
+        owner = newOwner;
+    }
+
+    function getOwner() external view returns (address) {
+        return owner;
     }
 }
 
-// File: @openzeppelin/contracts/token/ERC20/ERC20.sol
+contract PolkaProfitContract is Ownable {
+    
+    event Payment(address indexed _from, uint256 _amount, uint8 _network);
+    
+    bool public paused;
 
-
-
-pragma solidity ^0.8.0;
-
-
-
-
-/**
- * @dev Implementation of the {IERC20} interface.
- *
- * This implementation is agnostic to the way tokens are created. This means
- * that a supply mechanism has to be added in a derived contract using {_mint}.
- * For a generic mechanism see {ERC20PresetMinterPauser}.
- *
- * TIP: For a detailed writeup see our guide
- * https://forum.zeppelin.solutions/t/how-to-implement-erc20-supply-mechanisms/226[How
- * to implement supply mechanisms].
- *
- * We have followed general OpenZeppelin guidelines: functions revert instead
- * of returning `false` on failure. This behavior is nonetheless conventional
- * and does not conflict with the expectations of ERC20 applications.
- *
- * Additionally, an {Approval} event is emitted on calls to {transferFrom}.
- * This allows applications to reconstruct the allowance for all accounts just
- * by listening to said events. Other implementations of the EIP may not emit
- * these events, as it isn't required by the specification.
- *
- * Finally, the non-standard {decreaseAllowance} and {increaseAllowance}
- * functions have been added to mitigate the well-known issues around setting
- * allowances. See {IERC20-approve}.
- */
-contract ERC20 is Context, IERC20, IERC20Metadata {
-    mapping (address => uint256) private _balances;
-
-    mapping (address => mapping (address => uint256)) private _allowances;
-
-    uint256 private _totalSupply;
-
-    string private _name;
-    string private _symbol;
-
-    /**
-     * @dev Sets the values for {name} and {symbol}.
-     *
-     * The defaut value of {decimals} is 18. To select a different value for
-     * {decimals} you should overload it.
-     *
-     * All two of these values are immutable: they can only be set once during
-     * construction.
-     */
-    constructor (string memory name_, string memory symbol_) {
-        _name = name_;
-        _symbol = symbol_;
+    struct paymentByType {
+        uint256 weeklyPayment;
+        uint256 variantFactor; 
+        uint256 basePriceFactor;
     }
-
-    /**
-     * @dev Returns the name of the token.
-     */
-    function name() public view virtual override returns (string memory) {
-        return _name;
+    
+    struct Claim {
+        address account;
+        uint8 dNetwork;  // 1= Ethereum   2= BSC
+        uint256 assetId;
+        uint256 amount;
+        uint256 date;
     }
+    
+    Claim[] public payments;
+    
+    mapping (address => bool) public blackListed;
+    mapping (uint256 => paymentByType) public paymentAmount;
+    address public nftAddress = 0x57E9a39aE8eC404C08f88740A9e6E306f50c937f;
+    address public tokenAddress = 0xaA8330FB2B4D5D07ABFE7A72262752a8505C6B37;
+    address public walletAddress = 0xeA50CE6EBb1a5E4A8F90Bfb35A2fb3c3F0C673ec;
+    uint256 public gasFee = 1000000000000000;
+    
 
-    /**
-     * @dev Returns the symbol of the token, usually a shorter version of the
-     * name.
-     */
-    function symbol() public view virtual override returns (string memory) {
-        return _symbol;
+    uint256 wUnit = 1 weeks;
+    
+    constructor() {
+        fillPayments(1,    60000000000000000000, 10, 15000000000000);
+        fillPayments(2,   135000000000000000000, 10, 30000000000000);
+        fillPayments(3,   375000000000000000000, 10, 75000000000000);
+        fillPayments(4,   550000000000000000000, 10, 100000000000000);
+        fillPayments(5,   937500000000000000000, 10, 150000000000000);
+        fillPayments(6,  8250000000000000000000, 10, 750000000000000);
+        fillPayments(7,  6500000000000000000000, 10, 655000000000000);
+        fillPayments(8,  3000000000000000000000, 20, 400000000000000);
+        fillPayments(9, 10800000000000000000000, 50, 900000000000000);
+        fillPayments(10, 5225000000000000000000, 30, 550000000000000);
+        fillPayments(11,13125000000000000000000, 20, 1050000000000000);
+        fillPayments(12, 4500000000000000000000, 10, 500000000000000);
+        fillPayments(13, 1500000000000000000000, 10, 225000000000000);
+        fillPayments(14, 2100000000000000000000, 15, 300000000000000);
+        fillPayments(15, 3750000000000000000000, 10, 450000000000000);
+
     }
-
-    /**
-     * @dev Returns the number of decimals used to get its user representation.
-     * For example, if `decimals` equals `2`, a balance of `505` tokens should
-     * be displayed to a user as `5,05` (`505 / 10 ** 2`).
-     *
-     * Tokens usually opt for a value of 18, imitating the relationship between
-     * Ether and Wei. This is the value {ERC20} uses, unless this function is
-     * overridden;
-     *
-     * NOTE: This information is only used for _display_ purposes: it in
-     * no way affects any of the arithmetic of the contract, including
-     * {IERC20-balanceOf} and {IERC20-transfer}.
-     */
-    function decimals() public view virtual override returns (uint8) {
-        return 18;
+    
+    function fillPayments(uint256 _assetId, uint256 _weeklyPayment, uint256 _variantFactor, uint256 _basePriceFactor) private {
+        paymentAmount[_assetId].weeklyPayment = _weeklyPayment;
+        paymentAmount[_assetId].variantFactor = _variantFactor;
+        paymentAmount[_assetId].basePriceFactor = _basePriceFactor;
     }
-
-    /**
-     * @dev See {IERC20-totalSupply}.
-     */
-    function totalSupply() public view virtual override returns (uint256) {
-        return _totalSupply;
-    }
-
-    /**
-     * @dev See {IERC20-balanceOf}.
-     */
-    function balanceOf(address account) public view virtual override returns (uint256) {
-        return _balances[account];
-    }
-
-    /**
-     * @dev See {IERC20-transfer}.
-     *
-     * Requirements:
-     *
-     * - `recipient` cannot be the zero address.
-     * - the caller must have a balance of at least `amount`.
-     */
-    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(_msgSender(), recipient, amount);
+    
+    function profitsPayment(uint256 _assetId) public returns (bool success) {
+        require(paused == false, "Contract is paused");
+        IERC721 nft = IERC721(nftAddress);
+        address assetOwner = nft.ownerOf(_assetId);
+        require(assetOwner == msg.sender, "Only asset owner can claim profits");
+        require(blackListed[assetOwner] == false, "This address cannot claim profits");
+        (uint256 totalPayment, ) = calcProfit(_assetId);
+        require (totalPayment > 0, "You need to wait at least 1 week to claim");
+        nft.setPaymentDate(_assetId);
+        IERC20Token token = IERC20Token(tokenAddress);
+        require(token.transferFrom(walletAddress, assetOwner, totalPayment), "ERC20 transfer fail");
+        Claim memory thisclaim = Claim(msg.sender, 1,  _assetId, totalPayment, block.timestamp);
+        payments.push(thisclaim);
+        emit Payment(msg.sender, totalPayment, 1);
         return true;
     }
-
-    /**
-     * @dev See {IERC20-allowance}.
-     */
-    function allowance(address owner, address spender) public view virtual override returns (uint256) {
-        return _allowances[owner][spender];
-    }
-
-    /**
-     * @dev See {IERC20-approve}.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function approve(address spender, uint256 amount) public virtual override returns (bool) {
-        _approve(_msgSender(), spender, amount);
+    
+    function profitsPaymentBSC(uint256 _assetId) public payable  returns (bool success) {
+        require(paused == false, "Contract is paused");
+        require(msg.value >= gasFee, "Gas fee too low");
+        IERC721 nft = IERC721(nftAddress);
+        address assetOwner = nft.ownerOf(_assetId);
+        require(assetOwner == msg.sender, "Only asset owner can claim profits");
+        require(blackListed[assetOwner] == false, "This address cannot claim profits");
+        (uint256 totalPayment, ) = calcProfit(_assetId);
+        require (totalPayment > 0, "You need to wait at least 1 week to claim");
+        nft.setPaymentDate(_assetId);
+        Claim memory thisclaim = Claim(msg.sender, 2, _assetId, totalPayment, block.timestamp);
+        payments.push(thisclaim);
+        emit Payment(msg.sender, totalPayment, 2);
         return true;
     }
+    
+    function calcProfit(uint256 _assetId) public view returns (uint256 _profit, uint256 _lastPayment) {
+        IERC721 nft = IERC721(nftAddress);
+        ( , uint32 assetType,, uint32 lastTransfer, uint32 lastPayment ) = nft.getTokenDetails(_assetId);
+        uint256 cTime = block.timestamp - lastTransfer;
+        uint256 dTime = 0;
+        if (lastTransfer < lastPayment) {
+            dTime = lastPayment - lastTransfer;
+        }
+        if ((cTime) < wUnit) { 
+            return (0, lastTransfer);
+        } else {
+             uint256 weekCount;  
+            if (dTime == 0) {
+                weekCount = ((cTime)/(wUnit));
+            } else {
+                weekCount = ((cTime)/(wUnit)) - (dTime)/(wUnit);
+            }
+            if (weekCount < 1) {
+                return (0, lastPayment);
+            } else {
+                uint256 daysCount = weekCount * 7; //  
+                uint256 variantCount;
+                if (assetType == 8 || assetType == 15) {
+                    variantCount = countTaxis();
+                } else {
+                    variantCount = nft.polkaCitizens();
+                }
+                uint256 totalPayment;
+                paymentByType memory thisPayment = paymentAmount[uint256(assetType)];
+                uint256 dailyProfit = ((thisPayment.basePriceFactor*(variantCount*thisPayment.variantFactor))/30)*daysCount;
+                totalPayment = ((weekCount * thisPayment.weeklyPayment) + dailyProfit);
+                return (totalPayment, lastPayment);  
+                
+            }
+        }
+    }
+    
+    function calcTotalEarnings(uint256 _assetId) public view returns (uint256 _profit, uint256 _lastPayment) {
+        IERC721 nft = IERC721(nftAddress);
+        ( , uint32 assetType,, uint32 lastTransfer, ) = nft.getTokenDetails(_assetId);
+        uint256 timeFrame = block.timestamp - lastTransfer;
+        if (timeFrame < wUnit) {  
+            return (0, lastTransfer);
+        } else {
+            uint256 weekCount = timeFrame/(wUnit); 
+            uint256 daysCount = weekCount * 7;  
+            uint256 variantCount;
+            if (assetType == 8 || assetType == 15) {
+                variantCount = countTaxis();
+            } else {
+                variantCount = nft.polkaCitizens();
+            }
+            uint256 totalPayment;
+            paymentByType memory thisPayment = paymentAmount[uint256(assetType)];
+            uint256 dailyProfit = ((thisPayment.basePriceFactor*(variantCount*thisPayment.variantFactor))/30)*daysCount;
+            totalPayment = ((weekCount * thisPayment.weeklyPayment) + dailyProfit);
+            return (totalPayment, lastTransfer);    
+        }
 
-    /**
-     * @dev See {IERC20-transferFrom}.
-     *
-     * Emits an {Approval} event indicating the updated allowance. This is not
-     * required by the EIP. See the note at the beginning of {ERC20}.
-     *
-     * Requirements:
-     *
-     * - `sender` and `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `amount`.
-     * - the caller must have allowance for ``sender``'s tokens of at least
-     * `amount`.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(sender, recipient, amount);
+    }
+    
 
-        uint256 currentAllowance = _allowances[sender][_msgSender()];
-        require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
-        _approve(sender, _msgSender(), currentAllowance - amount);
-
-        return true;
+    function countTaxis() private view returns (uint256 taxis) {
+        uint256 taxiCount = 0;
+        uint64 assetMinted;
+        IERC721 nft = IERC721(nftAddress);
+        (, assetMinted,) = nft.assetsByType(1);
+        taxiCount += uint256(assetMinted);
+        (, assetMinted,) = nft.assetsByType(2);
+        taxiCount += uint256(assetMinted);
+        (, assetMinted,) = nft.assetsByType(3);
+        taxiCount += uint256(assetMinted);
+        (, assetMinted,) = nft.assetsByType(4);
+        taxiCount += assetMinted;
+        (, assetMinted,) = nft.assetsByType(5);
+        taxiCount += uint256(assetMinted);
+        return taxiCount;
     }
 
-    /**
-     * @dev Atomically increases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender] + addedValue);
-        return true;
+    
+    function pauseContract(bool _paused) public onlyOwner {
+        paused = _paused;
+    }
+    
+    function blackList(address _wallet, bool _blacklist) public onlyOwner {
+        blackListed[_wallet] = _blacklist;
     }
 
-    /**
-     * @dev Atomically decreases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     * - `spender` must have allowance for the caller of at least
-     * `subtractedValue`.
-     */
-    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
-        uint256 currentAllowance = _allowances[_msgSender()][spender];
-        require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
-        _approve(_msgSender(), spender, currentAllowance - subtractedValue);
-
-        return true;
+    function paymentCount() public view returns (uint256 _paymentCount) {
+        return payments.length;
     }
-
-    /**
-     * @dev Moves tokens `amount` from `sender` to `recipient`.
-     *
-     * This is internal function is equivalent to {transfer}, and can be used to
-     * e.g. implement automatic token fees, slashing mechanisms, etc.
-     *
-     * Emits a {Transfer} event.
-     *
-     * Requirements:
-     *
-     * - `sender` cannot be the zero address.
-     * - `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `amount`.
-     */
-    function _transfer(address sender, address recipient, uint256 amount) internal virtual {
-        require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
-
-        _beforeTokenTransfer(sender, recipient, amount);
-
-        uint256 senderBalance = _balances[sender];
-        require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
-        _balances[sender] = senderBalance - amount;
-        _balances[recipient] += amount;
-
-        emit Transfer(sender, recipient, amount);
+    
+    function paymentDetail(uint256 _paymentIndex) public view returns (address _to, uint8 _network, uint256 assetId, uint256 _amount, uint256 _date) {
+        Claim memory thisPayment = payments[_paymentIndex];
+        return (thisPayment.account, thisPayment.dNetwork, thisPayment.assetId, thisPayment.amount, thisPayment.date);
     }
-
-    /** @dev Creates `amount` tokens and assigns them to `account`, increasing
-     * the total supply.
-     *
-     * Emits a {Transfer} event with `from` set to the zero address.
-     *
-     * Requirements:
-     *
-     * - `to` cannot be the zero address.
-     */
-    function _mint(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: mint to the zero address");
-
-        _beforeTokenTransfer(address(0), account, amount);
-
-        _totalSupply += amount;
-        _balances[account] += amount;
-        emit Transfer(address(0), account, amount);
+    
+    function setGasFee(uint256 _gasFee) public onlyOwner {
+        gasFee = _gasFee;
     }
-
-    /**
-     * @dev Destroys `amount` tokens from `account`, reducing the
-     * total supply.
-     *
-     * Emits a {Transfer} event with `to` set to the zero address.
-     *
-     * Requirements:
-     *
-     * - `account` cannot be the zero address.
-     * - `account` must have at least `amount` tokens.
-     */
-    function _burn(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: burn from the zero address");
-
-        _beforeTokenTransfer(account, address(0), amount);
-
-        uint256 accountBalance = _balances[account];
-        require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
-        _balances[account] = accountBalance - amount;
-        _totalSupply -= amount;
-
-        emit Transfer(account, address(0), amount);
-    }
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the `owner` s tokens.
-     *
-     * This internal function is equivalent to `approve`, and can be used to
-     * e.g. set automatic allowances for certain subsystems, etc.
-     *
-     * Emits an {Approval} event.
-     *
-     * Requirements:
-     *
-     * - `owner` cannot be the zero address.
-     * - `spender` cannot be the zero address.
-     */
-    function _approve(address owner, address spender, uint256 amount) internal virtual {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
-
-        _allowances[owner][spender] = amount;
-        emit Approval(owner, spender, amount);
-    }
-
-    /**
-     * @dev Hook that is called before any transfer of tokens. This includes
-     * minting and burning.
-     *
-     * Calling conditions:
-     *
-     * - when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
-     * will be to transferred to `to`.
-     * - when `from` is zero, `amount` tokens will be minted for `to`.
-     * - when `to` is zero, `amount` of ``from``'s tokens will be burned.
-     * - `from` and `to` are never both zero.
-     *
-     * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
-     */
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
-}
-
-// File: contracts/service/ServicePayer.sol
-
-
-
-pragma solidity ^0.8.0;
-
-interface IPayable {
-    function pay(string memory serviceName) external payable;
-}
-
-/**
- * @title ServicePayer
- * @dev Implementation of the ServicePayer
- */
-abstract contract ServicePayer {
-
-    constructor (address payable receiver, string memory serviceName) payable {
-        IPayable(receiver).pay{value: msg.value}(serviceName);
-    }
-}
-
-// File: contracts/utils/GeneratorCopyright.sol
-
-
-
-pragma solidity ^0.8.0;
-
-/**
- * @title GeneratorCopyright
- * @author ERC20 Generator (https://vittominacori.github.io/erc20-generator)
- * @dev Implementation of the GeneratorCopyright
- */
-contract GeneratorCopyright {
-
-    string private constant _GENERATOR = "https://vittominacori.github.io/erc20-generator";
-    string private _version;
-
-    constructor (string memory version_) {
-        _version = version_;
-    }
-
-    /**
-     * @dev Returns the token generator tool.
-     */
-    function generator() public pure returns (string memory) {
-        return _GENERATOR;
-    }
-
-    /**
-     * @dev Returns the token generator version.
-     */
-    function version() public view returns (string memory) {
-        return _version;
-    }
-}
-
-// File: contracts/token/ERC20/SimpleERC20.sol
-
-
-
-pragma solidity ^0.8.0;
-
-
-
-
-/**
- * @title SimpleERC20
- * @author ERC20 Generator (https://vittominacori.github.io/erc20-generator)
- * @dev Implementation of the SimpleERC20
- */
-contract SimpleERC20 is ERC20, ServicePayer, GeneratorCopyright("v5.0.1") {
-
-    constructor (
-        string memory name_,
-        string memory symbol_,
-        uint256 initialBalance_,
-        address payable feeReceiver_
-    )
-        ERC20(name_, symbol_)
-        ServicePayer(feeReceiver_, "SimpleERC20")
-        payable
-    {
-        require(initialBalance_ > 0, "SimpleERC20: supply cannot be zero");
-
-        _mint(_msgSender(), initialBalance_);
-    }
+    
+    
 }

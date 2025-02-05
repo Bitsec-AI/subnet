@@ -1,118 +1,9 @@
 /**
- *Submitted for verification at Etherscan.io on 2021-04-12
+ *Submitted for verification at Etherscan.io on 2021-11-25
 */
 
-// File: contracts\gsn\Context.sol
-
-pragma solidity ^0.5.0;
-
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with GSN meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
-contract Context {
-
-    // Empty internal constructor, to prevent people from mistakenly deploying
-    // an instance of this contract, which should be used via inheritance.
-    constructor () internal { }
-    // solhint-disable-previous-line no-empty-blocks
-
-    function _msgSender() internal view returns (address payable) {
-        return msg.sender;
-    }
-
-    function _msgData() internal view returns (bytes memory) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
-    }
-
-}
-
-// File: contracts\access\Ownable.sol
-
-pragma solidity ^0.5.0;
-
-
-/**
- * @dev Contract module which provides a basic access control mechanism, where
- * there is an account (an owner) that can be granted exclusive access to
- * specific functions.
- *
- * By default, the owner account will be the one that deploys the contract. This
- * can later be changed with {transferOwnership}.
- *
- * This module is used through inheritance. It will make available the modifier
- * `onlyOwner`, which can be applied to your functions to restrict their use to
- * the owner.
- */
-contract Ownable is Context {
-
-    address private _owner;
-
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-    /**
-     * @dev Initializes the contract setting the deployer as the initial owner.
-     */
-    constructor () internal {
-        address msgSender = _msgSender();
-
-        _owner = msgSender;
-
-        emit OwnershipTransferred(address(0), msgSender);
-    }
-
-    /**
-     * @dev Returns the address of the current owner.
-     */
-    function owner() public view returns (address) {
-        return _owner;
-    }
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        require(_owner == _msgSender(), "Ownable: caller is not the owner");
-        _;
-    }
-
-    /**
-     * @dev Leaves the contract without owner. It will not be possible to call
-     * `onlyOwner` functions anymore. Can only be called by the current owner.
-     *
-     * NOTE: Renouncing ownership will leave the contract without an owner,
-     * thereby removing any functionality that is only available to the owner.
-     */
-    function renounceOwnership() public onlyOwner {
-        emit OwnershipTransferred(_owner, address(0));
-
-        _owner = address(0);
-    }
-
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Can only be called by the current owner.
-     */
-    function transferOwnership(address newOwner) public onlyOwner {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
-
-        emit OwnershipTransferred(_owner, newOwner);
-
-        _owner = newOwner;
-    }
-
-}
-
-// File: contracts\libs\SafeMath.sol
-
-pragma solidity ^0.5.0;
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.8.6;
 
 /**
  * @dev Wrappers over Solidity's arithmetic operations with added overflow
@@ -128,7 +19,6 @@ pragma solidity ^0.5.0;
  * class of bugs, so it's recommended to use it always.
  */
 library SafeMath {
-
     /**
      * @dev Returns the addition of two unsigned integers, reverting on
      * overflow.
@@ -140,7 +30,6 @@ library SafeMath {
      */
     function add(uint256 a, uint256 b) internal pure returns (uint256) {
         uint256 c = a + b;
-
         require(c >= a, "SafeMath: addition overflow");
 
         return c;
@@ -156,9 +45,23 @@ library SafeMath {
      * - Subtraction cannot overflow.
      */
     function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b <= a, "SafeMath: subtraction overflow");
+        return sub(a, b, "SafeMath: subtraction overflow");
+    }
 
-        return a - b;
+    /**
+     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
+     * overflow (when the result is negative).
+     *
+     * Counterpart to Solidity's `-` operator.
+     *
+     * Requirements:
+     * - Subtraction cannot overflow.
+     */
+    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b <= a, errorMessage);
+        uint256 c = a - b;
+
+        return c;
     }
 
     /**
@@ -179,7 +82,6 @@ library SafeMath {
         }
 
         uint256 c = a * b;
-
         require(c / a == b, "SafeMath: multiplication overflow");
 
         return c;
@@ -197,9 +99,27 @@ library SafeMath {
      * - The divisor cannot be zero.
      */
     function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b > 0, "SafeMath: division by zero");
+        return div(a, b, "SafeMath: division by zero");
+    }
 
-        return a / b;
+    /**
+     * @dev Returns the integer division of two unsigned integers. Reverts with custom message on
+     * division by zero. The result is rounded towards zero.
+     *
+     * Counterpart to Solidity's `/` operator. Note: this function uses a
+     * `revert` opcode (which leaves remaining gas untouched) while Solidity
+     * uses an invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     * - The divisor cannot be zero.
+     */
+    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        // Solidity only automatically asserts when dividing by 0
+        require(b > 0, errorMessage);
+        uint256 c = a / b;
+        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+
+        return c;
     }
 
     /**
@@ -214,20 +134,150 @@ library SafeMath {
      * - The divisor cannot be zero.
      */
     function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b > 0, "SafeMath: modulo by zero");
-
-        return a % b;
+        return mod(a, b, "SafeMath: modulo by zero");
     }
 
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+     * Reverts with custom message when dividing by zero.
+     *
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+     * invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     * - The divisor cannot be zero.
+     */
+    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b != 0, errorMessage);
+        return a % b;
+    }
 }
 
-// File: contracts\token\erc20\IERC20.sol
+/**
+ * @dev Provides information about the current execution context, including the
+ * sender of the transaction and its data. While these are generally available
+ * via msg.sender and msg.data, they should not be accessed in such a direct
+ * manner, since when dealing with meta-transactions the account sending and
+ * paying for execution may not be the actual sender (as far as an application
+ * is concerned).
+ *
+ * This contract is only required for intermediate, library-like contracts.
+ */
+abstract contract Context {
+    
+    function _msgSender() internal view virtual returns (address) {
+        return msg.sender;
+    }
 
-pragma solidity ^0.5.0;
+    function _msgData() internal view virtual returns (bytes calldata) {
+        return msg.data;
+    }
+}
 
 /**
- * @dev Interface of the ERC20 standard as defined in the EIP. Does not include
- * the optional functions; to access them see {ERC20Detailed}.
+ * @dev Provides information about the current owner information and protect functionality designed for owner only.
+ */
+abstract contract Ownable is Context {
+
+    address private _owner;
+
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    constructor () {
+        _setOwner(_msgSender());
+    }
+
+    /**
+     * @dev Returns the address of the current owner.
+     */
+    function owner() public view virtual returns (address) {
+        return _owner;
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(owner() == _msgSender(), "Ownable: caller is not the owner");
+        _;
+    }
+
+    /**
+     * @dev Leaves the contract without owner. It will not be possible to call
+     * `onlyOwner` functions anymore. Can only be called by the current owner.
+     *
+     * NOTE: Renouncing ownership will leave the contract without an owner,
+     * thereby removing any functionality that is only available to the owner.
+     */
+    function renounceOwnership() public virtual onlyOwner {
+        _setOwner(address(0));
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
+     */
+    function transferOwnership(address newOwner) public virtual onlyOwner {
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        _setOwner(newOwner);
+    }
+
+    function _setOwner(address newOwner) private {
+        address oldOwner = _owner;
+        _owner = newOwner;
+        emit OwnershipTransferred(oldOwner, newOwner);
+    }
+}
+
+abstract contract HoldersStorage {
+
+    address[] internal _holders;
+
+    constructor () 
+    {}
+
+    function holders() public view returns(address [] memory) {
+        return _holders;
+    }
+
+    /**
+    * @notice A method to check if an address is a stakeholder.
+    * @param _address The address to verify.
+    * @return bool, uint256 Whether the address is a stakeholder,
+    * and if so its position in the stakeholders array.
+    */
+    function isStakeholder(address _address) public view returns(bool, uint256) {
+        for (uint256 s = 0; s < _holders.length; s++){
+            if (_address == _holders[s]) return (true, s);
+        }
+        return (false, 0);
+    }
+
+    /**
+     * @notice A method to add a stakeholder.
+     * @param _stakeholder The stakeholder to add.
+     */
+    function addStakeholder(address _stakeholder) public {
+        (bool _isStakeholder, ) = isStakeholder(_stakeholder);
+        if(!_isStakeholder) _holders.push(_stakeholder);
+    }
+
+    /**
+     * @notice A method to remove a stakeholder.
+     * @param _stakeholder The stakeholder to remove.
+     */
+    function removeStakeholder(address _stakeholder) public {
+        (bool _isStakeholder, uint256 s) = isStakeholder(_stakeholder);
+        if(_isStakeholder){
+            _holders[s] = _holders[_holders.length - 1];
+            _holders.pop();
+        }
+    }
+}
+
+/**
+ * @dev Interface of the ERC20 standard as defined in the EIP.
  */
 interface IERC20 {
 
@@ -249,6 +299,7 @@ interface IERC20 {
      * Emits a {Transfer} event.
      */
     function transfer(address recipient, uint256 amount) external returns (bool);
+
 
     /**
      * @dev Returns the remaining number of tokens that `spender` will be
@@ -286,6 +337,7 @@ interface IERC20 {
      */
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
 
+
     /**
      * @dev Emitted when `value` tokens are moved from one account (`from`) to
      * another (`to`).
@@ -299,22 +351,14 @@ interface IERC20 {
      * a call to {approve}. `value` is the new allowance.
      */
     event Approval(address indexed owner, address indexed spender, uint256 value);
-
 }
-
-// File: contracts\token\erc20\ERC20.sol
-
-pragma solidity ^0.5.0;
-
-
-
 
 /**
  * @dev Implementation of the {IERC20} interface.
  *
  * This implementation is agnostic to the way tokens are created. This means
  * that a supply mechanism has to be added in a derived contract using {_mint}.
- * For a generic mechanism see {ERC20Mintable}.
+ * For a generic mechanism see {ERC20PresetMinterPauser}.
  *
  * TIP: For a detailed writeup see our guide
  * https://forum.zeppelin.solutions/t/how-to-implement-erc20-supply-mechanisms/226[How
@@ -333,15 +377,10 @@ pragma solidity ^0.5.0;
  * functions have been added to mitigate the well-known issues around setting
  * allowances. See {IERC20-approve}.
  */
-contract ERC20 is Context, IERC20 {
+
+contract ERC20 is Context, IERC20, Ownable, HoldersStorage {
 
     using SafeMath for uint256;
-
-    string private _name;
-
-    string private _symbol;
-
-    uint8 private _decimals;
 
     mapping (address => uint256) private _balances;
 
@@ -349,15 +388,50 @@ contract ERC20 is Context, IERC20 {
 
     uint256 private _totalSupply;
 
+    string private _name;
+
+    string private _symbol;
+
+    uint8 private _decimals;
+
+    // Holds the disscounted percent from any transfer
+    uint8 private _transferFees;
+
+    // Holds the distributed amount at the time of last destribution
+    uint256 private _totalDistributedAmount;
+
+    // Holds the distributed amount at the time of last destribution
+    uint256 private _lastDistributedAmount;
+
+    // Holds the time of last destribution in seconds
+    uint256 private _lastDistributionDate;
+
+    // Holds the investor balance at the time of last destribution
+    uint256 private _holdersBalanceAtLastDistribution;
+
+    // Holds the disscounted fees for later distribution  
+    uint256 private _transferFeesBalance;
+    
     /**
-     * @dev Sets the values for `name`, `symbol`, and `decimals`. All three of
-     * these values are immutable: they can only be set once during
+     * @dev Sets the values for {name} and {symbol}, initializes {decimals} with
+     * a default value of 18.
+     *
+     * To select a different value for {decimals}, use {_setupDecimals}.
+     *
+     * All three of these values are immutable: they can only be set once during
      * construction.
      */
-    constructor (string memory name, string memory symbol, uint8 decimals) public {
-        _name = name;
-        _symbol = symbol;
-        _decimals = decimals;
+    constructor () Ownable() HoldersStorage() {
+        _name     = 'Hunter Crypto Coin';
+        _symbol   = 'HCC';
+        _setupDecimals(18);
+        _mint(owner(), 500000000 * 10 ** decimals());
+        _transferFees                     = 2;
+        _transferFeesBalance              = 0;
+        _totalDistributedAmount           = 0;
+        _lastDistributionDate             = 0;
+        _lastDistributedAmount            = 0;
+        _holdersBalanceAtLastDistribution = 0;
     }
 
     /**
@@ -381,7 +455,8 @@ contract ERC20 is Context, IERC20 {
      * be displayed to a user as `5,05` (`505 / 10 ** 2`).
      *
      * Tokens usually opt for a value of 18, imitating the relationship between
-     * Ether and Wei.
+     * Ether and Wei. This is the value {ERC20} uses, unless {_setupDecimals} is
+     * called.
      *
      * NOTE: This information is only used for _display_ purposes: it in
      * no way affects any of the arithmetic of the contract, including
@@ -394,14 +469,14 @@ contract ERC20 is Context, IERC20 {
     /**
      * @dev See {IERC20-totalSupply}.
      */
-    function totalSupply() public view returns (uint256) {
+    function totalSupply() public view override returns (uint256) {
         return _totalSupply;
     }
 
     /**
      * @dev See {IERC20-balanceOf}.
      */
-    function balanceOf(address account) public view returns (uint256) {
+    function balanceOf(address account) public view override returns (uint256) {
         return _balances[account];
     }
 
@@ -413,7 +488,7 @@ contract ERC20 is Context, IERC20 {
      * - `recipient` cannot be the zero address.
      * - the caller must have a balance of at least `amount`.
      */
-    function transfer(address recipient, uint256 amount) public returns (bool) {
+    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
         _transfer(_msgSender(), recipient, amount);
         return true;
     }
@@ -421,8 +496,8 @@ contract ERC20 is Context, IERC20 {
     /**
      * @dev See {IERC20-allowance}.
      */
-    function allowance(address owner, address spender) public view returns (uint256) {
-        return _allowances[owner][spender];
+    function allowance(address from, address spender) public view virtual override returns (uint256) {
+        return _allowances[from][spender];
     }
 
     /**
@@ -432,7 +507,7 @@ contract ERC20 is Context, IERC20 {
      *
      * - `spender` cannot be the zero address.
      */
-    function approve(address spender, uint256 amount) public returns (bool) {
+    function approve(address spender, uint256 amount) public virtual override returns (bool) {
         _approve(_msgSender(), spender, amount);
         return true;
     }
@@ -441,17 +516,18 @@ contract ERC20 is Context, IERC20 {
      * @dev See {IERC20-transferFrom}.
      *
      * Emits an {Approval} event indicating the updated allowance. This is not
-     * required by the EIP. See the note at the beginning of {ERC20};
+     * required by the EIP. See the note at the beginning of {ERC20}.
      *
      * Requirements:
+     *
      * - `sender` and `recipient` cannot be the zero address.
      * - `sender` must have a balance of at least `amount`.
-     * - the caller must have allowance for `sender`'s tokens of at least
+     * - the caller must have allowance for ``sender``'s tokens of at least
      * `amount`.
      */
-    function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
+    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
         _transfer(sender, recipient, amount);
-        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount));
+        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
         return true;
     }
 
@@ -467,7 +543,7 @@ contract ERC20 is Context, IERC20 {
      *
      * - `spender` cannot be the zero address.
      */
-    function increaseAllowance(address spender, uint256 addedValue) public returns (bool) {
+    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
         _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
         return true;
     }
@@ -486,8 +562,8 @@ contract ERC20 is Context, IERC20 {
      * - `spender` must have allowance for the caller of at least
      * `subtractedValue`.
      */
-    function decreaseAllowance(address spender, uint256 subtractedValue) public returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue));
+    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
         return true;
     }
 
@@ -505,13 +581,24 @@ contract ERC20 is Context, IERC20 {
      * - `recipient` cannot be the zero address.
      * - `sender` must have a balance of at least `amount`.
      */
-    function _transfer(address sender, address recipient, uint256 amount) internal {
+    function _transfer(address sender, address recipient, uint256 amount) internal virtual {
         require(sender != address(0), "ERC20: transfer from the zero address");
         require(recipient != address(0), "ERC20: transfer to the zero address");
-
-        _balances[sender] = _balances[sender].sub(amount);
+        _beforeTokenTransfer(sender, recipient, amount);
+        _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
+        uint256 fees = amount.div(100).mul(feesPercent());
+        amount = amount.sub(fees);
+        _transferFeesBalance = _transferFeesBalance.add(fees);
         _balances[recipient] = _balances[recipient].add(amount);
+        if(address(recipient) == owner()) {
 
+        } 
+        else {
+            addStakeholder(recipient);
+        }
+        if(_balances[sender] == 0) {
+            removeStakeholder(sender);
+        }
         emit Transfer(sender, recipient, amount);
     }
 
@@ -520,16 +607,15 @@ contract ERC20 is Context, IERC20 {
      *
      * Emits a {Transfer} event with `from` set to the zero address.
      *
-     * Requirements
+     * Requirements:
      *
      * - `to` cannot be the zero address.
      */
-    function _mint(address account, uint256 amount) internal {
+    function _mint(address account, uint256 amount) internal virtual onlyOwner {
         require(account != address(0), "ERC20: mint to the zero address");
-
+        _beforeTokenTransfer(address(0), account, amount);
         _totalSupply = _totalSupply.add(amount);
         _balances[account] = _balances[account].add(amount);
-
         emit Transfer(address(0), account, amount);
     }
 
@@ -539,24 +625,23 @@ contract ERC20 is Context, IERC20 {
      *
      * Emits a {Transfer} event with `to` set to the zero address.
      *
-     * Requirements
+     * Requirements:
      *
      * - `account` cannot be the zero address.
      * - `account` must have at least `amount` tokens.
      */
-    function _burn(address account, uint256 amount) internal {
+    function _burn(address account, uint256 amount) internal virtual {
         require(account != address(0), "ERC20: burn from the zero address");
-
-        _balances[account] = _balances[account].sub(amount);
+        _beforeTokenTransfer(account, address(0), amount);
+        _balances[account] = _balances[account].sub(amount, "ERC20: burn amount exceeds balance");
         _totalSupply = _totalSupply.sub(amount);
-
         emit Transfer(account, address(0), amount);
     }
 
     /**
-     * @dev Sets `amount` as the allowance of `spender` over the `owner`s tokens.
+     * @dev Sets `amount` as the allowance of `spender` over the `owner` s tokens.
      *
-     * This is internal function is equivalent to `approve`, and can be used to
+     * This internal function is equivalent to `approve`, and can be used to
      * e.g. set automatic allowances for certain subsystems, etc.
      *
      * Emits an {Approval} event.
@@ -566,653 +651,123 @@ contract ERC20 is Context, IERC20 {
      * - `owner` cannot be the zero address.
      * - `spender` cannot be the zero address.
      */
-    function _approve(address owner, address spender, uint256 amount) internal {
-        require(owner != address(0), "ERC20: approve from the zero address");
+    function _approve(address from, address spender, uint256 amount) internal virtual {
+        require(from != address(0), "ERC20: approve from the zero address");
         require(spender != address(0), "ERC20: approve to the zero address");
-
-        _allowances[owner][spender] = amount;
-
-        emit Approval(owner, spender, amount);
+        _allowances[from][spender] = amount;
+        emit Approval(from, spender, amount);
     }
 
     /**
-     * @dev Destroys `amount` tokens from `account`.`amount` is then deducted
-     * from the caller's allowance.
+     * @dev Sets {decimals} to a value other than the default one of 18.
      *
-     * See {_burn} and {_approve}.
+     * WARNING: This function should only be called from the constructor. Most
+     * applications that interact with token contracts will not expect
+     * {decimals} to ever change, and may work incorrectly if it does.
      */
-    function _burnFrom(address account, uint256 amount) internal {
-        _burn(account, amount);
-        _approve(account, _msgSender(), _allowances[account][_msgSender()].sub(amount));
-    }
-
-}
-
-// File: contracts\libs\RealMath.sol
-
-pragma solidity ^0.5.0;
-
-/**
- * Reference: https://github.com/balancer-labs/balancer-core/blob/master/contracts/BNum.sol
- */
-
-library RealMath {
-
-    uint256 private constant BONE           = 10 ** 18;
-    uint256 private constant MIN_BPOW_BASE  = 1 wei;
-    uint256 private constant MAX_BPOW_BASE  = (2 * BONE) - 1 wei;
-    uint256 private constant BPOW_PRECISION = BONE / 10 ** 10;
-
-    /**
-     * @dev 
-     */
-    function rtoi(uint256 a)
-        internal
-        pure 
-        returns (uint256)
-    {
-        return a / BONE;
+    function _setupDecimals(uint8 decimals_) internal {
+        _decimals = decimals_;
     }
 
     /**
-     * @dev 
+     * @dev Hook that is called before any transfer of tokens. This includes
+     * minting and burning.
+     *
+     * Calling conditions:
+     *
+     * - when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
+     * will be to transferred to `to`.
+     * - when `from` is zero, `amount` tokens will be minted for `to`.
+     * - when `to` is zero, `amount` of ``from``'s tokens will be burned.
+     * - `from` and `to` are never both zero.
+     *
+     * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
      */
-    function rfloor(uint256 a)
-        internal
-        pure
-        returns (uint256)
-    {
-        return rtoi(a) * BONE;
-    }
-
-    /**
-     * @dev 
-     */
-    function radd(uint256 a, uint256 b)
-        internal
-        pure
-        returns (uint256)
-    {
-        uint256 c = a + b;
-
-        require(c >= a, "ERR_ADD_OVERFLOW");
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { 
         
-        return c;
     }
 
     /**
-     * @dev 
+     * @dev Returns the percent of the transfer fee.
      */
-    function rsub(uint256 a, uint256 b)
-        internal
-        pure
-        returns (uint256)
-    {
-        (uint256 c, bool flag) = rsubSign(a, b);
-
-        require(!flag, "ERR_SUB_UNDERFLOW");
-
-        return c;
+    function feesPercent() public view returns (uint256) {
+        return _transferFees;
     }
 
     /**
-     * @dev 
+     * @dev Returns the total balance of the transfer fee.
      */
-    function rsubSign(uint256 a, uint256 b)
-        internal
-        pure
-        returns (uint256, bool)
-    {
-        if (a >= b) {
-            return (a - b, false);
+    function totalFeesBalance() public view returns (uint256) {
+        return _transferFeesBalance;
+    }
 
-        } else {
-            return (b - a, true);
+    /**
+     * @dev Returns the account balance of the transfer fee.
+     */
+    function totalHoldersBalance() public view returns (uint256) {
+        uint256 _totalBalanceOfAllHolders = 0;
+        for (uint256 s = 0; s < _holders.length; s++) {
+            _totalBalanceOfAllHolders = _totalBalanceOfAllHolders.add(balanceOf(_holders[s]));
         }
+        return _totalBalanceOfAllHolders;
     }
 
     /**
-     * @dev 
+     * @dev Returns the account balance of the transfer fee.
      */
-    function rmul(uint256 a, uint256 b)
-        internal
-        pure
-        returns (uint256)
-    {
-        uint256 c0 = a * b;
-
-        require(a == 0 || c0 / a == b, "ERR_MUL_OVERFLOW");
-
-        uint256 c1 = c0 + (BONE / 2);
-
-        require(c1 >= c0, "ERR_MUL_OVERFLOW");
-
-        return c1 / BONE;
-    }
-
-    /**
-     * @dev 
-     */
-    function rdiv(uint256 a, uint256 b)
-        internal
-        pure
-        returns (uint256)
-    {
-        require(b != 0, "ERR_DIV_ZERO");
-
-        uint256 c0 = a * BONE;
-
-        require(a == 0 || c0 / a == BONE, "ERR_DIV_INTERNAL");
-
-        uint256 c1 = c0 + (b / 2);
-
-        require(c1 >= c0, "ERR_DIV_INTERNAL");
-
-        return c1 / b;
-    }
-
-    /**
-     * @dev 
-     */
-    function rpowi(uint256 a, uint256 n)
-        internal
-        pure
-        returns (uint256)
-    {
-        uint256 z = n % 2 != 0 ? a : BONE;
-
-        for (n /= 2; n != 0; n /= 2) {
-            a = rmul(a, a);
-
-            if (n % 2 != 0) {
-                z = rmul(z, a);
-            }
+    function rewardBalanceOf(address account) public view returns (uint256) {
+        if (address(account) == owner()) {
+            return 0;
         }
-
-        return z;
+        uint256 _totalBalanceOfAllHolders = totalHoldersBalance();
+        uint256 _allocated_percent        = balanceOf(account).mul(100).div(_totalBalanceOfAllHolders);
+        uint256 _amount                   = totalFeesBalance().mul(_allocated_percent).div(100);
+        return _amount;
     }
 
     /**
-     * @dev Computes b^(e.w) by splitting it into (b^e)*(b^0.w).
-     * Use `rpowi` for `b^e` and `rpowK` for k iterations of approximation of b^0.w
+     * @dev Returns the last time the destribution happened for fees balance.
      */
-    function rpow(uint256 base, uint256 exp)
-        internal
-        pure
-        returns (uint256)
-    {
-        require(base >= MIN_BPOW_BASE, "ERR_BPOW_BASE_TOO_LOW");
-        require(base <= MAX_BPOW_BASE, "ERR_BPOW_BASE_TOO_HIGH");
+    function lastDistributionDate() public view returns (uint256) {
+        return _lastDistributionDate;
+    }
 
-        uint256 whole = rfloor(exp);   
-        uint256 remain = rsub(exp, whole);
+    /**
+     * @dev Returns the last time destribution amount.
+     */
+    function lastDistributedAmount() public view returns (uint256) {
+        return _lastDistributedAmount;
+    }
 
-        uint256 wholePow = rpowi(base, rtoi(whole));
+    /**
+     * @dev Returns the balance of all holders at last time destribution.
+     */
+    function holdersBalanceAtLastDistribution() public view returns (uint256) {
+        return _holdersBalanceAtLastDistribution;
+    }
 
-        if (remain == 0) {
-            return wholePow;
+     /**
+     * @dev Returns the balance of all destributed amount.
+     */
+    function totalDistributedAmount() public view returns (uint256) {
+        return _totalDistributedAmount;
+    }
+
+    function destributeFeeReward(uint256 amount) public virtual onlyOwner { 
+        _transferFeesBalance.sub(amount, "ERC20: Destributed amount exceeds fee address balance");
+        uint256 _final_added_amount       = 0;
+        uint256 _totalBalanceOfAllHolders = totalHoldersBalance();
+        for (uint256 s = 0; s < _holders.length; s++) {
+            uint256 _allocated_percent = _balances[_holders[s]].mul(100).div(_totalBalanceOfAllHolders);
+            uint256 _amount_to_add     = amount.mul(_allocated_percent).div(100);
+            _final_added_amount        = _final_added_amount.add(_amount_to_add);
+            _balances[_holders[s]]     = _balances[_holders[s]].add(_amount_to_add);
+            emit Transfer(address(0), _holders[s], _amount_to_add);
         }
-
-        uint256 partialResult = rpowApprox(base, remain, BPOW_PRECISION);
-
-        return rmul(wholePow, partialResult);
+        _transferFeesBalance              = _transferFeesBalance.sub(_final_added_amount, "ERC20: Destributed amount exceeds fee address balance");
+        _lastDistributionDate             = block.timestamp;
+        _lastDistributedAmount            = _final_added_amount;
+        _holdersBalanceAtLastDistribution = _totalBalanceOfAllHolders;
+        _totalDistributedAmount           = _totalDistributedAmount.add(_final_added_amount);
     }
-
-    /**
-     * @dev 
-     */
-    function rpowApprox(uint256 base, uint256 exp, uint256 precision)
-        internal
-        pure
-        returns (uint256)
-    {
-        (uint256 x, bool xneg) = rsubSign(base, BONE);
-
-        uint256 a = exp;
-        uint256 term = BONE;
-        uint256 sum = term;
-
-        bool negative = false;
-
-        // term(k) = numer / denom 
-        //         = (product(a - i - 1, i = 1--> k) * x ^ k) / (k!)
-        // Each iteration, multiply previous term by (a - (k - 1)) * x / k
-        // continue until term is less than precision
-        for (uint256 i = 1; term >= precision; i++) {
-            uint256 bigK = i * BONE;
-
-            (uint256 c, bool cneg) = rsubSign(a, rsub(bigK, BONE));
-
-            term = rmul(term, rmul(c, x));
-            term = rdiv(term, bigK);
-
-            if (term == 0) break;
-
-            if (xneg) negative = !negative;
-            if (cneg) negative = !negative;
-
-            if (negative) {
-                sum = rsub(sum, term);
-
-            } else {
-                sum = radd(sum, term);
-            }
-        }
-
-        return sum;
-    }
-
-}
-
-// File: contracts\libs\Address.sol
-
-pragma solidity ^0.5.0;
-
-/**
- * @dev Collection of functions related to the address type
- */
-library Address {
-
-    /**
-     * @dev Returns true if `account` is a contract.
-     *
-     * [IMPORTANT]
-     * ====
-     * It is unsafe to assume that an address for which this function returns
-     * false is an externally-owned account (EOA) and not a contract.
-     *
-     * Among others, `isContract` will return false for the following
-     * types of addresses:
-     *
-     *  - an externally-owned account
-     *  - a contract in construction
-     *  - an address where a contract will be created
-     *  - an address where a contract lived, but was destroyed
-     * ====
-     */
-    function isContract(address account) internal view returns (bool) {
-        // According to EIP-1052, 0x0 is the value returned for not-yet created accounts
-        // and 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470 is returned
-        // for accounts without code, i.e. `keccak256('')`
-        bytes32 codehash;
-        bytes32 accountHash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
-
-        // solhint-disable-next-line no-inline-assembly
-        assembly { codehash := extcodehash(account) }
-
-        return (codehash != accountHash && codehash != 0x0);
-    }
-
-    /**
-     * @dev Converts an `address` into `address payable`. Note that this is
-     * simply a type cast: the actual underlying value is not changed.
-     *
-     * _Available since v2.4.0._
-     */
-    function toPayable(address account) internal pure returns (address payable) {
-        return address(uint160(account));
-    }
-
-}
-
-// File: contracts\pak\ICollection.sol
-
-pragma solidity ^0.5.0;
-
-interface ICollection {
-
-    // ERC721
-    function transferFrom(address from, address to, uint256 tokenId) external;
-
-    // ERC1155
-    function safeTransferFrom(address from, address to, uint256 tokenId, uint256 amount, bytes calldata data) external;
-
-}
-
-// File: contracts\pak\ASH.sol
-
-pragma solidity ^0.5.0;
-
-
-
-
-
-
-contract ASH is Ownable, ERC20 {
-
-    using RealMath for uint256;
-    using Address for address;
-
-    bytes4 private constant _ERC1155_RECEIVED = 0xf23a6e61;
-
-    event CollectionWhitelist(address collection, bool status);
-    event AssetWhitelist(address collection, uint256 assetId, bool status);
-
-    event CollectionBlacklist(address collection, bool status);
-    event AssetBlacklist(address collection, uint256 assetId, bool status);
-
-    event Swapped(address collection, uint256 assetId, address account, uint256 amount, bool isWhitelist, bool isERC721);
-
-    // Mapping "collection" whitelist
-    mapping(address => bool) private _collectionWhitelist;
-
-    // Mapping "asset" whitelist
-    mapping(address => mapping(uint256 => bool)) private _assetWhitelist;
-
-    // Mapping "collection" blacklist
-    mapping(address => bool) private _collectionBlacklist;
-
-    // Mapping "asset" blacklist
-    mapping(address => mapping(uint256 => bool)) private _assetBlacklist;
-
-    bool public isStarted = false;
-
-    bool public isERC721Paused = false;
-    bool public isERC1155Paused = true;
-
-    /**
-     * @dev Throws if NFT swapping does not start yet
-     */
-    modifier started() {
-        require(isStarted, "ASH: NFT swapping does not start yet");
-        _;
-    }
-
-    /**
-     * @dev Throws if collection or asset is in blacklist
-     */
-    modifier notInBlacklist(address collection, uint256 assetId) {
-        require(!_collectionBlacklist[collection] && !_assetBlacklist[collection][assetId], "ASH: collection or asset is in blacklist");
-        _;
-    }
-
-    /**
-     * @dev Initializes the contract settings
-     */
-    constructor(string memory name, string memory symbol)
-        public
-        ERC20(name, symbol, 18)
-    {}
-
-    /**
-     * @dev Starts to allow NFT swapping
-     */
-    function start()
-        public
-        onlyOwner
-    {
-        isStarted = true;
-    }
-
-    /**
-     * @dev Pauses NFT (everything) swapping
-     */
-    function pause(bool erc721)
-        public
-        onlyOwner
-    {
-        if (erc721) {
-            isERC721Paused = true;
-
-        } else {
-            isERC1155Paused = true;
-        }
-    }
-
-    /**
-     * @dev Resumes NFT (everything) swapping
-     */
-    function resume(bool erc721)
-        public
-        onlyOwner
-    {
-        if (erc721) {
-            isERC721Paused = false;
-
-        } else {
-            isERC1155Paused = false;
-        }
-    }
-
-    /**
-     * @dev Adds or removes collections in whitelist
-     */
-    function updateWhitelist(address[] memory collections, bool status)
-        public
-        onlyOwner
-    {
-        uint256 length = collections.length;
-
-        for (uint256 i = 0; i < length; i++) {
-            address collection = collections[i];
-
-            if (_collectionWhitelist[collection] != status) {
-                _collectionWhitelist[collection] = status;
-
-                emit CollectionWhitelist(collection, status);
-            }
-        }
-    }
-
-    /**
-     * @dev Adds or removes assets in whitelist
-     */
-    function updateWhitelist(address[] memory collections, uint256[] memory assetIds, bool status)
-        public
-        onlyOwner
-    {
-        uint256 length = collections.length;
-
-        require(length == assetIds.length, "ASH: length of arrays is not equal");
-
-        for (uint256 i = 0; i < length; i++) {
-            address collection = collections[i];
-            uint256 assetId = assetIds[i];
-
-            if (_assetWhitelist[collection][assetId] != status) {
-                _assetWhitelist[collection][assetId] = status;
-
-                emit AssetWhitelist(collection, assetId, status);
-            }
-        }
-    }
-
-    /**
-      * @dev Returns true if collection is in whitelist
-      */
-    function isWhitelist(address collection)
-        public
-        view
-        returns (bool)
-    {
-        return _collectionWhitelist[collection];
-    }
-
-    /**
-      * @dev Returns true if asset is in whitelist
-      */
-    function isWhitelist(address collection, uint256 assetId)
-        public
-        view
-        returns (bool)
-    {
-        return _assetWhitelist[collection][assetId];
-    }
-
-    /**
-     * @dev Adds or removes collections in blacklist
-     */
-    function updateBlacklist(address[] memory collections, bool status)
-        public
-        onlyOwner
-    {
-        uint256 length = collections.length;
-
-        for (uint256 i = 0; i < length; i++) {
-            address collection = collections[i];
-
-            if (_collectionBlacklist[collection] != status) {
-                _collectionBlacklist[collection] = status;
-
-                emit CollectionBlacklist(collection, status);
-            }
-        }
-    }
-
-    /**
-     * @dev Adds or removes assets in blacklist
-     */
-    function updateBlacklist(address[] memory collections, uint256[] memory assetIds, bool status)
-        public
-        onlyOwner
-    {
-        uint256 length = collections.length;
-
-        require(length == assetIds.length, "ASH: length of arrays is not equal");
-
-        for (uint256 i = 0; i < length; i++) {
-            address collection = collections[i];
-            uint256 assetId = assetIds[i];
-
-            if (_assetBlacklist[collection][assetId] != status) {
-                _assetBlacklist[collection][assetId] = status;
-
-                emit AssetBlacklist(collection, assetId, status);
-            }
-        }
-    }
-
-    /**
-      * @dev Returns true if collection is in blacklist
-      */
-    function isBlacklist(address collection)
-        public
-        view
-        returns (bool)
-    {
-        return _collectionBlacklist[collection];
-    }
-
-    /**
-      * @dev Returns true if asset is in blacklist
-      */
-    function isBlacklist(address collection, uint256 assetId)
-        public
-        view
-        returns (bool)
-    {
-        return _assetBlacklist[collection][assetId];
-    }
-
-    /**
-     * @dev Burns tokens with a specific `amount`
-     */
-    function burn(uint256 amount)
-        public
-    {
-        _burn(_msgSender(), amount);
-    }
-
-    /**
-     * @dev Calculates token amount that user will receive when burn
-     */
-    function calculateToken(address collection, uint256 assetId)
-        public
-        view
-        returns (bool, uint256)
-    {
-        bool whitelist = false;
-
-        // Checks if collection or asset in whitelist
-        if (_collectionWhitelist[collection] || _assetWhitelist[collection][assetId]) {
-            whitelist = true;
-        }
-
-        uint256 exp = totalSupply().rdiv(1000000 * (10 ** 18));
-
-        uint256 multiplier = RealMath.rdiv(1, 2).rpow(exp);
-
-        uint256 result;
-
-        // Calculates token amount that will issue
-        if (whitelist) {
-            result = multiplier.rmul(1000 * (10 ** 18));
-
-        } else {
-            result = multiplier.rmul(multiplier).rmul(2 * (10 ** 18));
-        }
-
-        return (whitelist, result);
-    }
-
-    /**
-     * @dev Issues ERC20 tokens
-     */
-    function _issueToken(address collection, uint256 assetId, address account, bool isERC721)
-        private
-    {
-        (bool whitelist, uint256 amount) = calculateToken(collection, assetId);
-
-        if (!whitelist) {
-            if (isERC721) {
-                require(!isERC721Paused, "ASH: ERC721 swapping paused");
-
-            } else {
-                require(!isERC1155Paused, "ASH: ERC1155 swapping paused");
-            }
-        }
-
-        require(amount > 0, "ASH: amount is invalid");
-
-        // Issues tokens
-        _mint(account, amount);
-
-        emit Swapped(collection, assetId, account, amount, whitelist, isERC721);
-    }
-
-    /**
-     * @dev Swaps ERC721 to ERC20
-     */
-    function swapERC721(address collection, uint256 assetId)
-        public
-        started()
-        notInBlacklist(collection, assetId)
-    {
-        address msgSender = _msgSender();
-
-        require(!msgSender.isContract(), "ASH: caller is invalid");
-
-        // Transfers ERC721 and lock in this smart contract
-        ICollection(collection).transferFrom(msgSender, address(this), assetId);
-
-        // Issues ERC20 tokens for caller
-        _issueToken(collection, assetId, msgSender, true);
-    }
-
-    /**
-     * @dev Swaps ERC1155 to ERC20
-     */
-    function swapERC1155(address collection, uint256 assetId)
-        public
-        started()
-        notInBlacklist(collection, assetId)
-    {
-        address msgSender = _msgSender();
-
-        require(!msgSender.isContract(), "ASH: caller is invalid");
-
-        // Transfers ERC1155 and lock in this smart contract
-        ICollection(collection).safeTransferFrom(msgSender, address(this), assetId, 1, "");
-
-        // Issues ERC20 tokens for caller
-        _issueToken(collection, assetId, msgSender, false);
-    }
-
-    function onERC1155Received(address operator, address from, uint256 id, uint256 value, bytes calldata data)
-        external
-        returns (bytes4)
-    {
-        return _ERC1155_RECEIVED;
-    }
-
 }

@@ -1,284 +1,337 @@
-// File: @openzeppelin/contracts/math/SafeMath.sol
+/**
+ *Submitted for verification at Etherscan.io on 2021-10-10
+*/
 
-// SPDX-License-Identifier: MIT
+// File: contracts/Context.sol
 
-pragma solidity ^0.6.0;
+
+
+pragma solidity ^0.8.0;
+
+/*
+ * @dev Provides information about the current execution context, including the
+ * sender of the transaction and its data. While these are generally available
+ * via msg.sender and msg.data, they should not be accessed in such a direct
+ * manner, since when dealing with meta-transactions the account sending and
+ * paying for execution may not be the actual sender (as far as an application
+ * is concerned).
+ *
+ * This contract is only required for intermediate, library-like contracts.
+ */
+abstract contract Context {
+    function _msgSender() internal view virtual returns (address) {
+        return msg.sender;
+    }
+
+    function _msgData() internal view virtual returns (bytes calldata) {
+        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
+        return msg.data;
+    }
+}
+
+// File: contracts/Ownable.sol
+
+
+
+pragma solidity ^0.8.0;
+
 
 /**
- * @dev Wrappers over Solidity's arithmetic operations with added overflow
- * checks.
+ * @dev Contract module which provides a basic access control mechanism, where
+ * there is an account (an owner) that can be granted exclusive access to
+ * specific functions.
  *
- * Arithmetic operations in Solidity wrap on overflow. This can easily result
- * in bugs, because programmers usually assume that an overflow raises an
- * error, which is the standard behavior in high level programming languages.
- * `SafeMath` restores this intuition by reverting the transaction when an
- * operation overflows.
+ * By default, the owner account will be the one that deploys the contract. This
+ * can later be changed with {transferOwnership}.
  *
- * Using this library instead of the unchecked operations eliminates an entire
- * class of bugs, so it's recommended to use it always.
+ * This module is used through inheritance. It will make available the modifier
+ * `onlyOwner`, which can be applied to your functions to restrict their use to
+ * the owner.
  */
-library SafeMath {
-    /**
-     * @dev Returns the addition of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `+` operator.
-     *
-     * Requirements:
-     *
-     * - Addition cannot overflow.
-     */
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a + b;
-        require(c >= a, "SafeMath: addition overflow");
+abstract contract Ownable is Context {
+    address private _owner;
 
-        return c;
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    /**
+     * @dev Initializes the contract setting the deployer as the initial owner.
+     */
+    constructor() {
+        _setOwner(_msgSender());
     }
 
     /**
-     * @dev Returns the subtraction of two unsigned integers, reverting on
-     * overflow (when the result is negative).
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
+     * @dev Returns the address of the current owner.
      */
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        return sub(a, b, "SafeMath: subtraction overflow");
+    function owner() public view virtual returns (address) {
+        return _owner;
     }
 
     /**
-     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
-     * overflow (when the result is negative).
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
+     * @dev Throws if called by any account other than the owner.
      */
-    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        require(b <= a, errorMessage);
-        uint256 c = a - b;
-
-        return c;
+    modifier onlyOwner() {
+        require(owner() == _msgSender(), "Ownable: caller is not the owner");
+        _;
     }
 
     /**
-     * @dev Returns the multiplication of two unsigned integers, reverting on
-     * overflow.
+     * @dev Leaves the contract without owner. It will not be possible to call
+     * `onlyOwner` functions anymore. Can only be called by the current owner.
      *
-     * Counterpart to Solidity's `*` operator.
-     *
-     * Requirements:
-     *
-     * - Multiplication cannot overflow.
+     * NOTE: Renouncing ownership will leave the contract without an owner,
+     * thereby removing any functionality that is only available to the owner.
      */
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-        // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
-        if (a == 0) {
-            return 0;
+    function renounceOwnership() public virtual onlyOwner {
+        _setOwner(address(0));
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
+     */
+    function transferOwnership(address newOwner) public virtual onlyOwner {
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        _setOwner(newOwner);
+    }
+
+    function _setOwner(address newOwner) private {
+        address oldOwner = _owner;
+        _owner = newOwner;
+        emit OwnershipTransferred(oldOwner, newOwner);
+    }
+}
+// File: contracts/Pineapple.sol
+
+
+
+pragma solidity ^0.8.9;
+
+
+/**
+ * ---------------------------------------------------------
+ * WELCOME TO THE PINEAPPLE LOTTERY
+ * The Lottery Master Wishes You All The Best
+ * ---------------------------------------------------------
+ */
+ 
+contract Pineapple is Ownable {
+    address payable private _headPineapple;
+    address payable private _devPineapple;
+    
+    
+    uint public ticketsSold;
+    bool public isSaleOpen;
+    bool private _locked;
+    
+    uint public constant MAX_TICKETS = 2600;
+    uint public constant MAX_PURCHASE = 100;
+    uint256 private constant PAYMENT_GAS_LIMIT = 5000;
+    uint256 public constant PRICE_PER_TICKET = 12500000 gwei;
+    
+    mapping (uint => address) public ticketOwner;
+    mapping (address => uint) public ticketsPuchasedByAddress;
+    
+    bytes32 private _purchaseHash;
+    uint private _randomUint;
+    
+    mapping (string => uint[]) public winnerList; // This mapping is to track winners. Prize Position => Ticket Number
+    mapping (uint => bool) public selectedTickets; //This is to ensure ticket has not already been selected. Ticket Number => Prize position. IF !=0, then that ticket has already won something
+
+
+    
+    constructor () {
+        _headPineapple = payable(0xe4F3f40D41aaF11fC0d86B55De9F8F0cE3dfd1f4);
+        _devPineapple = payable(0xD3EFB591A0336037757a21e747C6c4E3e367dedA);
+        isSaleOpen = false;
+        _purchaseHash = keccak256(abi.encodePacked(block.difficulty, block.timestamp, msg.sender));
+        _randomUint = uint(keccak256(abi.encodePacked(block.coinbase, block.basefee, block.number)));
+    }
+    
+    // Event functions here
+    event Purchased(address indexed sender, uint[] ticketsBought);
+    event Giveaway(address indexed reciever, uint[] ticketsReceived);
+    event WinnerSelection(string indexed prize, uint[] ticketsSelected);
+    
+    // Setter functions here
+    function setIsPublicSalesOpen(bool status) public onlyOwner {
+        isSaleOpen = status;
+    }
+
+    // Getter function
+    function showWinningTickets (string calldata prize) public view returns (uint[] memory){
+        uint[] memory winningTicketsListing = winnerList[prize];
+        return winningTicketsListing;
+    }
+
+    
+    // Prevent function from being called while still being executed.
+    modifier functionLock() {
+        require(!_locked, "Function Locked");
+        _locked = true;
+        _;
+        _locked = false;
+    }
+    
+    // Buy Ticket Function. Remove onlyOwner
+    function buyTicket (uint ticketQty) public payable functionLock {
+        // Check that sale is open
+        require (isSaleOpen, "Sale is not open"); 
+        
+        // Check that ticketsSold + ticketQty is less than MAX_TICKETS
+        require (ticketsSold + ticketQty <= MAX_TICKETS, "Not enough tickets remaining");
+        
+        // Check that ticketqty is less than  MAX_PURCHASE
+        require (ticketQty <= MAX_PURCHASE, "Purchase qty > 100");
+        
+        // Check that amount sent is equivalent to qty x PRICE_PER_TICKET
+        require (msg.value >= ticketQty*PRICE_PER_TICKET, "Insufficient payment"); 
+        
+        // get how many tickets have been sold
+        uint currentTicket = ticketsSold + 1;
+        
+        // Track ticket numbers to emit event
+        uint[] memory purchasedTicketsArray = new uint[](ticketQty);
+        
+        // create tickets in ticket owner (based on how many have already been sold)
+        for (uint i = 0; i < ticketQty; i++){
+            ticketOwner[currentTicket + i] = msg.sender;
+            purchasedTicketsArray[i] = currentTicket + i;
         }
-
-        uint256 c = a * b;
-        require(c / a == b, "SafeMath: multiplication overflow");
-
-        return c;
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers. Reverts on
-     * division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        return div(a, b, "SafeMath: division by zero");
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers. Reverts with custom message on
-     * division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        require(b > 0, errorMessage);
-        uint256 c = a / b;
-        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-
-        return c;
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * Reverts when dividing by zero.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        return mod(a, b, "SafeMath: modulo by zero");
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * Reverts with custom message when dividing by zero.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        require(b != 0, errorMessage);
-        return a % b;
-    }
-}
-
-// File: contracts/IETradingNFT.sol
-
-pragma solidity 0.6.12;
-
-interface IETradingNFT {
-    function mint(address _to, uint256 _id, uint256 _quantity, bytes memory _data) external ;
-	function totalSupply(uint256 _id) external view returns (uint256);
-    function maxSupply(uint256 _id) external view returns (uint256);
-    function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _amount, bytes calldata _data) external;
-}
-
-// File: contracts/EnftTrader.sol
-
-pragma solidity 0.6.12;
-
-
-
-/**
- * @title EnftTrade
- */
-
-contract EnftTrader {
-    using SafeMath for uint256;
-    // Enft token.
-    IETradingNFT ETradingNFT;
-    address payable public dev;
-
-    // Info of each order.
-    struct EnftOrderInfo {
-        address payable owner; // owner
-        uint256 price; // price 
-        uint256 enftID; // enftID
-        bool isOpen; // open order
-    }
-
-    // Info of each order list.
-    EnftOrderInfo[] public orderList;
-
-    uint256 private _currentOrderID = 0;
-
-    event Order(uint256 indexed orderID, address indexed user, uint256 indexed wid, uint256 price);
-    event Cancel(uint256 indexed orderID, address indexed user, uint256 indexed wid);
-    event Buy(uint256 indexed orderID, address indexed user, uint256 indexed wid);
-
-    constructor(
-        IETradingNFT _ETradingNFT
-    ) public {
-        ETradingNFT = _ETradingNFT;
-        dev = msg.sender;
-        orderList.push(EnftOrderInfo({
-            owner: address(0),
-            price: 0,
-            enftID: 0,
-            isOpen: false
-        }));
-    }
-
-    function withdrawFee() external {
-        require(msg.sender == dev, "only dev");
-        dev.transfer(address(this).balance);
-    }
-
-    function orderEnft(uint256 _enftID, uint256 _price) external {
-        // transferFrom
-        ETradingNFT.safeTransferFrom(msg.sender, address(this), _enftID, 1, "");
-
-        orderList.push(EnftOrderInfo({
-            owner: msg.sender,
-            price: _price,
-            enftID: _enftID,
-            isOpen: true
-        }));
-
-        uint256 _id = _getNextOrderID();
-        _incrementOrderId();
-
-        emit Order(_id, msg.sender, _enftID, _price);
+        
+        // add tickets to ticketsPuchasedByAddress (ensure to add any existing purchase tickets)
+        ticketsPuchasedByAddress[msg.sender] = ticketsPuchasedByAddress[msg.sender] + ticketQty;
+        
+        //add number purchased to tally of tickets sold
+        ticketsSold = ticketsSold + ticketQty;
+        
+        // calculate a purchase purchaseHash
+        _purchaseHash = bytes32(keccak256(abi.encodePacked(_purchaseHash, block.difficulty, block.timestamp, msg.sender)));
+        
+        // calculate amounts to transfer
+        uint devAmount = (msg.value / 10000) * 2000;
+        uint pineappleAmount = msg.value - devAmount;
+        
+        // transfer amounts to dev wallet
+        (bool devSuccess, ) = _devPineapple.call{ value:devAmount, gas: PAYMENT_GAS_LIMIT }("");
+        require(devSuccess, "Dev payment failed");
+        
+        // transfer amounts to pineapple wallet
+        (bool pineappleSuccess, ) = _headPineapple.call{ value:pineappleAmount, gas: PAYMENT_GAS_LIMIT }("");
+        require(pineappleSuccess, "Pineapple payment failed");
+        
+        emit Purchased(msg.sender, purchasedTicketsArray);
 
     }
-
-    function cancel(uint256 orderID) external {
-        EnftOrderInfo storage orderInfo = orderList[orderID];
-        require(orderInfo.owner == msg.sender, "not your order");
-        require(orderInfo.isOpen == true, "only open order can be cancel");
-
-        orderInfo.isOpen = false;
-
-        // transferFrom
-        ETradingNFT.safeTransferFrom(address(this), msg.sender, orderInfo.enftID, 1, "");
-
-        emit Cancel(orderID, msg.sender, orderInfo.enftID);
-
+    
+    // Bonus ticket giveaway. Ensure that its onlyOwner
+    function bonusGiveway (address[] calldata winnerAddress, uint giveawayQty) public onlyOwner functionLock {
+        // track winners number
+        uint winners = winnerAddress.length;
+        
+        // Check that ticketsSold + ticketQty is less than MAX_TICKETS
+        require (ticketsSold + (winners*giveawayQty) <= MAX_TICKETS, "Not enough tickets remaining");
+        
+        // get how many tickets have been sold
+        uint currentTicket = ticketsSold + 1;
+        
+        bytes32 hashGeneration = _purchaseHash;
+        
+        
+        // create tickets in ticket recipient (based on how many have already been sold)
+        for (uint i = 0; i < winners; i++){
+            address giveawayAddress = winnerAddress[i];
+            
+            // Track ticket numbers to emit event
+            uint[] memory giveawayTicketsArray = new uint[](giveawayQty);
+            
+            for (uint j = 0; j < giveawayQty; j++){
+                ticketOwner[currentTicket] = giveawayAddress;
+                giveawayTicketsArray[j] = currentTicket;
+                currentTicket++;
+            }
+            
+            // add tickets to ticketsPuchasedByAddress (ensure to add any existing purchase tickets)
+            ticketsPuchasedByAddress[giveawayAddress] = ticketsPuchasedByAddress[giveawayAddress] + giveawayQty;
+            
+            // Emit tickets given away for this address
+            emit Giveaway(giveawayAddress, giveawayTicketsArray);
+            
+            // calculate a purchase purchaseHash
+            hashGeneration = bytes32(keccak256(abi.encodePacked(hashGeneration, block.difficulty, block.timestamp, giveawayAddress)));
+        }
+        
+        //add number given away to tally of tickets sold
+        ticketsSold = ticketsSold + (winners*giveawayQty);
+        
+        _purchaseHash = hashGeneration;
     }
-
-    function buyEnft(uint256 orderID) external payable {
-        EnftOrderInfo storage orderInfo = orderList[orderID];
-        require(orderInfo.owner != address(0),"bad address");
-        require(orderInfo.owner != msg.sender, "it is your order");
-        require(orderInfo.isOpen == true, "only open order can buy");
-        require(msg.value == orderInfo.price, "error price");
-
-        // 3% fee
-        uint256 sellerValue = msg.value.mul(97).div(100);
-        orderInfo.isOpen = false;
-
-        // transferFrom
-        ETradingNFT.safeTransferFrom(address(this), msg.sender, orderInfo.enftID, 1, "");
-        orderInfo.owner.transfer(sellerValue);
-        emit Buy(orderID, msg.sender, orderInfo.enftID);
+    
+    
+ 
+    // Generic function to determine winner. Aim to be called any number of times
+    function drawTicket (uint randomiserNumber, bytes32 randomHash) internal view returns(uint pickedTicket, bytes32 newGeneratedRandomHash) {
+        bytes32 newRandomHash;
+        uint pickTicket;
+        
+        for (int i = 0; i < 10; i++) {
+            newRandomHash = keccak256(abi.encodePacked(randomHash, block.difficulty, block.coinbase, randomiserNumber, i));
+            pickTicket = uint(newRandomHash)%ticketsSold;
+            
+            if (selectedTickets[pickTicket] == false && pickTicket != 0) {
+                return (pickTicket, newRandomHash);
+            } else if (pickTicket == 0 && selectedTickets[ticketsSold]) {
+                return (ticketsSold, newRandomHash);
+            }
+        } 
+        
+        return (pickTicket, newRandomHash);
     }
-
-	function _getNextOrderID() private view returns (uint256) {
-		return _currentOrderID.add(1);
-	}
-	function _incrementOrderId() private {
-		_currentOrderID++;
-	}
-
-    function onERC1155Received(address _operator, address _from, uint256 _id, uint256 _value, bytes calldata _data) external returns(bytes4){
-        return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
+    
+    
+    // Winner selector function. Use this to select any winner due to bug, as well as select Big Prize and Grand Prize
+    function winnerSelector(string memory prize, uint prizes) public onlyOwner functionLock {
+        // Ensure that all tickets are sold out or that the public sale has been closed
+        require (ticketsSold == MAX_TICKETS || isSaleOpen == false, "Tickets not sold out or sale not yet closed");
+        
+        // Ensure that prize position has not been allocated previously
+        require (winnerList[prize].length == 0, "Winner for this place already allocated");
+        
+        // get _purchaseHash
+        bytes32 generatorHash = _purchaseHash;
+        
+        // get a random number
+        uint generatorNumber = _randomUint;
+        
+        //Temporary storage for winner selection
+        uint[] memory selectedTicketsArray = new uint[](prizes);
+        
+        for (uint i = 0; i < prizes; i++){
+           // Draw the winning ticket
+           (uint selectedTicket, bytes32 newGeneratorHash) = drawTicket(generatorNumber, generatorHash);
+           
+           // store winning item in selectedTicketsArray
+           selectedTicketsArray[i] = selectedTicket;
+           
+           // store ticket in selectedTickets
+           selectedTickets[selectedTicket] = true;
+           
+           //update generatorHash & generatorNumber
+           generatorHash = newGeneratorHash;
+           generatorNumber = selectedTicket;
+          
+        }
+        
+        //Store winning list on winnerList
+        winnerList[prize] = selectedTicketsArray;
+        
+        //Emit tickets selectedTicketsArray
+        emit WinnerSelection(prize, selectedTicketsArray);
+        
+        // Update _purchaseHash _randomUint
+        _purchaseHash = generatorHash;
+        _randomUint = uint(keccak256(abi.encodePacked(block.coinbase, block.basefee, block.number)));
+        
     }
+    
 }

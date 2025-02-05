@@ -1,551 +1,813 @@
-/**
- *Submitted for verification at Etherscan.io on 2021-05-22
+pragma solidity ^0.4.20;
+
+/*
+* Welcome to Power of HODL (POHD) pohd.io ..
+* ==========================*
+*  ____   ___  _   _ ____   *
+* |  _ \ / _ \| | | |  _ \  *
+* | |_) | | | | |_| | | | | *
+* |  __/| |_| |  _  | |_| | *
+* |_|    \___/|_| |_|____/  *
+*                           *
+* ==========================*
+* -> What?
+* This source code is copy of Proof of Weak Legs (POWL) which is copy of POWH3D
+* Only difference is that, you will receive 25% dividends.
 */
 
-// SPDX-License-Identifier: MIT
-
-/*
- * Token has been generated for FREE using https://vittominacori.github.io/erc20-generator/
- *
- * NOTE: "Contract Source Code Verified (Similar Match)" means that this Token is similar to other tokens deployed
- *  using the same generator. It is not an issue. It means that you won't need to verify your source code because of
- *  it is already verified.
- *
- * DISCLAIMER: GENERATOR'S AUTHOR IS FREE OF ANY LIABILITY REGARDING THE TOKEN AND THE USE THAT IS MADE OF IT.
- *  The following code is provided under MIT License. Anyone can use it as per their needs.
- *  The generator's purpose is to make people able to tokenize their ideas without coding or paying for it.
- *  Source code is well tested and continuously updated to reduce risk of bugs and to introduce language optimizations.
- *  Anyway the purchase of tokens involves a high degree of risk. Before acquiring tokens, it is recommended to
- *  carefully weighs all the information and risks detailed in Token owner's Conditions.
- */
-
-
-// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
-
-
-
-pragma solidity ^0.8.0;
-
-/**
- * @dev Interface of the ERC20 standard as defined in the EIP.
- */
-interface IERC20 {
-    /**
-     * @dev Returns the amount of tokens in existence.
-     */
-    function totalSupply() external view returns (uint256);
-
-    /**
-     * @dev Returns the amount of tokens owned by `account`.
-     */
-    function balanceOf(address account) external view returns (uint256);
-
-    /**
-     * @dev Moves `amount` tokens from the caller's account to `recipient`.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Returns the remaining number of tokens that `spender` will be
-     * allowed to spend on behalf of `owner` through {transferFrom}. This is
-     * zero by default.
-     *
-     * This value changes when {approve} or {transferFrom} are called.
-     */
-    function allowance(address owner, address spender) external view returns (uint256);
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * IMPORTANT: Beware that changing an allowance with this method brings the risk
-     * that someone may use both the old and the new allowance by unfortunate
-     * transaction ordering. One possible solution to mitigate this race
-     * condition is to first reduce the spender's allowance to 0 and set the
-     * desired value afterwards:
-     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-     *
-     * Emits an {Approval} event.
-     */
-    function approve(address spender, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Moves `amount` tokens from `sender` to `recipient` using the
-     * allowance mechanism. `amount` is then deducted from the caller's
-     * allowance.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
-     *
-     * Note that `value` may be zero.
-     */
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to {approve}. `value` is the new allowance.
-     */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-}
-
-// File: @openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol
-
-
-
-pragma solidity ^0.8.0;
-
-
-/**
- * @dev Interface for the optional metadata functions from the ERC20 standard.
- *
- * _Available since v4.1._
- */
-interface IERC20Metadata is IERC20 {
-    /**
-     * @dev Returns the name of the token.
-     */
-    function name() external view returns (string memory);
-
-    /**
-     * @dev Returns the symbol of the token.
-     */
-    function symbol() external view returns (string memory);
-
-    /**
-     * @dev Returns the decimals places of the token.
-     */
-    function decimals() external view returns (uint8);
-}
-
-// File: @openzeppelin/contracts/utils/Context.sol
-
-
-
-pragma solidity ^0.8.0;
-
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
-abstract contract Context {
-    function _msgSender() internal view virtual returns (address) {
-        return msg.sender;
+contract Hourglass {
+    /*=================================
+    =            MODIFIERS            =
+    =================================*/
+    // only people with tokens
+    modifier onlyBagholders() {
+        require(myTokens() > 0);
+        _;
     }
-
-    function _msgData() internal view virtual returns (bytes calldata) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
+    
+    // only people with profits
+    modifier onlyStronghands() {
+        require(myDividends(true) > 0);
+        _;
     }
-}
-
-// File: @openzeppelin/contracts/token/ERC20/ERC20.sol
-
-
-
-pragma solidity ^0.8.0;
-
-
-
-
-/**
- * @dev Implementation of the {IERC20} interface.
- *
- * This implementation is agnostic to the way tokens are created. This means
- * that a supply mechanism has to be added in a derived contract using {_mint}.
- * For a generic mechanism see {ERC20PresetMinterPauser}.
- *
- * TIP: For a detailed writeup see our guide
- * https://forum.zeppelin.solutions/t/how-to-implement-erc20-supply-mechanisms/226[How
- * to implement supply mechanisms].
- *
- * We have followed general OpenZeppelin guidelines: functions revert instead
- * of returning `false` on failure. This behavior is nonetheless conventional
- * and does not conflict with the expectations of ERC20 applications.
- *
- * Additionally, an {Approval} event is emitted on calls to {transferFrom}.
- * This allows applications to reconstruct the allowance for all accounts just
- * by listening to said events. Other implementations of the EIP may not emit
- * these events, as it isn't required by the specification.
- *
- * Finally, the non-standard {decreaseAllowance} and {increaseAllowance}
- * functions have been added to mitigate the well-known issues around setting
- * allowances. See {IERC20-approve}.
- */
-contract ERC20 is Context, IERC20, IERC20Metadata {
-    mapping (address => uint256) private _balances;
-
-    mapping (address => mapping (address => uint256)) private _allowances;
-
-    uint256 private _totalSupply;
-
-    string private _name;
-    string private _symbol;
-
-    /**
-     * @dev Sets the values for {name} and {symbol}.
-     *
-     * The defaut value of {decimals} is 18. To select a different value for
-     * {decimals} you should overload it.
-     *
-     * All two of these values are immutable: they can only be set once during
-     * construction.
-     */
-    constructor (string memory name_, string memory symbol_) {
-        _name = name_;
-        _symbol = symbol_;
+    
+    // administrators can:
+    // -> change the name of the contract
+    // -> change the name of the token
+    // -> change the PoS difficulty (How many tokens it costs to hold a masternode, in case it gets crazy high later)
+    // they CANNOT:
+    // -> take funds
+    // -> disable withdrawals
+    // -> kill the contract
+    // -> change the price of tokens
+    modifier onlyAdministrator(){
+        address _customerAddress = msg.sender;
+        require(administrators[keccak256(_customerAddress)]);
+        _;
     }
-
-    /**
-     * @dev Returns the name of the token.
-     */
-    function name() public view virtual override returns (string memory) {
-        return _name;
+    
+    
+    // ensures that the first tokens in the contract will be equally distributed
+    // meaning, no divine dump will be ever possible
+    // result: healthy longevity.
+    modifier antiEarlyWhale(uint256 _amountOfEthereum){
+        address _customerAddress = msg.sender;
+        
+        // are we still in the vulnerable phase?
+        // if so, enact anti early whale protocol 
+        if( onlyAmbassadors && ((totalEthereumBalance() - _amountOfEthereum) <= ambassadorQuota_ )){
+            require(
+                // is the customer in the ambassador list?
+                ambassadors_[_customerAddress] == true &&
+                
+                // does the customer purchase exceed the max ambassador quota?
+                (ambassadorAccumulatedQuota_[_customerAddress] + _amountOfEthereum) <= ambassadorMaxPurchase_
+                
+            );
+            
+            // updated the accumulated quota    
+            ambassadorAccumulatedQuota_[_customerAddress] = SafeMath.add(ambassadorAccumulatedQuota_[_customerAddress], _amountOfEthereum);
+        
+            // execute
+            _;
+        } else {
+            // in case the ether count drops low, the ambassador phase won&#39;t reinitiate
+            onlyAmbassadors = false;
+            _;    
+        }
+        
     }
-
-    /**
-     * @dev Returns the symbol of the token, usually a shorter version of the
-     * name.
-     */
-    function symbol() public view virtual override returns (string memory) {
-        return _symbol;
-    }
-
-    /**
-     * @dev Returns the number of decimals used to get its user representation.
-     * For example, if `decimals` equals `2`, a balance of `505` tokens should
-     * be displayed to a user as `5,05` (`505 / 10 ** 2`).
-     *
-     * Tokens usually opt for a value of 18, imitating the relationship between
-     * Ether and Wei. This is the value {ERC20} uses, unless this function is
-     * overridden;
-     *
-     * NOTE: This information is only used for _display_ purposes: it in
-     * no way affects any of the arithmetic of the contract, including
-     * {IERC20-balanceOf} and {IERC20-transfer}.
-     */
-    function decimals() public view virtual override returns (uint8) {
-        return 18;
-    }
-
-    /**
-     * @dev See {IERC20-totalSupply}.
-     */
-    function totalSupply() public view virtual override returns (uint256) {
-        return _totalSupply;
-    }
-
-    /**
-     * @dev See {IERC20-balanceOf}.
-     */
-    function balanceOf(address account) public view virtual override returns (uint256) {
-        return _balances[account];
-    }
-
-    /**
-     * @dev See {IERC20-transfer}.
-     *
-     * Requirements:
-     *
-     * - `recipient` cannot be the zero address.
-     * - the caller must have a balance of at least `amount`.
-     */
-    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(_msgSender(), recipient, amount);
-        return true;
-    }
-
-    /**
-     * @dev See {IERC20-allowance}.
-     */
-    function allowance(address owner, address spender) public view virtual override returns (uint256) {
-        return _allowances[owner][spender];
-    }
-
-    /**
-     * @dev See {IERC20-approve}.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function approve(address spender, uint256 amount) public virtual override returns (bool) {
-        _approve(_msgSender(), spender, amount);
-        return true;
-    }
-
-    /**
-     * @dev See {IERC20-transferFrom}.
-     *
-     * Emits an {Approval} event indicating the updated allowance. This is not
-     * required by the EIP. See the note at the beginning of {ERC20}.
-     *
-     * Requirements:
-     *
-     * - `sender` and `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `amount`.
-     * - the caller must have allowance for ``sender``'s tokens of at least
-     * `amount`.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(sender, recipient, amount);
-
-        uint256 currentAllowance = _allowances[sender][_msgSender()];
-        require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
-        _approve(sender, _msgSender(), currentAllowance - amount);
-
-        return true;
-    }
-
-    /**
-     * @dev Atomically increases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender] + addedValue);
-        return true;
-    }
-
-    /**
-     * @dev Atomically decreases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     * - `spender` must have allowance for the caller of at least
-     * `subtractedValue`.
-     */
-    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
-        uint256 currentAllowance = _allowances[_msgSender()][spender];
-        require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
-        _approve(_msgSender(), spender, currentAllowance - subtractedValue);
-
-        return true;
-    }
-
-    /**
-     * @dev Moves tokens `amount` from `sender` to `recipient`.
-     *
-     * This is internal function is equivalent to {transfer}, and can be used to
-     * e.g. implement automatic token fees, slashing mechanisms, etc.
-     *
-     * Emits a {Transfer} event.
-     *
-     * Requirements:
-     *
-     * - `sender` cannot be the zero address.
-     * - `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `amount`.
-     */
-    function _transfer(address sender, address recipient, uint256 amount) internal virtual {
-        require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
-
-        _beforeTokenTransfer(sender, recipient, amount);
-
-        uint256 senderBalance = _balances[sender];
-        require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
-        _balances[sender] = senderBalance - amount;
-        _balances[recipient] += amount;
-
-        emit Transfer(sender, recipient, amount);
-    }
-
-    /** @dev Creates `amount` tokens and assigns them to `account`, increasing
-     * the total supply.
-     *
-     * Emits a {Transfer} event with `from` set to the zero address.
-     *
-     * Requirements:
-     *
-     * - `to` cannot be the zero address.
-     */
-    function _mint(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: mint to the zero address");
-
-        _beforeTokenTransfer(address(0), account, amount);
-
-        _totalSupply += amount;
-        _balances[account] += amount;
-        emit Transfer(address(0), account, amount);
-    }
-
-    /**
-     * @dev Destroys `amount` tokens from `account`, reducing the
-     * total supply.
-     *
-     * Emits a {Transfer} event with `to` set to the zero address.
-     *
-     * Requirements:
-     *
-     * - `account` cannot be the zero address.
-     * - `account` must have at least `amount` tokens.
-     */
-    function _burn(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: burn from the zero address");
-
-        _beforeTokenTransfer(account, address(0), amount);
-
-        uint256 accountBalance = _balances[account];
-        require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
-        _balances[account] = accountBalance - amount;
-        _totalSupply -= amount;
-
-        emit Transfer(account, address(0), amount);
-    }
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the `owner` s tokens.
-     *
-     * This internal function is equivalent to `approve`, and can be used to
-     * e.g. set automatic allowances for certain subsystems, etc.
-     *
-     * Emits an {Approval} event.
-     *
-     * Requirements:
-     *
-     * - `owner` cannot be the zero address.
-     * - `spender` cannot be the zero address.
-     */
-    function _approve(address owner, address spender, uint256 amount) internal virtual {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
-
-        _allowances[owner][spender] = amount;
-        emit Approval(owner, spender, amount);
-    }
-
-    /**
-     * @dev Hook that is called before any transfer of tokens. This includes
-     * minting and burning.
-     *
-     * Calling conditions:
-     *
-     * - when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
-     * will be to transferred to `to`.
-     * - when `from` is zero, `amount` tokens will be minted for `to`.
-     * - when `to` is zero, `amount` of ``from``'s tokens will be burned.
-     * - `from` and `to` are never both zero.
-     *
-     * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
-     */
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
-}
-
-// File: contracts/service/ServicePayer.sol
+    
+    
+    /*==============================
+    =            EVENTS            =
+    ==============================*/
+    event onTokenPurchase(
+        address indexed customerAddress,
+        uint256 incomingEthereum,
+        uint256 tokensMinted,
+        address indexed referredBy
+    );
+    
+    event onTokenSell(
+        address indexed customerAddress,
+        uint256 tokensBurned,
+        uint256 ethereumEarned
+    );
+    
+    event onReinvestment(
+        address indexed customerAddress,
+        uint256 ethereumReinvested,
+        uint256 tokensMinted
+    );
+    
+    event onWithdraw(
+        address indexed customerAddress,
+        uint256 ethereumWithdrawn
+    );
+    
+    // ERC20
+    event Transfer(
+        address indexed from,
+        address indexed to,
+        uint256 tokens
+    );
+    
+    
+    /*=====================================
+    =            CONFIGURABLES            =
+    =====================================*/
+    string public name = "POHD";
+    string public symbol = "POHD";
+    uint8 constant public decimals = 18;
+    uint8 constant internal dividendFee_ = 2;
+    uint256 constant internal tokenPriceInitial_ = 0.0000001 ether;
+    uint256 constant internal tokenPriceIncremental_ = 0.00000001 ether;
+    uint256 constant internal magnitude = 2**64;
+    
+    // proof of stake (defaults at 100 tokens)
+    uint256 public stakingRequirement = 5e18;
+    
+    // ambassador program
+    mapping(address => bool) internal ambassadors_;
+    uint256 constant internal ambassadorMaxPurchase_ = 10 ether;
+    uint256 constant internal ambassadorQuota_ = 10 ether;
+    
+    
+    
+   /*================================
+    =            DATASETS            =
+    ================================*/
+    // amount of shares for each address (scaled number)
+    mapping(address => uint256) internal tokenBalanceLedger_;
+    mapping(address => uint256) internal referralBalance_;
+    mapping(address => int256) internal payoutsTo_;
+    mapping(address => uint256) internal ambassadorAccumulatedQuota_;
+    uint256 internal tokenSupply_ = 0;
+    uint256 internal profitPerShare_;
+    
+    // administrator list (see above on what they can do)
+    mapping(bytes32 => bool) public administrators;
+    
+    // when this is set to true, only ambassadors can purchase tokens (this prevents a whale premine, it ensures a fairly distributed upper pyramid)
+    bool public onlyAmbassadors = false;
+    
 
 
-
-pragma solidity ^0.8.0;
-
-interface IPayable {
-    function pay(string memory serviceName) external payable;
-}
-
-/**
- * @title ServicePayer
- * @dev Implementation of the ServicePayer
- */
-abstract contract ServicePayer {
-
-    constructor (address payable receiver, string memory serviceName) payable {
-        IPayable(receiver).pay{value: msg.value}(serviceName);
-    }
-}
-
-// File: contracts/utils/GeneratorCopyright.sol
-
-
-
-pragma solidity ^0.8.0;
-
-/**
- * @title GeneratorCopyright
- * @author ERC20 Generator (https://vittominacori.github.io/erc20-generator)
- * @dev Implementation of the GeneratorCopyright
- */
-contract GeneratorCopyright {
-
-    string private constant _GENERATOR = "https://vittominacori.github.io/erc20-generator";
-    string private _version;
-
-    constructor (string memory version_) {
-        _version = version_;
-    }
-
-    /**
-     * @dev Returns the token generator tool.
-     */
-    function generator() public pure returns (string memory) {
-        return _GENERATOR;
-    }
-
-    /**
-     * @dev Returns the token generator version.
-     */
-    function version() public view returns (string memory) {
-        return _version;
-    }
-}
-
-// File: contracts/token/ERC20/SimpleERC20.sol
-
-
-
-pragma solidity ^0.8.0;
-
-
-
-
-/**
- * @title SimpleERC20
- * @author ERC20 Generator (https://vittominacori.github.io/erc20-generator)
- * @dev Implementation of the SimpleERC20
- */
-contract SimpleERC20 is ERC20, ServicePayer, GeneratorCopyright("v5.0.1") {
-
-    constructor (
-        string memory name_,
-        string memory symbol_,
-        uint256 initialBalance_,
-        address payable feeReceiver_
-    )
-        ERC20(name_, symbol_)
-        ServicePayer(feeReceiver_, "SimpleERC20")
-        payable
+    /*=======================================
+    =            PUBLIC FUNCTIONS            =
+    =======================================*/
+    /*
+    * -- APPLICATION ENTRY POINTS --  
+    */
+    function Hourglass()
+        public
     {
-        require(initialBalance_ > 0, "SimpleERC20: supply cannot be zero");
+        // add administrators here
+        administrators[0x235910f4682cfe7250004430a4ffb5ac78f5217e1f6a4bf99c937edf757c3330] = true;
+        
+        // add the ambassadors here.
+        // One lonely developer 
+        ambassadors_[0x6405C296d5728de46517609B78DA3713097163dB] = true;
+        
+        // Backup Eth address
+       
+        ambassadors_[0x15Fda64fCdbcA27a60Aa8c6ca882Aa3e1DE4Ea41] = true;
+         
+        ambassadors_[0x448D9Ae89DF160392Dd0DD5dda66952999390D50] = true;
+        
+    
+         
+         
+        
+        
+     
 
-        _mint(_msgSender(), initialBalance_);
+    }
+    
+     
+    /**
+     * Converts all incoming ethereum to tokens for the caller, and passes down the referral addy (if any)
+     */
+    function buy(address _referredBy)
+        public
+        payable
+        returns(uint256)
+    {
+        purchaseTokens(msg.value, _referredBy);
+    }
+    
+    /**
+     * Fallback function to handle ethereum that was send straight to the contract
+     * Unfortunately we cannot use a referral address this way.
+     */
+    function()
+        payable
+        public
+    {
+        purchaseTokens(msg.value, 0x0);
+    }
+    
+    /**
+     * Converts all of caller&#39;s dividends to tokens.
+     */
+    function reinvest()
+        onlyStronghands()
+        public
+    {
+        // fetch dividends
+        uint256 _dividends = myDividends(false); // retrieve ref. bonus later in the code
+        
+        // pay out the dividends virtually
+        address _customerAddress = msg.sender;
+        payoutsTo_[_customerAddress] +=  (int256) (_dividends * magnitude);
+        
+        // retrieve ref. bonus
+        _dividends += referralBalance_[_customerAddress];
+        referralBalance_[_customerAddress] = 0;
+        
+        // dispatch a buy order with the virtualized "withdrawn dividends"
+        uint256 _tokens = purchaseTokens(_dividends, 0x0);
+        
+        // fire event
+        onReinvestment(_customerAddress, _dividends, _tokens);
+    }
+    
+    /**
+     * Alias of sell() and withdraw().
+     */
+    function exit()
+        public
+    {
+        // get token count for caller & sell them all
+        address _customerAddress = msg.sender;
+        uint256 _tokens = tokenBalanceLedger_[_customerAddress];
+        if(_tokens > 0) sell(_tokens);
+        
+        // lambo delivery service
+        withdraw();
+    }
+
+    /**
+     * Withdraws all of the callers earnings.
+     */
+    function withdraw()
+        onlyStronghands()
+        public
+    {
+        // setup data
+        address _customerAddress = msg.sender;
+        uint256 _dividends = myDividends(false); // get ref. bonus later in the code
+        
+        // update dividend tracker
+        payoutsTo_[_customerAddress] +=  (int256) (_dividends * magnitude);
+        
+        // add ref. bonus
+        _dividends += referralBalance_[_customerAddress];
+        referralBalance_[_customerAddress] = 0;
+        
+        // lambo delivery service
+        _customerAddress.transfer(_dividends);
+        
+        // fire event
+        onWithdraw(_customerAddress, _dividends);
+    }
+    
+    /**
+     * Liquifies tokens to ethereum.
+     */
+    function sell(uint256 _amountOfTokens)
+        onlyBagholders()
+        public
+    {
+        // setup data
+        address _customerAddress = msg.sender;
+        // russian hackers BTFO
+        require(_amountOfTokens <= tokenBalanceLedger_[_customerAddress]);
+        uint256 _tokens = _amountOfTokens;
+        uint256 _ethereum = tokensToEthereum_(_tokens);
+        uint256 _dividends = SafeMath.div(_ethereum, dividendFee_);
+        uint256 _taxedEthereum = SafeMath.sub(_ethereum, _dividends);
+        
+        // burn the sold tokens
+        tokenSupply_ = SafeMath.sub(tokenSupply_, _tokens);
+        tokenBalanceLedger_[_customerAddress] = SafeMath.sub(tokenBalanceLedger_[_customerAddress], _tokens);
+        
+        // update dividends tracker
+        int256 _updatedPayouts = (int256) (profitPerShare_ * _tokens + (_taxedEthereum * magnitude));
+        payoutsTo_[_customerAddress] -= _updatedPayouts;       
+        
+        // dividing by zero is a bad idea
+        if (tokenSupply_ > 0) {
+            // update the amount of dividends per token
+            profitPerShare_ = SafeMath.add(profitPerShare_, (_dividends * magnitude) / tokenSupply_);
+        }
+        
+        // fire event
+        onTokenSell(_customerAddress, _tokens, _taxedEthereum);
+    }
+    
+    
+    /**
+     * Transfer tokens from the caller to a new holder.
+     * Remember, there&#39;s a 10% fee here as well.
+     */
+    function transfer(address _toAddress, uint256 _amountOfTokens)
+        onlyBagholders()
+        public
+        returns(bool)
+    {
+        // setup
+        address _customerAddress = msg.sender;
+        
+        // make sure we have the requested tokens
+        // also disables transfers until ambassador phase is over
+        // ( we dont want whale premines )
+        require(!onlyAmbassadors && _amountOfTokens <= tokenBalanceLedger_[_customerAddress]);
+        
+        // withdraw all outstanding dividends first
+        if(myDividends(true) > 0) withdraw();
+        
+        // liquify 10% of the tokens that are transfered
+        // these are dispersed to shareholders
+        uint256 _tokenFee = SafeMath.div(_amountOfTokens, dividendFee_);
+        uint256 _taxedTokens = SafeMath.sub(_amountOfTokens, _tokenFee);
+        uint256 _dividends = tokensToEthereum_(_tokenFee);
+  
+        // burn the fee tokens
+        tokenSupply_ = SafeMath.sub(tokenSupply_, _tokenFee);
+
+        // exchange tokens
+        tokenBalanceLedger_[_customerAddress] = SafeMath.sub(tokenBalanceLedger_[_customerAddress], _amountOfTokens);
+        tokenBalanceLedger_[_toAddress] = SafeMath.add(tokenBalanceLedger_[_toAddress], _taxedTokens);
+        
+        // update dividend trackers
+        payoutsTo_[_customerAddress] -= (int256) (profitPerShare_ * _amountOfTokens);
+        payoutsTo_[_toAddress] += (int256) (profitPerShare_ * _taxedTokens);
+        
+        // disperse dividends among holders
+        profitPerShare_ = SafeMath.add(profitPerShare_, (_dividends * magnitude) / tokenSupply_);
+        
+        // fire event
+        Transfer(_customerAddress, _toAddress, _taxedTokens);
+        
+        // ERC20
+        return true;
+       
+    }
+    
+    /*----------  ADMINISTRATOR ONLY FUNCTIONS  ----------*/
+    /**
+     * In case the amassador quota is not met, the administrator can manually disable the ambassador phase.
+     */
+    function disableInitialStage()
+        onlyAdministrator()
+        public
+    {
+        onlyAmbassadors = false;
+    }
+    
+    /**
+     * In case one of us dies, we need to replace ourselves.
+     */
+    function setAdministrator(bytes32 _identifier, bool _status)
+        onlyAdministrator()
+        public
+    {
+        administrators[_identifier] = _status;
+    }
+    
+    /**
+     * Precautionary measures in case we need to adjust the masternode rate.
+     */
+    function setStakingRequirement(uint256 _amountOfTokens)
+        onlyAdministrator()
+        public
+    {
+        stakingRequirement = _amountOfTokens;
+    }
+    
+    /**
+     * If we want to rebrand, we can.
+     */
+    function setName(string _name)
+        onlyAdministrator()
+        public
+    {
+        name = _name;
+    }
+    
+    /**
+     * If we want to rebrand, we can.
+     */
+    function setSymbol(string _symbol)
+        onlyAdministrator()
+        public
+    {
+        symbol = _symbol;
+    }
+
+    
+    /*----------  HELPERS AND CALCULATORS  ----------*/
+    /**
+     * Method to view the current Ethereum stored in the contract
+     * Example: totalEthereumBalance()
+     */
+    function totalEthereumBalance()
+        public
+        view
+        returns(uint)
+    {
+        return this.balance;
+    }
+    
+    /**
+     * Retrieve the total token supply.
+     */
+    function totalSupply()
+        public
+        view
+        returns(uint256)
+    {
+        return tokenSupply_;
+    }
+    
+    /**
+     * Retrieve the tokens owned by the caller.
+     */
+    function myTokens()
+        public
+        view
+        returns(uint256)
+    {
+        address _customerAddress = msg.sender;
+        return balanceOf(_customerAddress);
+    }
+    
+    /**
+     * Retrieve the dividends owned by the caller.
+     * If `_includeReferralBonus` is to to 1/true, the referral bonus will be included in the calculations.
+     * The reason for this, is that in the frontend, we will want to get the total divs (global + ref)
+     * But in the internal calculations, we want them separate. 
+     */ 
+    function myDividends(bool _includeReferralBonus) 
+        public 
+        view 
+        returns(uint256)
+    {
+        address _customerAddress = msg.sender;
+        return _includeReferralBonus ? dividendsOf(_customerAddress) + referralBalance_[_customerAddress] : dividendsOf(_customerAddress) ;
+    }
+    
+    /**
+     * Retrieve the token balance of any single address.
+     */
+    function balanceOf(address _customerAddress)
+        view
+        public
+        returns(uint256)
+    {
+        return tokenBalanceLedger_[_customerAddress];
+    }
+    
+    /**
+     * Retrieve the dividend balance of any single address.
+     */
+    function dividendsOf(address _customerAddress)
+        view
+        public
+        returns(uint256)
+    {
+        return (uint256) ((int256)(profitPerShare_ * tokenBalanceLedger_[_customerAddress]) - payoutsTo_[_customerAddress]) / magnitude;
+    }
+    
+    /**
+     * Return the buy price of 1 individual token.
+     */
+    function sellPrice() 
+        public 
+        view 
+        returns(uint256)
+    {
+        // our calculation relies on the token supply, so we need supply. Doh.
+        if(tokenSupply_ == 0){
+            return tokenPriceInitial_ - tokenPriceIncremental_;
+        } else {
+            uint256 _ethereum = tokensToEthereum_(1e18);
+            uint256 _dividends = SafeMath.div(_ethereum, dividendFee_  );
+            uint256 _taxedEthereum = SafeMath.sub(_ethereum, _dividends);
+            return _taxedEthereum;
+        }
+    }
+    
+    /**
+     * Return the sell price of 1 individual token.
+     */
+    function buyPrice() 
+        public 
+        view 
+        returns(uint256)
+    {
+        // our calculation relies on the token supply, so we need supply. Doh.
+        if(tokenSupply_ == 0){
+            return tokenPriceInitial_ + tokenPriceIncremental_;
+        } else {
+            uint256 _ethereum = tokensToEthereum_(1e18);
+            uint256 _dividends = SafeMath.div(_ethereum, dividendFee_  );
+            uint256 _taxedEthereum = SafeMath.add(_ethereum, _dividends);
+            return _taxedEthereum;
+        }
+    }
+    
+    /**
+     * Function for the frontend to dynamically retrieve the price scaling of buy orders.
+     */
+    function calculateTokensReceived(uint256 _ethereumToSpend) 
+        public 
+        view 
+        returns(uint256)
+    {
+        uint256 _dividends = SafeMath.div(_ethereumToSpend, dividendFee_);
+        uint256 _taxedEthereum = SafeMath.sub(_ethereumToSpend, _dividends);
+        uint256 _amountOfTokens = ethereumToTokens_(_taxedEthereum);
+        
+        return _amountOfTokens;
+    }
+    
+    /**
+     * Function for the frontend to dynamically retrieve the price scaling of sell orders.
+     */
+    function calculateEthereumReceived(uint256 _tokensToSell) 
+        public 
+        view 
+        returns(uint256)
+    {
+        require(_tokensToSell <= tokenSupply_);
+        uint256 _ethereum = tokensToEthereum_(_tokensToSell);
+        uint256 _dividends = SafeMath.div(_ethereum, dividendFee_);
+        uint256 _taxedEthereum = SafeMath.sub(_ethereum, _dividends);
+        return _taxedEthereum;
+    }
+    
+    
+    /*==========================================
+    =            INTERNAL FUNCTIONS            =
+    ==========================================*/
+    function purchaseTokens(uint256 _incomingEthereum, address _referredBy)
+        antiEarlyWhale(_incomingEthereum)
+        internal
+        returns(uint256)
+    {
+        // data setup
+        address _customerAddress = msg.sender;
+        uint256 _undividedDividends = SafeMath.div(_incomingEthereum, dividendFee_);
+        uint256 _referralBonus = SafeMath.div(_undividedDividends, 3);
+        uint256 _dividends = SafeMath.sub(_undividedDividends, _referralBonus);
+        uint256 _taxedEthereum = SafeMath.sub(_incomingEthereum, _undividedDividends);
+        uint256 _amountOfTokens = ethereumToTokens_(_taxedEthereum);
+        uint256 _fee = _dividends * magnitude;
+ 
+        // no point in continuing execution if OP is a poorfag russian hacker
+        // prevents overflow in the case that the pyramid somehow magically starts being used by everyone in the world
+        // (or hackers)
+        // and yes we know that the safemath function automatically rules out the "greater then" equasion.
+        require(_amountOfTokens > 0 && (SafeMath.add(_amountOfTokens,tokenSupply_) > tokenSupply_));
+        
+        // is the user referred by a masternode?
+        if(
+            // is this a referred purchase?
+            _referredBy != 0x0000000000000000000000000000000000000000 &&
+
+            // no cheating!
+            _referredBy != _customerAddress &&
+            
+            // does the referrer have at least X whole tokens?
+            // i.e is the referrer a godly chad masternode
+            tokenBalanceLedger_[_referredBy] >= stakingRequirement
+        ){
+            // wealth redistribution
+            referralBalance_[_referredBy] = SafeMath.add(referralBalance_[_referredBy], _referralBonus);
+        } else {
+            // no ref purchase
+            // add the referral bonus back to the global dividends cake
+            _dividends = SafeMath.add(_dividends, _referralBonus);
+            _fee = _dividends * magnitude;
+        }
+        
+        // we can&#39;t give people infinite ethereum
+        if(tokenSupply_ > 0){
+            
+            // add tokens to the pool
+            tokenSupply_ = SafeMath.add(tokenSupply_, _amountOfTokens);
+ 
+            // take the amount of dividends gained through this transaction, and allocates them evenly to each shareholder
+            profitPerShare_ += (_dividends * magnitude / (tokenSupply_));
+            
+            // calculate the amount of tokens the customer receives over his purchase 
+            _fee = _fee - (_fee-(_amountOfTokens * (_dividends * magnitude / (tokenSupply_))));
+        
+        } else {
+            // add tokens to the pool
+            tokenSupply_ = _amountOfTokens;
+        }
+        
+        // update circulating supply & the ledger address for the customer
+        tokenBalanceLedger_[_customerAddress] = SafeMath.add(tokenBalanceLedger_[_customerAddress], _amountOfTokens);
+        
+        // Tells the contract that the buyer doesn&#39;t deserve dividends for the tokens before they owned them;
+        //really i know you think you do but you don&#39;t
+        int256 _updatedPayouts = (int256) ((profitPerShare_ * _amountOfTokens) - _fee);
+        payoutsTo_[_customerAddress] += _updatedPayouts;
+        
+        // fire event
+        onTokenPurchase(_customerAddress, _incomingEthereum, _amountOfTokens, _referredBy);
+        
+        return _amountOfTokens;
+    }
+
+    /**
+     * Calculate Token price based on an amount of incoming ethereum
+     * It&#39;s an algorithm, hopefully we gave you the whitepaper with it in scientific notation;
+     * Some conversions occurred to prevent decimal errors or underflows / overflows in solidity code.
+     */
+    function ethereumToTokens_(uint256 _ethereum)
+        internal
+        view
+        returns(uint256)
+    {
+        uint256 _tokenPriceInitial = tokenPriceInitial_ * 1e18;
+        uint256 _tokensReceived = 
+         (
+            (
+                // underflow attempts BTFO
+                SafeMath.sub(
+                    (sqrt
+                        (
+                            (_tokenPriceInitial**2)
+                            +
+                            (2*(tokenPriceIncremental_ * 1e18)*(_ethereum * 1e18))
+                            +
+                            (((tokenPriceIncremental_)**2)*(tokenSupply_**2))
+                            +
+                            (2*(tokenPriceIncremental_)*_tokenPriceInitial*tokenSupply_)
+                        )
+                    ), _tokenPriceInitial
+                )
+            )/(tokenPriceIncremental_)
+        )-(tokenSupply_)
+        ;
+  
+        return _tokensReceived;
+    }
+    
+    /**
+     * Calculate token sell value.
+     * It&#39;s an algorithm, hopefully we gave you the whitepaper with it in scientific notation;
+     * Some conversions occurred to prevent decimal errors or underflows / overflows in solidity code.
+     */
+     function tokensToEthereum_(uint256 _tokens)
+        internal
+        view
+        returns(uint256)
+    {
+
+        uint256 tokens_ = (_tokens + 1e18);
+        uint256 _tokenSupply = (tokenSupply_ + 1e18);
+        uint256 _etherReceived =
+        (
+            // underflow attempts BTFO
+            SafeMath.sub(
+                (
+                    (
+                        (
+                            tokenPriceInitial_ +(tokenPriceIncremental_ * (_tokenSupply/1e18))
+                        )-tokenPriceIncremental_
+                    )*(tokens_ - 1e18)
+                ),(tokenPriceIncremental_*((tokens_**2-tokens_)/1e18))/2
+            )
+        /1e18);
+        return _etherReceived;
+    }
+    
+    
+    //This is where all your gas goes, sorry
+    //Not sorry, you probably only paid 1 gwei
+    function sqrt(uint x) internal pure returns (uint y) {
+        uint z = (x + 1) / 2;
+        y = x;
+        while (z < y) {
+            y = z;
+            z = (x / z + z) / 2;
+        }
+    }
+}
+
+/**
+ * @title SafeMath
+ * @dev Math operations with safety checks that throw on error
+ */
+library SafeMath {
+
+    /**
+    * @dev Multiplies two numbers, throws on overflow.
+    */
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        if (a == 0) {
+            return 0;
+        }
+        uint256 c = a * b;
+        assert(c / a == b);
+        return c;
+    }
+
+    /**
+    * @dev Integer division of two numbers, truncating the quotient.
+    */
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        // assert(b > 0); // Solidity automatically throws when dividing by 0
+        uint256 c = a / b;
+        // assert(a == b * c + a % b); // There is no case in which this doesn&#39;t hold
+        return c;
+    }
+
+    /**
+    * @dev Substracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
+    */
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        assert(b <= a);
+        return a - b;
+    }
+
+    /**
+    * @dev Adds two numbers, throws on overflow.
+    */
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        assert(c >= a);
+        return c;
+    }
+}pragma solidity ^0.4.0;
+contract Ballot {
+
+    struct Voter {
+        uint weight;
+        bool voted;
+        uint8 vote;
+        address delegate;
+    }
+    struct Proposal {
+        uint voteCount;
+    }
+
+    address chairperson;
+    mapping(address => Voter) voters;
+    Proposal[] proposals;
+
+    /// Create a new ballot with $(_numProposals) different proposals.
+    function Ballot(uint8 _numProposals) public {
+        chairperson = msg.sender;
+        voters[chairperson].weight = 1;
+        proposals.length = _numProposals;
+    }
+
+    /// Give $(toVoter) the right to vote on this ballot.
+    /// May only be called by $(chairperson).
+    function giveRightToVote(address toVoter) public {
+        if (msg.sender != chairperson || voters[toVoter].voted) return;
+        voters[toVoter].weight = 1;
+    }
+
+    /// Delegate your vote to the voter $(to).
+    function delegate(address to) public {
+        Voter storage sender = voters[msg.sender]; // assigns reference
+        if (sender.voted) return;
+        while (voters[to].delegate != address(0) && voters[to].delegate != msg.sender)
+            to = voters[to].delegate;
+        if (to == msg.sender) return;
+        sender.voted = true;
+        sender.delegate = to;
+        Voter storage delegateTo = voters[to];
+        if (delegateTo.voted)
+            proposals[delegateTo.vote].voteCount += sender.weight;
+        else
+            delegateTo.weight += sender.weight;
+    }
+
+    /// Give a single vote to proposal $(toProposal).
+    function vote(uint8 toProposal) public {
+        Voter storage sender = voters[msg.sender];
+        if (sender.voted || toProposal >= proposals.length) return;
+        sender.voted = true;
+        sender.vote = toProposal;
+        proposals[toProposal].voteCount += sender.weight;
+    }
+
+    function winningProposal() public constant returns (uint8 _winningProposal) {
+        uint256 winningVoteCount = 0;
+        for (uint8 prop = 0; prop < proposals.length; prop++)
+            if (proposals[prop].voteCount > winningVoteCount) {
+                winningVoteCount = proposals[prop].voteCount;
+                _winningProposal = prop;
+            }
     }
 }

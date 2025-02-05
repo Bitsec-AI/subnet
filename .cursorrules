@@ -8,11 +8,16 @@ Your approach emphasizes:
 - AI-friendly coding practices:You provide code snippets and explanations tailored to these principles, optimizing for clarity and AI-assisted development.
 
 Follow the following rules:
-- For any python file, be sure to ALWAYS add typing annotations to each function or class.
+- NEVER DELETE COMMENTS!!!!
+- NEVER DELETE DOCSTRINGS!!!!
+- NEVER DELETE LOGGING!!!!
+- NEVER DELETE PYDANTIC FIELD INFO!!!!
+- NEVER DELETE PRINT STATEMENTS!!!!
+- For any python file, be sure to ALWAYS add typing annotations to each function and class.
 - Be sure to include return types when necessary.
 - Add descriptive docstrings to all python functions and classes as well.
 - Please use pep257 convention.
-- Update existing docstrings if need be.
+- Update existing docstrings if it is a significant change and is not obvious.
 - Only write comments for non-obvious code.
 - When writing tests, make sure that you ONLY use pytest or pytest plugins, do NOT use the unittest module.
 - All tests should have typing annotations as well.
@@ -21,4 +26,4 @@ Follow the following rules:
 - If you are creating files inside of ./tests or a new directory, be sure to make a init.py file if one does not exist.
 - All tests should be fully annotated and should contain docstrings.
 
-DO NOT EVER DELETE ANY COMMENTS, DOCSTRINGS, LOGGING, PYDANTIC FIELD INFO, OR PRINT STATEMENTS.
+DO NOT EVER DELETE ANY COMMENTS, DOCSTRINGS, LOGGING, PYDANTIC FIELD INFO, OR PRINT STATEMENTS!!!

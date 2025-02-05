@@ -1,524 +1,1291 @@
-/**
- *Submitted for verification at Etherscan.io on 2021-07-12
-*/
+pragma solidity 0.4.18;
 
-// File: @openzeppelin/contracts/utils/Context.sol
-// SPDX-License-Identifier: MIT
+interface ConversionRatesInterface {
 
-pragma solidity ^0.8.1;
 
-// 
-// 'Billion' token contract
-//
-// Symbol      : BLL
-// Name        : Billion
-// Total supply: 1000000000
-// Decimals    : 18
-//
 
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
-abstract contract Context {
-    function _msgSender() internal view virtual returns (address) {
-        return msg.sender;
-    }
+    function recordImbalance(
 
-    function _msgData() internal view virtual returns (bytes calldata) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
-    }
+        ERC20 token,
+
+        int buyAmount,
+
+        uint rateUpdateBlock,
+
+        uint currentBlock
+
+    )
+
+        public;
+
+
+
+    function getRate(ERC20 token, uint currentBlockNumber, bool buy, uint qty) public view returns(uint);
+
 }
 
-// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
-pragma solidity ^0.8.1;
+interface ERC20 {
 
-/**
- * @dev Interface of the ERC20 standard as defined in the EIP.
- */
-interface IERC20 {
-    /**
-     * @dev Returns the amount of tokens in existence.
-     */
-    function totalSupply() external view returns (uint256);
+    function totalSupply() public view returns (uint supply);
 
-    /**
-     * @dev Returns the amount of tokens owned by `account`.
-     */
-    function balanceOf(address account) external view returns (uint256);
+    function balanceOf(address _owner) public view returns (uint balance);
 
-    /**
-     * @dev Moves `amount` tokens from the caller's account to `recipient`.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transfer(address recipient, uint256 amount) external returns (bool);
+    function transfer(address _to, uint _value) public returns (bool success);
 
-    /**
-     * @dev Returns the remaining number of tokens that `spender` will be
-     * allowed to spend on behalf of `owner` through {transferFrom}. This is
-     * zero by default.
-     *
-     * This value changes when {approve} or {transferFrom} are called.
-     */
-    function allowance(address owner, address spender) external view returns (uint256);
+    function transferFrom(address _from, address _to, uint _value) public returns (bool success);
 
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * IMPORTANT: Beware that changing an allowance with this method brings the risk
-     * that someone may use both the old and the new allowance by unfortunate
-     * transaction ordering. One possible solution to mitigate this race
-     * condition is to first reduce the spender's allowance to 0 and set the
-     * desired value afterwards:
-     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-     *
-     * Emits an {Approval} event.
-     */
-    function approve(address spender, uint256 amount) external returns (bool);
+    function approve(address _spender, uint _value) public returns (bool success);
 
-    /**
-     * @dev Moves `amount` tokens from `sender` to `recipient` using the
-     * allowance mechanism. `amount` is then deducted from the caller's
-     * allowance.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    function allowance(address _owner, address _spender) public view returns (uint remaining);
 
-    /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
-     *
-     * Note that `value` may be zero.
-     */
-    event Transfer(address indexed from, address indexed to, uint256 value);
+    function decimals() public view returns(uint digits);
 
-    /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to {approve}. `value` is the new allowance.
-     */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Approval(address indexed _owner, address indexed _spender, uint _value);
+
 }
 
+contract UtilMath {
 
-// File: @openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol
-pragma solidity ^0.8.1;
+    uint public constant BIG_NUMBER = (uint(1)<<uint(200));
 
 
-/**
- * @dev Interface for the optional metadata functions from the ERC20 standard.
- *
- * _Available since v4.1._
- */
-interface IERC20Metadata is IERC20 {
-    /**
-     * @dev Returns the name of the token.
-     */
-    function name() external view returns (string memory);
 
-    /**
-     * @dev Returns the symbol of the token.
-     */
-    function symbol() external view returns (string memory);
+    function checkMultOverflow(uint x, uint y) public pure returns(bool) {
 
-    /**
-     * @dev Returns the decimals places of the token.
-     */
-    function decimals() external view returns (uint8);
+        if (y == 0) return false;
+
+        return (((x*y) / y) != x);
+
+    }
+
+
+
+    function compactFraction(uint p, uint q, uint precision) public pure returns (uint, uint) {
+
+        if (q < precision * precision) return (p, q);
+
+        return compactFraction(p/precision, q/precision, precision);
+
+    }
+
+
+
+    /* solhint-disable code-complexity */
+
+    function exp(uint p, uint q, uint precision) public pure returns (uint) {
+
+        uint n = 0;
+
+        uint nFact = 1;
+
+        uint currentP = 1;
+
+        uint currentQ = 1;
+
+
+
+        uint sum = 0;
+
+        uint prevSum = 0;
+
+
+
+        while (true) {
+
+            if (checkMultOverflow(currentP, precision)) return sum;
+
+            if (checkMultOverflow(currentQ, nFact)) return sum;
+
+
+
+            sum += (currentP * precision) / (currentQ * nFact);
+
+
+
+            if (sum == prevSum) return sum;
+
+            prevSum = sum;
+
+
+
+            n++;
+
+
+
+            if (checkMultOverflow(currentP, p)) return sum;
+
+            if (checkMultOverflow(currentQ, q)) return sum;
+
+            if (checkMultOverflow(nFact, n)) return sum;
+
+
+
+            currentP *= p;
+
+            currentQ *= q;
+
+            nFact *= n;
+
+
+
+            (currentP, currentQ) = compactFraction(currentP, currentQ, precision);
+
+        }
+
+    }
+
+    /* solhint-enable code-complexity */
+
+
+
+    function countLeadingZeros(uint p, uint q) public pure returns (uint) {
+
+        uint denomator = (uint(1)<<255);
+
+        for (int i = 255; i >= 0; i--) {
+
+            if ((q*denomator)/denomator != q) {
+
+                // overflow
+
+                denomator = denomator/2;
+
+                continue;
+
+            }
+
+            if (p/(q*denomator) > 0) return uint(i);
+
+            denomator = denomator/2;
+
+        }
+
+
+
+        return uint(-1);
+
+    }
+
+
+
+    // log2 for a number that it in [1,2)
+
+    function log2ForSmallNumber(uint x, uint numPrecisionBits) public pure returns (uint) {
+
+        uint res = 0;
+
+        uint one = (uint(1)<<numPrecisionBits);
+
+        uint two = 2 * one;
+
+        uint addition = one;
+
+
+
+        require((x >= one) && (x <= two));
+
+        require(numPrecisionBits < 125);
+
+
+
+        for (uint i = numPrecisionBits; i > 0; i--) {
+
+            x = (x*x) / one;
+
+            addition = addition/2;
+
+            if (x >= two) {
+
+                x = x/2;
+
+                res += addition;
+
+            }
+
+        }
+
+
+
+        return res;
+
+    }
+
+
+
+    function logBase2 (uint p, uint q, uint numPrecisionBits) public pure returns (uint) {
+
+        uint n = 0;
+
+        uint precision = (uint(1)<<numPrecisionBits);
+
+
+
+        if (p > q) {
+
+            n = countLeadingZeros(p, q);
+
+        }
+
+
+
+        require(!checkMultOverflow(p, precision));
+
+        require(!checkMultOverflow(n, precision));
+
+        require(!checkMultOverflow(uint(1)<<n, q));
+
+
+
+        uint y = p * precision / (q * (uint(1)<<n));
+
+        uint log2Small = log2ForSmallNumber(y, numPrecisionBits);
+
+
+
+        require(n*precision <= BIG_NUMBER);
+
+        require(log2Small <= BIG_NUMBER);
+
+
+
+        return n * precision + log2Small;
+
+    }
+
+
+
+    function ln(uint p, uint q, uint numPrecisionBits) public pure returns (uint) {
+
+        uint ln2Numerator   = 6931471805599453094172;
+
+        uint ln2Denomerator = 10000000000000000000000;
+
+
+
+        uint log2x = logBase2(p, q, numPrecisionBits);
+
+
+
+        require(!checkMultOverflow(ln2Numerator, log2x));
+
+
+
+        return ln2Numerator * log2x / ln2Denomerator;
+
+    }
+
 }
 
+contract LiquidityFormula is UtilMath {
 
-// File: @openzeppelin/contracts/token/ERC20/ERC20.sol
-pragma solidity ^0.8.1;
+    function pE(uint r, uint pMIn, uint e, uint precision) public pure returns (uint) {
 
-/**
- * @dev Implementation of the {IERC20} interface.
- *
- * This implementation is agnostic to the way tokens are created. This means
- * that a supply mechanism has to be added in a derived contract using {_mint}.
- * For a generic mechanism see {ERC20PresetMinterPauser}.
- *
- * TIP: For a detailed writeup see our guide
- * https://forum.zeppelin.solutions/t/how-to-implement-erc20-supply-mechanisms/226[How
- * to implement supply mechanisms].
- *
- * We have followed general OpenZeppelin guidelines: functions revert instead
- * of returning `false` on failure. This behavior is nonetheless conventional
- * and does not conflict with the expectations of ERC20 applications.
- *
- * Additionally, an {Approval} event is emitted on calls to {transferFrom}.
- * This allows applications to reconstruct the allowance for all accounts just
- * by listening to said events. Other implementations of the EIP may not emit
- * these events, as it isn't required by the specification.
- *
- * Finally, the non-standard {decreaseAllowance} and {increaseAllowance}
- * functions have been added to mitigate the well-known issues around setting
- * allowances. See {IERC20-approve}.
- */
-contract ERC20 is Context, IERC20, IERC20Metadata {
-    mapping (address => uint256) private _balances;
+        require(!checkMultOverflow(r, e));
 
-    mapping (address => mapping (address => uint256)) private _allowances;
+        uint expRE = exp(r*e, precision*precision, precision);
 
-    uint256 private _totalSupply;
+        require(!checkMultOverflow(expRE, pMIn));
 
-    string private _name;
-    string private _symbol;
+        return pMIn*expRE / precision;
 
-    /**
-     * @dev Sets the values for {name} and {symbol}.
-     *
-     * The defaut value of {decimals} is 18. To select a different value for
-     * {decimals} you should overload it.
-     *
-     * All two of these values are immutable: they can only be set once during
-     * construction.
-     */
-    constructor (string memory name_, string memory symbol_) {
-        _name = name_;
-        _symbol = symbol_;
-    }
-
-    /**
-     * @dev Returns the name of the token.
-     */
-    function name() public view virtual override returns (string memory) {
-        return _name;
-    }
-
-    /**
-     * @dev Returns the symbol of the token, usually a shorter version of the
-     * name.
-     */
-    function symbol() public view virtual override returns (string memory) {
-        return _symbol;
-    }
-
-    /**
-     * @dev Returns the number of decimals used to get its user representation.
-     * For example, if `decimals` equals `2`, a balance of `505` tokens should
-     * be displayed to a user as `5,05` (`505 / 10 ** 2`).
-     *
-     * Tokens usually opt for a value of 18, imitating the relationship between
-     * Ether and Wei. This is the value {ERC20} uses, unless this function is
-     * overridden;
-     *
-     * NOTE: This information is only used for _display_ purposes: it in
-     * no way affects any of the arithmetic of the contract, including
-     * {IERC20-balanceOf} and {IERC20-transfer}.
-     */
-    function decimals() public view virtual override returns (uint8) {
-        return 18;
-    }
-
-    /**
-     * @dev See {IERC20-totalSupply}.
-     */
-    function totalSupply() public view virtual override returns (uint256) {
-        return _totalSupply;
-    }
-
-    /**
-     * @dev See {IERC20-balanceOf}.
-     */
-    function balanceOf(address account) public view virtual override returns (uint256) {
-        return _balances[account];
-    }
-
-     /**
-     * @dev Destroys `amount` tokens from `account`, reducing the
-     * total supply.
-     *
-     * Emits a {Transfer} event with `to` set to the zero address.
-     *
-     * Requirements:
-     *
-     * - `account` cannot be the zero address.
-     * - `account` must have at least `amount` tokens.
-     */
-    function _burn(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: burn from the zero address");
-
-        _beforeTokenTransfer(account, address(0), amount);
-
-        uint256 accountBalance = _balances[account];
-        require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
-        _balances[account] = accountBalance - amount;
-        _totalSupply -= amount;
-
-        emit Transfer(account, address(0), amount);
-    }
-
-    /**
-     * @dev See {IERC20-transfer}.
-     *
-     * Requirements:
-     *
-     * - `recipient` cannot be the zero address.
-     * - the caller must have a balance of at least `amount`.
-     */
-    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(_msgSender(), recipient, amount);
-        return true;
-    }
-
-    /**
-     * @dev See {IERC20-allowance}.
-     */
-    function allowance(address owner, address spender) public view virtual override returns (uint256) {
-        return _allowances[owner][spender];
-    }
-
-    /**
-     * @dev See {IERC20-approve}.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function approve(address spender, uint256 amount) public virtual override returns (bool) {
-        _approve(_msgSender(), spender, amount);
-        return true;
-    }
-
-    /**
-     * @dev See {IERC20-transferFrom}.
-     *
-     * Emits an {Approval} event indicating the updated allowance. This is not
-     * required by the EIP. See the note at the beginning of {ERC20}.
-     *
-     * Requirements:
-     *
-     * - `sender` and `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `amount`.
-     * - the caller must have allowance for ``sender``'s tokens of at least
-     * `amount`.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(sender, recipient, amount);
-
-        uint256 currentAllowance = _allowances[sender][_msgSender()];
-        require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
-        _approve(sender, _msgSender(), currentAllowance - amount);
-
-        return true;
-    }
-
-    /**
-     * @dev Atomically increases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender] + addedValue);
-        return true;
-    }
-
-    /**
-     * @dev Atomically decreases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     * - `spender` must have allowance for the caller of at least
-     * `subtractedValue`.
-     */
-    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
-        uint256 currentAllowance = _allowances[_msgSender()][spender];
-        require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
-        _approve(_msgSender(), spender, currentAllowance - subtractedValue);
-
-        return true;
-    }
-
-    /**
-     * @dev Moves tokens `amount` from `sender` to `recipient`.
-     *
-     * This is internal function is equivalent to {transfer}, and can be used to
-     * e.g. implement automatic token fees, slashing mechanisms, etc.
-     *
-     * Emits a {Transfer} event.
-     *
-     * Requirements:
-     *
-     * - `sender` cannot be the zero address.
-     * - `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `amount`.
-     */
-    function _transfer(address sender, address recipient, uint256 amount) internal virtual {
-        require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
-
-        _beforeTokenTransfer(sender, recipient, amount);
-
-        uint256 senderBalance = _balances[sender];
-        require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
-        _balances[sender] = senderBalance - amount;
-        _balances[recipient] += amount;
-
-        emit Transfer(sender, recipient, amount);
-    }
-
-    /** @dev Creates `amount` tokens and assigns them to `account`, increasing
-     * the total supply.
-     *
-     * Emits a {Transfer} event with `from` set to the zero address.
-     *
-     * Requirements:
-     *
-     * - `to` cannot be the zero address.
-     */
-    function _mint(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: mint to the zero address");
-
-        _beforeTokenTransfer(address(0), account, amount);
-
-        _totalSupply += amount;
-        _balances[account] += amount;
-        emit Transfer(address(0), account, amount);
     }
 
 
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the `owner` s tokens.
-     *
-     * This internal function is equivalent to `approve`, and can be used to
-     * e.g. set automatic allowances for certain subsystems, etc.
-     *
-     * Emits an {Approval} event.
-     *
-     * Requirements:
-     *
-     * - `owner` cannot be the zero address.
-     * - `spender` cannot be the zero address.
-     */
-    function _approve(address owner, address spender, uint256 amount) internal virtual {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
 
-        _allowances[owner][spender] = amount;
-        emit Approval(owner, spender, amount);
+    function deltaTFunc(uint r, uint pMIn, uint e, uint deltaE, uint precision) public pure returns (uint) {
+
+        uint pe = pE(r, pMIn, e, precision);
+
+        uint rpe = r * pe;
+
+
+
+        require(!checkMultOverflow(r, deltaE));
+
+        uint erdeltaE = exp(r*deltaE, precision*precision, precision);
+
+
+
+        require(erdeltaE >= precision);
+
+        require(!checkMultOverflow(erdeltaE - precision, precision));
+
+        require(!checkMultOverflow((erdeltaE - precision)*precision, precision));
+
+        require(!checkMultOverflow((erdeltaE - precision)*precision*precision, precision));
+
+        require(!checkMultOverflow(rpe, erdeltaE));
+
+        require(!checkMultOverflow(r, pe));
+
+
+
+        return (erdeltaE - precision) * precision * precision * precision / (rpe*erdeltaE);
+
     }
 
-    /**
-     * @dev Hook that is called before any transfer of tokens. This includes
-     * minting and burning.
-     *
-     * Calling conditions:
-     *
-     * - when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
-     * will be to transferred to `to`.
-     * - when `from` is zero, `amount` tokens will be minted for `to`.
-     * - when `to` is zero, `amount` of ``from``'s tokens will be burned.
-     * - `from` and `to` are never both zero.
-     *
-     * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
-     */
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
+
+
+    function deltaEFunc(uint r, uint pMIn, uint e, uint deltaT, uint precision, uint numPrecisionBits)
+
+        public pure
+
+        returns (uint)
+
+    {
+
+        uint pe = pE(r, pMIn, e, precision);
+
+        uint rpe = r * pe;
+
+
+
+        require(!checkMultOverflow(rpe, deltaT));
+
+        require(precision * precision + rpe * deltaT/precision > precision * precision);
+
+        uint lnPart = ln(precision*precision + rpe*deltaT/precision, precision*precision, numPrecisionBits);
+
+
+
+        require(!checkMultOverflow(r, pe));
+
+        require(!checkMultOverflow(precision, precision));
+
+        require(!checkMultOverflow(rpe, deltaT));
+
+        require(!checkMultOverflow(lnPart, precision));
+
+
+
+        return lnPart * precision / r;
+
+    }
+
 }
 
-// File: @openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol
-pragma solidity ^0.8.1;
+contract PermissionGroups {
 
 
 
-/**
- * @dev Extension of {ERC20} that allows token holders to destroy both their own
- * tokens and those that they have an allowance for, in a way that can be
- * recognized off-chain (via event analysis).
- */
-abstract contract ERC20Burnable is Context, ERC20 {
-    /**
-     * @dev Destroys `amount` tokens from the caller.
-     *
-     * See {ERC20-_burn}.
-     */
-    function burn(uint256 amount) public virtual {
-        _burn(_msgSender(), amount);
+    address public admin;
+
+    address public pendingAdmin;
+
+    mapping(address=>bool) internal operators;
+
+    mapping(address=>bool) internal alerters;
+
+    address[] internal operatorsGroup;
+
+    address[] internal alertersGroup;
+
+    uint constant internal MAX_GROUP_SIZE = 50;
+
+
+
+    function PermissionGroups() public {
+
+        admin = msg.sender;
+
     }
 
-    /**
-     * @dev Destroys `amount` tokens from `account`, deducting from the caller's
-     * allowance.
-     *
-     * See {ERC20-_burn} and {ERC20-allowance}.
-     *
-     * Requirements:
-     *
-     * - the caller must have allowance for ``accounts``'s tokens of at least
-     * `amount`.
-     */
-    function burnFrom(address account, uint256 amount) public virtual {
-        uint256 currentAllowance = allowance(account, _msgSender());
-        require(currentAllowance >= amount, "ERC20: burn amount exceeds allowance");
-        _approve(account, _msgSender(), currentAllowance - amount);
-        _burn(account, amount);
+
+
+    modifier onlyAdmin() {
+
+        require(msg.sender == admin);
+
+        _;
+
     }
+
+
+
+    modifier onlyOperator() {
+
+        require(operators[msg.sender]);
+
+        _;
+
+    }
+
+
+
+    modifier onlyAlerter() {
+
+        require(alerters[msg.sender]);
+
+        _;
+
+    }
+
+
+
+    function getOperators () external view returns(address[]) {
+
+        return operatorsGroup;
+
+    }
+
+
+
+    function getAlerters () external view returns(address[]) {
+
+        return alertersGroup;
+
+    }
+
+
+
+    event TransferAdminPending(address pendingAdmin);
+
+
+
+    /**
+
+     * @dev Allows the current admin to set the pendingAdmin address.
+
+     * @param newAdmin The address to transfer ownership to.
+
+     */
+
+    function transferAdmin(address newAdmin) public onlyAdmin {
+
+        require(newAdmin != address(0));
+
+        TransferAdminPending(pendingAdmin);
+
+        pendingAdmin = newAdmin;
+
+    }
+
+
+
+    /**
+
+     * @dev Allows the current admin to set the admin in one tx. Useful initial deployment.
+
+     * @param newAdmin The address to transfer ownership to.
+
+     */
+
+    function transferAdminQuickly(address newAdmin) public onlyAdmin {
+
+        require(newAdmin != address(0));
+
+        TransferAdminPending(newAdmin);
+
+        AdminClaimed(newAdmin, admin);
+
+        admin = newAdmin;
+
+    }
+
+
+
+    event AdminClaimed( address newAdmin, address previousAdmin);
+
+
+
+    /**
+
+     * @dev Allows the pendingAdmin address to finalize the change admin process.
+
+     */
+
+    function claimAdmin() public {
+
+        require(pendingAdmin == msg.sender);
+
+        AdminClaimed(pendingAdmin, admin);
+
+        admin = pendingAdmin;
+
+        pendingAdmin = address(0);
+
+    }
+
+
+
+    event AlerterAdded (address newAlerter, bool isAdd);
+
+
+
+    function addAlerter(address newAlerter) public onlyAdmin {
+
+        require(!alerters[newAlerter]); // prevent duplicates.
+
+        require(alertersGroup.length < MAX_GROUP_SIZE);
+
+
+
+        AlerterAdded(newAlerter, true);
+
+        alerters[newAlerter] = true;
+
+        alertersGroup.push(newAlerter);
+
+    }
+
+
+
+    function removeAlerter (address alerter) public onlyAdmin {
+
+        require(alerters[alerter]);
+
+        alerters[alerter] = false;
+
+
+
+        for (uint i = 0; i < alertersGroup.length; ++i) {
+
+            if (alertersGroup[i] == alerter) {
+
+                alertersGroup[i] = alertersGroup[alertersGroup.length - 1];
+
+                alertersGroup.length--;
+
+                AlerterAdded(alerter, false);
+
+                break;
+
+            }
+
+        }
+
+    }
+
+
+
+    event OperatorAdded(address newOperator, bool isAdd);
+
+
+
+    function addOperator(address newOperator) public onlyAdmin {
+
+        require(!operators[newOperator]); // prevent duplicates.
+
+        require(operatorsGroup.length < MAX_GROUP_SIZE);
+
+
+
+        OperatorAdded(newOperator, true);
+
+        operators[newOperator] = true;
+
+        operatorsGroup.push(newOperator);
+
+    }
+
+
+
+    function removeOperator (address operator) public onlyAdmin {
+
+        require(operators[operator]);
+
+        operators[operator] = false;
+
+
+
+        for (uint i = 0; i < operatorsGroup.length; ++i) {
+
+            if (operatorsGroup[i] == operator) {
+
+                operatorsGroup[i] = operatorsGroup[operatorsGroup.length - 1];
+
+                operatorsGroup.length -= 1;
+
+                OperatorAdded(operator, false);
+
+                break;
+
+            }
+
+        }
+
+    }
+
 }
 
-// File: @openzeppelin/contracts/token/ERC20/presets/ERC20PresetFixedSupply.sol
-
-pragma solidity ^0.8.1;
+contract Utils {
 
 
-/**
- * @dev {ERC20} token, including:
- *
- *  - Preminted initial supply
- *  - Ability for holders to burn (destroy) their tokens
- *  - No access control mechanism (for minting/pausing) and hence no governance
- *
- * This contract uses {ERC20Burnable} to include burn capabilities - head to
- * its documentation for details.
- *
- * _Available since v3.4._
- */
-contract ERC20PresetFixedSupply is ERC20Burnable {
-    /**
-     * @dev Mints `initialSupply` amount of token and transfers them to `owner`.
-     *
-     * See {ERC20-constructor}.
-     */
-    constructor(
-        string memory name,
-        string memory symbol,
-        uint256 initialSupply,
-        address owner
-    ) ERC20(name, symbol) {
-        _mint(owner, initialSupply);
+
+    ERC20 constant internal ETH_TOKEN_ADDRESS = ERC20(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee);
+
+    uint  constant internal PRECISION = (10**18);
+
+    uint  constant internal MAX_QTY   = (10**28); // 10B tokens
+
+    uint  constant internal MAX_RATE  = (PRECISION * 10**6); // up to 1M tokens per ETH
+
+    uint  constant internal MAX_DECIMALS = 18;
+
+    uint  constant internal ETH_DECIMALS = 18;
+
+    mapping(address=>uint) internal decimals;
+
+
+
+    function setDecimals(ERC20 token) internal {
+
+        if (token == ETH_TOKEN_ADDRESS) decimals[token] = ETH_DECIMALS;
+
+        else decimals[token] = token.decimals();
+
     }
+
+
+
+    function getDecimals(ERC20 token) internal view returns(uint) {
+
+        if (token == ETH_TOKEN_ADDRESS) return ETH_DECIMALS; // save storage access
+
+        uint tokenDecimals = decimals[token];
+
+        // technically, there might be token with decimals 0
+
+        // moreover, very possible that old tokens have decimals 0
+
+        // these tokens will just have higher gas fees.
+
+        if(tokenDecimals == 0) return token.decimals();
+
+
+
+        return tokenDecimals;
+
+    }
+
+
+
+    function calcDstQty(uint srcQty, uint srcDecimals, uint dstDecimals, uint rate) internal pure returns(uint) {
+
+        require(srcQty <= MAX_QTY);
+
+        require(rate <= MAX_RATE);
+
+
+
+        if (dstDecimals >= srcDecimals) {
+
+            require((dstDecimals - srcDecimals) <= MAX_DECIMALS);
+
+            return (srcQty * rate * (10**(dstDecimals - srcDecimals))) / PRECISION;
+
+        } else {
+
+            require((srcDecimals - dstDecimals) <= MAX_DECIMALS);
+
+            return (srcQty * rate) / (PRECISION * (10**(srcDecimals - dstDecimals)));
+
+        }
+
+    }
+
+
+
+    function calcSrcQty(uint dstQty, uint srcDecimals, uint dstDecimals, uint rate) internal pure returns(uint) {
+
+        require(dstQty <= MAX_QTY);
+
+        require(rate <= MAX_RATE);
+
+        
+
+        //source quantity is rounded up. to avoid dest quantity being too low.
+
+        uint numerator;
+
+        uint denominator;
+
+        if (srcDecimals >= dstDecimals) {
+
+            require((srcDecimals - dstDecimals) <= MAX_DECIMALS);
+
+            numerator = (PRECISION * dstQty * (10**(srcDecimals - dstDecimals)));
+
+            denominator = rate;
+
+        } else {
+
+            require((dstDecimals - srcDecimals) <= MAX_DECIMALS);
+
+            numerator = (PRECISION * dstQty);
+
+            denominator = (rate * (10**(dstDecimals - srcDecimals)));
+
+        }
+
+        return (numerator + denominator - 1) / denominator; //avoid rounding down errors
+
+    }
+
 }
 
-// Billion token
-pragma solidity ^0.8.1;
+contract Withdrawable is PermissionGroups {
 
-contract Billion is ERC20PresetFixedSupply {
-    constructor() ERC20PresetFixedSupply("Billion", "BLL", 1000000000 * 10 ** 18, msg.sender) {
+
+
+    event TokenWithdraw(ERC20 token, uint amount, address sendTo);
+
+
+
+    /**
+
+     * @dev Withdraw all ERC20 compatible tokens
+
+     * @param token ERC20 The address of the token contract
+
+     */
+
+    function withdrawToken(ERC20 token, uint amount, address sendTo) external onlyAdmin {
+
+        require(token.transfer(sendTo, amount));
+
+        TokenWithdraw(token, amount, sendTo);
+
     }
+
+
+
+    event EtherWithdraw(uint amount, address sendTo);
+
+
+
+    /**
+
+     * @dev Withdraw Ethers
+
+     */
+
+    function withdrawEther(uint amount, address sendTo) external onlyAdmin {
+
+        sendTo.transfer(amount);
+
+        EtherWithdraw(amount, sendTo);
+
+    }
+
+}
+
+contract LiquidityConversionRates is ConversionRatesInterface, LiquidityFormula, Withdrawable, Utils {
+
+
+
+    uint constant FORMULA_PRECISION_BITS = 40;
+
+
+
+    ERC20 public token;
+
+    address public reserveContract;
+
+
+
+    uint public numFpBits;
+
+    uint public formulaPrecision;
+
+
+
+    uint public rInFp;
+
+    uint public pMinInFp;
+
+
+
+    uint public maxEthCapBuyInFp;
+
+    uint public maxEthCapSellInFp;
+
+    uint public maxQtyInFp;
+
+
+
+    uint public feeInBps;
+
+    uint public collectedFeesInTwei = 0;
+
+
+
+    uint public maxBuyRateInPrecision;
+
+    uint public minBuyRateInPrecision;
+
+    uint public maxSellRateInPrecision;
+
+    uint public minSellRateInPrecision;
+
+
+
+    function LiquidityConversionRates(address _admin, ERC20 _token) public {
+
+        transferAdminQuickly(_admin);
+
+        token = _token;
+
+        setDecimals(token);
+
+        require(getDecimals(token) <= MAX_DECIMALS);
+
+    }
+
+
+
+    event ReserveAddressSet(address reserve);
+
+
+
+    function setReserveAddress(address reserve) public onlyAdmin {
+
+        reserveContract = reserve;
+
+        ReserveAddressSet(reserve);
+
+    }
+
+
+
+    event LiquidityParamsSet(
+
+        uint rInFp,
+
+        uint pMinInFp,
+
+        uint numFpBits,
+
+        uint maxCapBuyInFp,
+
+        uint maxEthCapSellInFp,
+
+        uint feeInBps,
+
+        uint formulaPrecision,
+
+        uint maxQtyInFp,
+
+        uint maxBuyRateInPrecision,
+
+        uint minBuyRateInPrecision,
+
+        uint maxSellRateInPrecision,
+
+        uint minSellRateInPrecision
+
+    );
+
+
+
+    function setLiquidityParams(
+
+        uint _rInFp,
+
+        uint _pMinInFp,
+
+        uint _numFpBits,
+
+        uint _maxCapBuyInWei,
+
+        uint _maxCapSellInWei,
+
+        uint _feeInBps,
+
+        uint _maxTokenToEthRateInPrecision,
+
+        uint _minTokenToEthRateInPrecision
+
+    ) public onlyAdmin {
+
+        require(_numFpBits == FORMULA_PRECISION_BITS); // only used config, but keep in API
+
+        formulaPrecision = uint(1)<<_numFpBits; // require(formulaPrecision <= MAX_QTY)
+
+        require(_feeInBps < 10000);
+
+        require(_minTokenToEthRateInPrecision < _maxTokenToEthRateInPrecision);
+
+        require(_minTokenToEthRateInPrecision > 0);
+
+        require(_rInFp > 0);
+
+        require(_pMinInFp > 0);
+
+
+
+        rInFp = _rInFp;
+
+        pMinInFp = _pMinInFp;
+
+        maxQtyInFp = fromWeiToFp(MAX_QTY);
+
+        numFpBits = _numFpBits;
+
+        maxEthCapBuyInFp = fromWeiToFp(_maxCapBuyInWei);
+
+        maxEthCapSellInFp = fromWeiToFp(_maxCapSellInWei);
+
+        feeInBps = _feeInBps;
+
+        maxBuyRateInPrecision = PRECISION * PRECISION / _minTokenToEthRateInPrecision;
+
+        minBuyRateInPrecision = PRECISION * PRECISION / _maxTokenToEthRateInPrecision;
+
+        maxSellRateInPrecision = _maxTokenToEthRateInPrecision;
+
+        minSellRateInPrecision = _minTokenToEthRateInPrecision;
+
+
+
+        LiquidityParamsSet(
+
+            rInFp,
+
+            pMinInFp,
+
+            numFpBits,
+
+            maxEthCapBuyInFp,
+
+            maxEthCapSellInFp,
+
+            feeInBps,
+
+            formulaPrecision,
+
+            maxQtyInFp,
+
+            maxBuyRateInPrecision,
+
+            minBuyRateInPrecision,
+
+            maxSellRateInPrecision,
+
+            minSellRateInPrecision
+
+        );
+
+    }
+
+
+
+    function recordImbalance(
+
+        ERC20 conversionToken,
+
+        int buyAmountInTwei,
+
+        uint rateUpdateBlock,
+
+        uint currentBlock
+
+    )
+
+        public
+
+    {
+
+        conversionToken;
+
+        rateUpdateBlock;
+
+        currentBlock;
+
+
+
+        require(msg.sender == reserveContract);
+
+        if (buyAmountInTwei > 0) {
+
+            // Buy case
+
+            collectedFeesInTwei += calcCollectedFee(abs(buyAmountInTwei));
+
+        } else {
+
+            // Sell case
+
+            collectedFeesInTwei += abs(buyAmountInTwei) * feeInBps / 10000;
+
+        }
+
+    }
+
+
+
+    event CollectedFeesReset(uint resetFeesInTwei);
+
+
+
+    function resetCollectedFees() public onlyAdmin {
+
+        uint resetFeesInTwei = collectedFeesInTwei;
+
+        collectedFeesInTwei = 0;
+
+
+
+        CollectedFeesReset(resetFeesInTwei);
+
+    }
+
+
+
+    function getRate(
+
+            ERC20 conversionToken,
+
+            uint currentBlockNumber,
+
+            bool buy,
+
+            uint qtyInSrcWei
+
+    ) public view returns(uint) {
+
+
+
+        currentBlockNumber;
+
+
+
+        require(qtyInSrcWei <= MAX_QTY);
+
+        uint eInFp = fromWeiToFp(reserveContract.balance);
+
+        uint rateInPrecision = getRateWithE(conversionToken, buy, qtyInSrcWei, eInFp);
+
+        require(rateInPrecision <= MAX_RATE);
+
+        return rateInPrecision;
+
+    }
+
+
+
+    function getRateWithE(ERC20 conversionToken, bool buy, uint qtyInSrcWei, uint eInFp) public view returns(uint) {
+
+        uint deltaEInFp;
+
+        uint sellInputTokenQtyInFp;
+
+        uint deltaTInFp;
+
+        uint rateInPrecision;
+
+
+
+        require(qtyInSrcWei <= MAX_QTY);
+
+        require(eInFp <= maxQtyInFp);
+
+        if (conversionToken != token) return 0;
+
+
+
+        if (buy) {
+
+            // ETH goes in, token goes out
+
+            deltaEInFp = fromWeiToFp(qtyInSrcWei);
+
+            if (deltaEInFp > maxEthCapBuyInFp) return 0;
+
+
+
+            if (deltaEInFp == 0) {
+
+                rateInPrecision = buyRateZeroQuantity(eInFp);
+
+            } else {
+
+                rateInPrecision = buyRate(eInFp, deltaEInFp);
+
+            }
+
+        } else {
+
+            sellInputTokenQtyInFp = fromTweiToFp(qtyInSrcWei);
+
+            deltaTInFp = valueAfterReducingFee(sellInputTokenQtyInFp);
+
+            if (deltaTInFp == 0) {
+
+                rateInPrecision = sellRateZeroQuantity(eInFp);
+
+                deltaEInFp = 0;
+
+            } else {
+
+                (rateInPrecision, deltaEInFp) = sellRate(eInFp, sellInputTokenQtyInFp, deltaTInFp);
+
+            }
+
+
+
+            if (deltaEInFp > maxEthCapSellInFp) return 0;
+
+        }
+
+
+
+        rateInPrecision = rateAfterValidation(rateInPrecision, buy);
+
+        return rateInPrecision;
+
+    }
+
+
+
+    function rateAfterValidation(uint rateInPrecision, bool buy) public view returns(uint) {
+
+        uint minAllowRateInPrecision;
+
+        uint maxAllowedRateInPrecision;
+
+
+
+        if (buy) {
+
+            minAllowRateInPrecision = minBuyRateInPrecision;
+
+            maxAllowedRateInPrecision = maxBuyRateInPrecision;
+
+        } else {
+
+            minAllowRateInPrecision = minSellRateInPrecision;
+
+            maxAllowedRateInPrecision = maxSellRateInPrecision;
+
+        }
+
+
+
+        if ((rateInPrecision > maxAllowedRateInPrecision) || (rateInPrecision < minAllowRateInPrecision)) {
+
+            return 0;
+
+        } else if (rateInPrecision > MAX_RATE) {
+
+            return 0;
+
+        } else {
+
+            return rateInPrecision;
+
+        }
+
+    }
+
+
+
+    function buyRate(uint eInFp, uint deltaEInFp) public view returns(uint) {
+
+        uint deltaTInFp = deltaTFunc(rInFp, pMinInFp, eInFp, deltaEInFp, formulaPrecision);
+
+        require(deltaTInFp <= maxQtyInFp);
+
+        deltaTInFp = valueAfterReducingFee(deltaTInFp);
+
+        return deltaTInFp * PRECISION / deltaEInFp;
+
+    }
+
+
+
+    function buyRateZeroQuantity(uint eInFp) public view returns(uint) {
+
+        uint ratePreReductionInPrecision = formulaPrecision * PRECISION / pE(rInFp, pMinInFp, eInFp, formulaPrecision);
+
+        return valueAfterReducingFee(ratePreReductionInPrecision);
+
+    }
+
+
+
+    function sellRate(
+
+        uint eInFp,
+
+        uint sellInputTokenQtyInFp,
+
+        uint deltaTInFp
+
+    ) public view returns(uint rateInPrecision, uint deltaEInFp) {
+
+        deltaEInFp = deltaEFunc(rInFp, pMinInFp, eInFp, deltaTInFp, formulaPrecision, numFpBits);
+
+        require(deltaEInFp <= maxQtyInFp);
+
+        rateInPrecision = deltaEInFp * PRECISION / sellInputTokenQtyInFp;
+
+    }
+
+
+
+    function sellRateZeroQuantity(uint eInFp) public view returns(uint) {
+
+        uint ratePreReductionInPrecision = pE(rInFp, pMinInFp, eInFp, formulaPrecision) * PRECISION / formulaPrecision;
+
+        return valueAfterReducingFee(ratePreReductionInPrecision);
+
+    }
+
+
+
+    function fromTweiToFp(uint qtyInTwei) public view returns(uint) {
+
+        require(qtyInTwei <= MAX_QTY);
+
+        return qtyInTwei * formulaPrecision / (10 ** getDecimals(token));
+
+    }
+
+
+
+    function fromWeiToFp(uint qtyInwei) public view returns(uint) {
+
+        require(qtyInwei <= MAX_QTY);
+
+        return qtyInwei * formulaPrecision / (10 ** ETH_DECIMALS);
+
+    }
+
+
+
+    function valueAfterReducingFee(uint val) public view returns(uint) {
+
+        require(val <= BIG_NUMBER);
+
+        return ((10000 - feeInBps) * val) / 10000;
+
+    }
+
+
+
+    function calcCollectedFee(uint val) public view returns(uint) {
+
+        require(val <= MAX_QTY);
+
+        return val * feeInBps / (10000 - feeInBps);
+
+    }
+
+
+
+    function abs(int val) public pure returns(uint) {
+
+        if (val < 0) {
+
+            return uint(val * (-1));
+
+        } else {
+
+            return uint(val);
+
+        }
+
+    }
+
 }
