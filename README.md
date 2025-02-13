@@ -4,11 +4,27 @@
 
 ## Welcome to the Bitsec Subnet
 
-This repository contains all the necessary information to get started, understand our subnet architecture, and contribute.
+Bitsec is an Ecosystem for AI-powered code vulnerability detection. It finds and fixes code vulnerabilities for subnet codebases and smart contracts. As the project grows, Bitsec will expand coverage to other types of codebases and vulnerabilities.
 
-## What is Bitsec?
-
-Bitsec is an Ecosystem for AI-powered code vulnerability detection. Initially it will help other Bittensor Subnet owners find and fix flaws in their incentive mechanisms, and find exploits in smart contract code. As the project grows, Bitsec will expand coverage to other types of codebases.
+<table style="border: none !important; width: 100% !important; border-collapse: collapse !important; margin: 0 auto !important;">
+  <tbody>
+    <tr>
+      <td><b>Docs</b></td>
+      <td><b>Resources</b></td>
+    </tr>
+    <tr style="vertical-align: top !important">
+      <td>
+        <a href="./miner_and_validator_setup.md">Mining and Validator Guide</a><br>
+        <a href="contrib/CONTRIBUTING.md">Contributor Guide</a></td>
+      <td>
+        <a href="https://bitsec.ai/scan">SN60-Powered Applications</a><br>
+        <a href="https://docs.bittensor.com/learn/bittensor-building-blocks">Bittensor Introduction</a><br> 
+        <a href="https://learnbittensor.org/guides">Bittensor Guides</a><br> 
+        <a href="https://x.com/bitsecai">BitsecAI twitter / X</a><br>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 ## Subnet Incentive Mechanism Reports
 
@@ -31,10 +47,6 @@ Here are two sample applications on the roadmap:
 - **Research Integration:** We update our detection models and methodologies in response to emerging academic research, offering resources like training data sets, training code, model weights to our community.
 - **Validators:** Responsible for challenging miners with a balanced mix of synthetic and real codebases, drawn from a diverse pool of sources.
 - **Resource Expansion:** We are committed to enhancing the validators' capabilities by increasing the diversity and volume of the codebase population, which supports rigorous testing and validation processes.
-
-## Setup
-
-To set up a miner or validator, use [miner_and_validator_setup.md](./miner_and_validator_setup.md)
 
 ## Questions?
 

@@ -1,5 +1,5 @@
-bittensor-cli==8.2.0rc14
-bittensor==8.5.2
+bittensor-cli==9.0.0rc4
+bittensor==9.0.0rc6
 starlette>=0.30.0
 pydantic>=2
 torch>=2
@@ -8,7 +8,4 @@ setuptools>=68
 tenacity>=9
 openai>=1.47
 flaky>=3.8.1
-
-# Auto updating the validator
-GitPython>=3
-APScheduler>=3.11.0
+wandb>=0.19.6

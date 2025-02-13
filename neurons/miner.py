@@ -19,10 +19,12 @@
 
 import time
 import typing
+import argparse
 import bittensor as bt
 
-# Bittensor Miner Template:
-import bitsec
+# Logging
+import wandb
+from bitsec import __version__
 
 # import base miner class which takes care of most of the boilerplate
 from bitsec.base.miner import BaseMinerNeuron
@@ -41,6 +43,27 @@ class Miner(BaseMinerNeuron):
 
     def __init__(self, config=None):
         super(Miner, self).__init__(config=config)
+
+        # Initialize wandb only if not disabled
+        if not self.config.wandb.off and not self.config.wandb.offline:
+            run_name = f'bitsec/miner-{self.uid}-{__version__}'
+            wandb_config = {
+                "uid": self.uid,
+                "validator_hotkey": self.wallet.hotkey.ss58_address,
+                "version": __version__,
+                "type": 'miner',
+                "netuid": self.config.netuid,
+                "subtensor_network": self.config.network,
+            }
+            
+            wandb.init(
+                name=run_name,
+                project=self.config.wandb.project_name,
+                entity=self.config.wandb.entity,
+                config=wandb_config,
+                notes=self.config.wandb.notes,
+                mode="offline" if self.config.wandb.offline else "online"
+            )
 
     async def forward(
         self, synapse: CodeSynapse
@@ -64,9 +87,14 @@ class Miner(BaseMinerNeuron):
         except Exception as e:
             bt.logging.error("Error performing inference")
             bt.logging.error(e)
+            wandb.log({"miner/inference_error": str(e)})
 
         bt.logging.info(f"PREDICTION: {synapse.response.prediction}")
         bt.logging.info(f"VULNERABILITIES: {synapse.response.vulnerabilities}")
+        wandb.log({
+            "miner/prediction": synapse.response.prediction,
+            "miner/vulnerabilities": synapse.response.vulnerabilities
+        })
         return synapse
 
     async def blacklist(
@@ -169,6 +197,7 @@ class Miner(BaseMinerNeuron):
 
     def save_state(self):
         pass
+
 # This is the main function, which runs the miner.
 if __name__ == "__main__":
     with Miner() as miner:

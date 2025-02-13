@@ -18,6 +18,9 @@
 # DEALINGS IN THE SOFTWARE.
 
 import random
+import time
+
+import wandb
 import bittensor as bt
 
 from bitsec.protocol import prepare_code_synapse
@@ -53,31 +56,39 @@ async def forward(self):
     # get_random_uids is an example method, but you can replace it with your own.
     miner_uids = get_random_uids(self, k=self.config.neuron.sample_size)
     bt.logging.info(f"Attempting to connect to {self.config.neuron.sample_size} miners, UIDs found: {miner_uids}")
+    wandb.log({"miner_uids": miner_uids})
+
 
     if len(miner_uids) == 0:
         bt.logging.warning(f"❌❌❌❌❌ No miners found, skipping challenge")
         return
 
-    vulnerable = random.random() < 0.5
+    vulnerable = random.random() < 0.8
     challenge, expected_response = create_challenge(vulnerable=vulnerable)
     bt.logging.info(f"created challenge")
+    wandb.log({"challenge": challenge})
+
 
     # The dendrite client queries the network.
     axons = [self.metagraph.axons[uid] for uid in miner_uids]
     bt.logging.info(f"⏳ Connecting to miner axons at: {[axon.ip + ':' + str(axon.port) for axon in axons]}")
     
+    start_time = time.time()
     responses = await self.dendrite(
         # Send the query to selected miner axons in the network.
         axons=axons,
         synapse=prepare_code_synapse(code=challenge),
         deserialize=True,
     )
+    response_time = time.time() - start_time
+    wandb.log({"response_time": response_time})
 
     # Log the results for monitoring purposes.
     bt.logging.info(f"Received {len(responses)} responses")
 
     # Adjust the scores based on responses from miners.
     rewards = get_rewards(expected_response=expected_response, responses=responses)
+    wandb.log({"rewards": rewards})
 
     # bt.logging.info(f"Scored responses: {rewards}")
     # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.

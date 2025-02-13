@@ -53,7 +53,7 @@ pip install -r requirements.txt
 
 ## Validator
 
-To start the validator, run `python3 start-validator.py`. It will automatically check for updates and restart the validator if needed.
+To start the validator, run `./start-validator.sh --netuid 60`. It will automatically check for updates and restart the validator if needed.
 
 ### Future:
 
