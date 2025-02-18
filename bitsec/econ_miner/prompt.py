@@ -4,7 +4,7 @@
 import openai
 import json
 import re
-from openai import OpenAI
+from bitsec.utils.llm import chat_completion
 from bitsec.protocol import PredictionResponse
 from bitsec.utils.data import SAMPLE_DIR
 import bittensor as bt
@@ -16,17 +16,8 @@ from tenacity import (
     retry_if_exception_type
 )
 
-# OpenAI API key config
-if not os.getenv("OPENAI_API_KEY"):
-    bt.logging.error("OpenAI API key is not set. Please set the 'OPENAI_API_KEY' environment variable.")
-    raise ValueError("OpenAI API key is not set.")
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-# Default parameters
-DEFAULT_MODEL = "gpt-4o-mini-2024-07-18"
-DEFAULT_TEMPERATURE = 0.7
-DEFAULT_MAX_TOKENS = 1000
+# - categorize the risk from the following enum (critical, high, medium, low, informational). 
 
 # Templates for prompts
 VULN_PROMPT_TEMPLATE = """
@@ -70,10 +61,10 @@ retryable_exceptions = (
 
 def analyze_code(
     code: str,
-    model: str = DEFAULT_MODEL,
-    temperature: float = DEFAULT_TEMPERATURE,
-    max_tokens: int = DEFAULT_MAX_TOKENS
-) -> str:
+    model: str = None,
+    temperature: float = None,
+    max_tokens: int = None
+) -> PredictionResponse:
     """
     Calls OpenAI API to analyze provided code for vulnerabilities.
 
@@ -88,22 +79,16 @@ def analyze_code(
     """
     prompt = VULN_PROMPT_TEMPLATE.format(code=code)
     try:
-        response = client.chat.completions.create(
-            messages=[{"role": "system", "content": prompt}],
-            model=model,
-            temperature=temperature,
-            max_tokens=max_tokens
-        )
-        return response.choices[0].message.content.strip()
+        return chat_completion(prompt, PredictionResponse, model, temperature, max_tokens)
     except Exception as e:
         bt.logging.error(f"Failed to analyze code: {e}")
         raise
 
 def format_analysis(
     analysis: str,
-    model: str = DEFAULT_MODEL,
-    temperature: float = DEFAULT_TEMPERATURE,
-    max_tokens: int = DEFAULT_MAX_TOKENS
+    model: str = None,
+    temperature: float = None,
+    max_tokens: int = None
 ) -> str:
     """
     Formats the vulnerability analysis into a structured JSON response: PredictionResponse.
@@ -120,13 +105,7 @@ def format_analysis(
     prompt = FORMAT_RESULTS_TEMPLATE.format(analysis=analysis)
 
     try:
-        response = client.chat.completions.create(
-            messages=[{"role": "system", "content": prompt}],
-            model=model,
-            temperature=temperature,
-            max_tokens=max_tokens
-        )
-        content = response.choices[0].message.content
+        content = chat_completion(prompt, model, temperature, max_tokens)
         content = re.sub(r'```json\s*|\s*```', '', content)
         return content
     except Exception as e:
@@ -162,26 +141,15 @@ def code_to_vulns(code: str) -> PredictionResponse:
 
     ## short circuit testnet default code
     if default_testnet_code(code) == True:
-      bt.logging.info("Default Testnet Code detected. Sending default prediction.")
-      return PredictionResponse.from_tuple([True,[]])
+        bt.logging.info("Default Testnet Code detected. Sending default prediction.")
+        return PredictionResponse.from_tuple([True,[]])
 
     try:
-        bt.logging.info(f"analyzing code:\n{code}")
-        analysis = analyze_code(code)
-        bt.logging.info(f"Analysis result:\n{analysis}")
-
-        formatted_result = format_analysis(analysis)
-        bt.logging.debug(f"Formatted result: {formatted_result}")
-
-        try:
-            formatted_result_dict = json.loads(formatted_result)
-        except json.JSONDecodeError as e:
-            bt.logging.error(f"Failed to parse formatted result as JSON: {e}")
-            raise
-
-        prediction_response = PredictionResponse.model_validate(formatted_result_dict)
-        bt.logging.info(f"Analysis complete. Result: {prediction_response}")
-        return prediction_response
+        bt.logging.info(f"analyzing code:\n{len(code.splitlines())} lines")
+        # analyze_code already returns a PredictionResponse
+        response = analyze_code(code)
+        bt.logging.info(f"Analysis result:\n{response}")
+        return response
     except Exception as e:
         bt.logging.error(f"An error occurred during analysis: {e}")
         raise

@@ -28,7 +28,7 @@ def test_make_report():
     3. Response validation works correctly
     """
     if not SPEND_MONEY:
-        print(f"SPEND_MONEY: {SPEND_MONEY}")    
+        print(f"SPEND_MONEY: {SPEND_MONEY}")
         pytest.skip("Skipping test because SPEND_MONEY is False")
 
     p = PredictionResponse(
