@@ -3,7 +3,7 @@ import pytest
 import os
 from flaky import flaky
 from unittest.mock import patch, MagicMock
-from bitsec.utils.llm import chat_completion
+from bitsec.utils.llm import chat_completion, get_token_cost
 import openai
 import bittensor as bt
 from bitsec.utils.data import create_challenge
@@ -81,6 +81,73 @@ def test_chat_completion_refused():
         with pytest.raises(ValueError, match="Prompt was refused"):
             chat_completion("Test prompt")
 
+def test_get_token_cost():
+    """Test basic token cost calculation."""
+    response = MagicMock()
+    response.model = "testing"
+    response.usage = MagicMock(
+        prompt_tokens=1000,
+        completion_tokens=1000,
+        total_tokens=2000,
+        prompt_tokens_details=MagicMock(cached_tokens=0),
+        completion_tokens_details=MagicMock(
+            reasoning_tokens=0,
+            accepted_prediction_tokens=0,
+            rejected_prediction_tokens=0
+        )
+    )
+
+    fee, description = get_token_cost(response)
+    # Using 1000 tokens to make math cleaner: 1000 * (1/1M) * 100 = 0.1
+    assert fee == 0.2  # 0.1 for input + 0.1 for output
+    assert "Input: ¢0.1" in description
+    assert "Output: ¢0.1" in description
+
+def test_get_token_cost_with_cached():
+    """Test token cost with cached tokens."""
+    response = MagicMock()
+    response.model = "testing"
+    response.usage = MagicMock(
+        prompt_tokens=1000,
+        completion_tokens=1000,
+        total_tokens=2000,
+        prompt_tokens_details=MagicMock(cached_tokens=500),
+        completion_tokens_details=MagicMock(
+            reasoning_tokens=0,
+            accepted_prediction_tokens=0,
+            rejected_prediction_tokens=0
+        )
+    )
+
+    fee, description = get_token_cost(response)
+    # 500 uncached + 500 cached + 1000 output, each at 0.1 per 1000 tokens
+    assert fee == 0.2
+    assert "Input: ¢0.1" in description
+    assert "(cached: ¢0.1)" in description
+    assert "Output: ¢0.1" in description
+
+def test_get_token_cost_invalid_model():
+    """Test invalid model handling."""
+    response = MagicMock()
+    response.model = "invalid-model"
+    response.usage = MagicMock(
+        prompt_tokens=1000,
+        completion_tokens=1000,
+        total_tokens=2000,
+        prompt_tokens_details=MagicMock(cached_tokens=0)
+    )
+
+    with pytest.raises(ValueError, match="Model invalid-model not found in cost dictionary"):
+        get_token_cost(response)
+
+def test_get_token_cost_no_usage():
+    """Test missing usage data handling."""
+    response = MagicMock()
+    response.model = "testing"
+    response.usage = None
+
+    with pytest.raises(ValueError, match="No usage data"):
+        get_token_cost(response)
 
 @pytest.fixture
 def mock_openai_response():
