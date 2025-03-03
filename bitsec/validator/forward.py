@@ -56,7 +56,7 @@ async def forward(self):
     # get_random_uids is an example method, but you can replace it with your own.
     miner_uids = get_random_uids(self, k=self.config.neuron.sample_size)
     bt.logging.info(f"Attempting to connect to {self.config.neuron.sample_size} miners, UIDs found: {miner_uids}")
-    wandb.log({"miner_uids": miner_uids})
+    #wandb.log({"miner_uids": miner_uids})
 
 
     if len(miner_uids) == 0:
@@ -73,7 +73,7 @@ async def forward(self):
         try:
             challenge, expected_response = create_challenge(vulnerable=vulnerable)
             bt.logging.info(f"created challenge")
-            wandb.log({"challenge": challenge})
+            #wandb.log({"challenge": challenge})
         except Exception as e:
             bt.logging.warning(f"Error creating challenge: {e}")
             time.sleep(1)
@@ -89,17 +89,28 @@ async def forward(self):
         axons=axons,
         synapse=prepare_code_synapse(code=challenge),
         deserialize=True,
+        timeout=30
     )
     response_time = time.time() - start_time
-    wandb.log({"response_time": response_time})
+    #wandb.log({"response_time": response_time})
 
     # Log the results for monitoring purposes.
     bt.logging.info(f"Received {len(responses)} responses")
 
     # Adjust the scores based on responses from miners.
     rewards = get_rewards(expected_response=expected_response, responses=responses)
-    wandb.log({"rewards": rewards})
+    #wandb.log({"rewards": rewards})
 
     # bt.logging.info(f"Scored responses: {rewards}")
     # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
     self.update_scores(rewards, miner_uids)
+
+    wandb.log({
+        "miner_uids": miner_uids.tolist(),
+        "rewards": rewards.tolist(),
+        "response_time": response_time,
+        "challenge": challenge,
+        "expected_response": expected_response.model_dump_json(),
+        "response": [response.model_dump_json() for response in responses],
+        "vulnerable": vulnerable
+    })
