@@ -138,3 +138,36 @@ def get_rewards(
     return np.array(
         [reward(expected_response, response) for response in responses]
     )
+
+def improve_incentive_reward_mechanism(expected_response: PredictionResponse, response: PredictionResponse) -> float:
+    """
+    Improve the design on incentive reward mechanism.
+
+    Args:
+    - expected_response (PredictionResponse): The expected response.
+    - response (PredictionResponse): The response to score.
+
+    Returns:
+    - float: The improved reward value for the miner.
+    """
+    # Implement improved incentive reward mechanism here
+    # This is a placeholder for actual improvement logic
+    base_reward = reward(expected_response, response)
+    improved_reward = base_reward * 1.1  # Example improvement factor
+    return improved_reward
+
+def improve_sybil_resistance(miner_responses: List[PredictionResponse]) -> List[float]:
+    """
+    Improve Sybil resistance against a miner group overtaking miner supply.
+
+    Args:
+    - miner_responses (List[PredictionResponse]): List of responses from miners.
+
+    Returns:
+    - List[float]: List of adjusted rewards to improve Sybil resistance.
+    """
+    # Implement improved Sybil resistance logic here
+    # This is a placeholder for actual Sybil resistance logic
+    rewards = [reward(PredictionResponse(prediction=True, vulnerabilities=[]), response) for response in miner_responses]
+    adjusted_rewards = [r * 0.9 for r in rewards]  # Example adjustment factor
+    return adjusted_rewards

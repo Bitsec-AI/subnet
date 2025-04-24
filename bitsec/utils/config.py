@@ -128,6 +128,20 @@ def add_args(cls, parser):
         default="",
     )
 
+    parser.add_argument(
+        "--neuron.identity_attestation",
+        type=str,
+        help="Identity attestation method (e.g., DID, KYC service).",
+        default="",
+    )
+
+    parser.add_argument(
+        "--neuron.max_stake_weight",
+        type=float,
+        help="Maximum stake weight per on-chain identity.",
+        default=1000.0,
+    )
+
 
 def add_miner_args(cls, parser):
     """Add miner specific arguments to the parser."""
