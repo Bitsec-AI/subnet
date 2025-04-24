@@ -21,6 +21,8 @@ from bitsec.protocol import PredictionResponse
 import bittensor as bt
 from typing import List, Union, Any, Dict
 from bittensor.subnets import SubnetsAPI
+from bitsec.protocol import Vulnerability
+from bitsec.validator.make_report import format_vulnerability_to_report
 
 
 # CodeAPI allows validators to query miners using real code. This gateway allows external client services
@@ -39,3 +41,30 @@ class CodeAPI(SubnetsAPI):
                 continue
             return outputs.append(PredictionResponse.from_tuple(response))
         return outputs
+
+    def aggregate_responses(self, responses: List[PredictionResponse]) -> List[Vulnerability]:
+        """
+        Aggregates multiple miner responses into a single list of vulnerabilities.
+
+        Args:
+            responses (List[PredictionResponse]): List of responses from miners.
+
+        Returns:
+            List[Vulnerability]: Aggregated list of vulnerabilities.
+        """
+        aggregated_vulnerabilities = []
+        for response in responses:
+            aggregated_vulnerabilities.extend(response.vulnerabilities)
+        return aggregated_vulnerabilities
+
+    def generate_report(self, aggregated_vulnerabilities: List[Vulnerability]) -> str:
+        """
+        Generates a report from aggregated vulnerabilities.
+
+        Args:
+            aggregated_vulnerabilities (List[Vulnerability]): Aggregated list of vulnerabilities.
+
+        Returns:
+            str: Generated report in markdown format.
+        """
+        return format_vulnerability_to_report(aggregated_vulnerabilities)
