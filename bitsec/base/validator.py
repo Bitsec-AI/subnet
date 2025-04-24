@@ -88,6 +88,10 @@ class BaseValidatorNeuron(BaseNeuron):
         # Initialize set to track first-time miner connections
         self.seen_miners = set()
 
+        # Initialize identity attestations and max stake weight
+        self.identity_attestations = {}
+        self.max_stake_weight = self.config.neuron.max_stake_weight
+
     def serve_axon(self):
         """Serve axon to enable external connections."""
 
@@ -269,6 +273,19 @@ class BaseValidatorNeuron(BaseNeuron):
         )
         bt.logging.debug("processed_weights", processed_weights)
         bt.logging.debug("processed_weight_uids", processed_weight_uids)
+
+        # Apply max stake weight limitation per on-chain identity
+        for uid in processed_weight_uids:
+            identity = self.identity_attestations.get(uid)
+            if identity:
+                total_stake_weight = sum(
+                    processed_weights[i]
+                    for i, u in enumerate(processed_weight_uids)
+                    if self.identity_attestations.get(u) == identity
+                )
+                if total_stake_weight > self.max_stake_weight:
+                    excess_weight = total_stake_weight - self.max_stake_weight
+                    processed_weights[uid] -= excess_weight
 
         # Convert to uint16 weights and uids.
         (

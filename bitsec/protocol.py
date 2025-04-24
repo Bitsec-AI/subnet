@@ -278,3 +278,51 @@ class CodeSynapse(bt.Synapse):
         - PredictionResponse: The deserialized miner prediction and vulnerabilities
         """
         return self.response
+
+class IdentityAttestation(pydantic.BaseModel):
+    """
+    Represents an identity attestation for a node.
+    """
+    node_id: str = pydantic.Field(
+        description="The unique identifier of the node"
+    )
+    identity_proof: str = pydantic.Field(
+        description="Proof of identity, such as a DID or KYC verification"
+    )
+
+    model_config = { "populate_by_name": True }
+
+    # get field attrs from model
+    def __getattr__(self, name):
+        try:
+            return self.model_dump()[name]
+        except KeyError:
+            raise AttributeError(f"'{self.__class__.__name__}' has no attribute '{name}'")
+
+    def __dict__(self):
+        """Make JSON serializable by default."""
+        return self.model_dump()
+
+class StakeWeightLimit(pydantic.BaseModel):
+    """
+    Represents the maximum stake weight limit for a node.
+    """
+    node_id: str = pydantic.Field(
+        description="The unique identifier of the node"
+    )
+    max_stake_weight: float = pydantic.Field(
+        description="The maximum stake weight allowed for the node"
+    )
+
+    model_config = { "populate_by_name": True }
+
+    # get field attrs from model
+    def __getattr__(self, name):
+        try:
+            return self.model_dump()[name]
+        except KeyError:
+            raise AttributeError(f"'{self.__class__.__name__}' has no attribute '{name}'")
+
+    def __dict__(self):
+        """Make JSON serializable by default."""
+        return self.model_dump()
