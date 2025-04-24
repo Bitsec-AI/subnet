@@ -70,6 +70,10 @@ class BaseMinerNeuron(BaseNeuron):
         self.thread: Union[threading.Thread, None] = None
         self.lock = asyncio.Lock()
 
+        # Initialize identity attestations and max stake weight
+        self.identity_attestations = {}
+        self.max_stake_weight = self.config.neuron.max_stake_weight
+
     def run(self):
         """
         Initiates and manages the main loop for the miner on the Bittensor network. The main loop handles graceful shutdown on keyboard interrupts and logs unforeseen errors.
@@ -132,6 +136,19 @@ class BaseMinerNeuron(BaseNeuron):
                 # Sync metagraph and potentially set weights.
                 self.sync()
                 self.step += 1
+
+                # Apply max stake weight limitation per on-chain identity
+                for uid in self.metagraph.uids:
+                    identity = self.identity_attestations.get(uid)
+                    if identity:
+                        total_stake_weight = sum(
+                            self.metagraph.S[i]
+                            for i, u in enumerate(self.metagraph.uids)
+                            if self.identity_attestations.get(u) == identity
+                        )
+                        if total_stake_weight > self.max_stake_weight:
+                            excess_weight = total_stake_weight - self.max_stake_weight
+                            self.metagraph.S[uid] -= excess_weight
 
         # If someone intentionally stops the miner, it'll safely terminate operations.
         except KeyboardInterrupt:
