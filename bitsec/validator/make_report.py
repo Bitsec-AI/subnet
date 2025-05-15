@@ -1,5 +1,5 @@
 from bitsec.utils.llm import chat_completion
-from bitsec.protocol import Vulnerability
+from bitsec.protocol import Vulnerability, PredictionResponse
 from typing import List
 import bittensor as bt
 
@@ -68,3 +68,30 @@ def format_vulnerability_to_report(
     except Exception as e:
         bt.logging.error(f"Failed to format analysis: {e}")
         raise
+
+def aggregate_responses(responses: List[PredictionResponse]) -> List[Vulnerability]:
+    """
+    Aggregates multiple miner responses into a single list of vulnerabilities.
+
+    Args:
+        responses (List[PredictionResponse]): List of responses from miners.
+
+    Returns:
+        List[Vulnerability]: Aggregated list of vulnerabilities.
+    """
+    aggregated_vulnerabilities = []
+    for response in responses:
+        aggregated_vulnerabilities.extend(response.vulnerabilities)
+    return aggregated_vulnerabilities
+
+def generate_report(aggregated_vulnerabilities: List[Vulnerability]) -> str:
+    """
+    Generates a report from aggregated vulnerabilities.
+
+    Args:
+        aggregated_vulnerabilities (List[Vulnerability]): Aggregated list of vulnerabilities.
+
+    Returns:
+        str: Generated report in markdown format.
+    """
+    return format_vulnerability_to_report(aggregated_vulnerabilities)
