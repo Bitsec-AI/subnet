@@ -148,14 +148,15 @@ class ValidatorProxy:
         metagraph = self.validator.metagraph
         bt.logging.info(f"metagraph: {metagraph}")
 
-        # miner_uids = self.validator.last_responding_miner_uids
-        # if len(miner_uids) == 0:
-        #     bt.logging.warning("[ORGANIC] No recent miner uids found, sampling random uids")
-        #     miner_uids = get_random_uids(self.validator, k=self.validator.config.neuron.sample_size)
-        miner_uids = [2]
+        miner_uids = self.validator.last_responding_miner_uids
+        if len(miner_uids) == 0:
+            bt.logging.warning("[ORGANIC] No recent miner uids found, sampling random uids")
+            miner_uids = get_random_uids(self.validator, k=self.validator.config.neuron.sample_size)
+        # miner_uids = [2]
 
-        bt.logging.info(f"[ORGANIC] Querying {len(miner_uids)} miners...")
-        bt.logging.info(f"axons: {metagraph.axons[3]}")
+        bt.logging.info(f"[ORGANIC] Querying {len(miner_uids)} miners: {miner_uids}")
+        for uid in miner_uids:
+            bt.logging.info(f"{uid} axon: {metagraph.axons[uid]}")
 
         responses = await self.dendrite(
             # Send the query to selected miner axons in the network.
@@ -177,6 +178,7 @@ class ValidatorProxy:
             if len(valid_preds) > 0:
                 # Merge all vulnerabilities from all miners into a single list
                 vulnerabilities_by_miner = []
+                predictions_by_miner = {}
                 for uid, pred in zip(valid_pred_uids, valid_preds):
                     bt.logging.info(f"uid: {uid}, pred: {pred}")
                     for vuln in pred.vulnerabilities:
@@ -196,11 +198,12 @@ class ValidatorProxy:
                                 **parts
                             )
                         )
+                    predictions_by_miner[uid] = pred
                 
                 data = {
                     'uids': [int(uid) for uid in valid_pred_uids],
                     'vulnerabilities': [v.model_dump() for v in vulnerabilities_by_miner],
-                    'predictions_from_miners': [p.model_dump() for p in valid_preds],
+                    'predictions_from_miners': {uid: p.model_dump() for uid, p in predictions_by_miner.items()},
                     'ranks': [float(self.validator.metagraph.R[uid]) for uid in valid_pred_uids],
                     'incentives': [float(self.validator.metagraph.I[uid]) for uid in valid_pred_uids],
                     'emissions': [float(self.validator.metagraph.E[uid]) for uid in valid_pred_uids],
