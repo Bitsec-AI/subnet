@@ -184,7 +184,11 @@ class ValidatorProxy:
                         if isinstance(vuln, Vulnerability):
                             parts = vuln.model_dump()
                         elif isinstance(vuln, dict):
-                            parts = vuln
+                            # Convert dict to Vulnerability object first
+                            vuln_obj = Vulnerability.model_validate(vuln)
+                            parts = vuln_obj.model_dump()
+                        else:
+                            raise ValueError(f"Invalid vulnerability type: {type(vuln)}, {vuln}")
                         bt.logging.info(f"vuln {vuln}, parts {parts}")
                         vulnerabilities_by_miner.append(
                             VulnerabilityByMiner(
