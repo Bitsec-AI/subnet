@@ -16,6 +16,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 import copy
+import time
 import typing
 
 import bittensor as bt
@@ -89,9 +90,20 @@ class BaseNeuron(ABC):
             )
         else:
             self.wallet = bt.wallet(config=self.config)
-            self.subtensor = bt.subtensor(config=self.config)
-            self.metagraph = self.subtensor.metagraph(self.config.netuid)
-
+            
+            # Retry subtensor connection 3 times
+            retry_count = 0
+            while retry_count < 3:
+                try:
+                    self.subtensor = bt.subtensor(config=self.config)
+                    self.metagraph = self.subtensor.metagraph(self.config.netuid)
+                    break
+                except TimeoutError as e:
+                    retry_count += 1
+                    bt.logging.error(f"TimeoutError: {e}")
+                    time.sleep(5 * retry_count)
+                    bt.logging.info(f"Retrying subtensor connection... {retry_count}")
+            
         bt.logging.info(f"Wallet: {self.wallet}")
         bt.logging.info(f"Subtensor: {self.subtensor}")
         bt.logging.info(f"Metagraph: {self.metagraph}")
