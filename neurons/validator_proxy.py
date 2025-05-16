@@ -49,6 +49,7 @@ class ValidatorProxy:
         )
         if self.validator.config.proxy.port:
             self.start_server()
+            bt.logging.info(f"Validator proxy server started on port {self.validator.config.proxy.port} e.g. GET http://localhost:{self.validator.config.proxy.port}/healthcheck and http://localhost:{self.validator.config.proxy.port}/metagraph POST http://localhost:{self.validator.config.proxy.port}/validator_proxy")
 
     def get_credentials(self):
         # with httpx.Client(timeout=httpx.Timeout(30)) as client:
@@ -147,12 +148,15 @@ class ValidatorProxy:
         metagraph = self.validator.metagraph
         bt.logging.info(f"metagraph: {metagraph}")
 
-        miner_uids = self.validator.last_responding_miner_uids
-        if len(miner_uids) == 0:
-            bt.logging.warning("[ORGANIC] No recent miner uids found, sampling random uids")
-            miner_uids = get_random_uids(self.validator, k=self.validator.config.neuron.sample_size)
+        # miner_uids = self.validator.last_responding_miner_uids
+        # if len(miner_uids) == 0:
+        #     bt.logging.warning("[ORGANIC] No recent miner uids found, sampling random uids")
+        #     miner_uids = get_random_uids(self.validator, k=self.validator.config.neuron.sample_size)
+        miner_uids = [2]
 
         bt.logging.info(f"[ORGANIC] Querying {len(miner_uids)} miners...")
+        bt.logging.info(f"axons: {metagraph.axons[3]}")
+
         responses = await self.dendrite(
             # Send the query to selected miner axons in the network.
             axons=[metagraph.axons[uid] for uid in miner_uids],
