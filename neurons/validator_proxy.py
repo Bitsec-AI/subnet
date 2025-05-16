@@ -168,20 +168,24 @@ class ValidatorProxy:
 
         # return predictions from miners
         valid_pred_idx = np.array([i for i, v in enumerate(responses) if v.prediction])
+        bt.logging.info(f"valid_pred_idx: {valid_pred_idx}")
         if len(valid_pred_idx) > 0:
             valid_preds = np.array(responses)[valid_pred_idx]
             valid_pred_uids = np.array(miner_uids)[valid_pred_idx]
+            bt.logging.info(f"valid_preds: {valid_preds}")
+            bt.logging.info(f"valid_pred_uids: {valid_pred_uids}")
             if len(valid_preds) > 0:
                 # Merge all vulnerabilities from all miners into a single list
                 vulnerabilities_by_miner = []
                 for uid, pred in zip(valid_pred_uids, valid_preds):
+                    bt.logging.info(f"uid: {uid}, pred: {pred}")
                     for vuln in pred.vulnerabilities:
                         parts = None
                         if isinstance(vuln, Vulnerability):
                             parts = vuln.model_dump()
                         elif isinstance(vuln, dict):
                             parts = vuln.__dict__()
-
+                        bt.logging.info(f"vuln {vuln}, parts {parts}")
                         vulnerabilities_by_miner.append(
                             VulnerabilityByMiner(
                                 miner_id=str(uid),  # Convert to string as required by the model
