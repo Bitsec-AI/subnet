@@ -95,6 +95,7 @@ class BaseNeuron(ABC):
             retry_count = 0
             while retry_count < 3:
                 try:
+                    bt.logging.info(f"Attempting to connect to subtensor... {retry_count}")
                     self.subtensor = bt.subtensor(config=self.config)
                     self.metagraph = self.subtensor.metagraph(self.config.netuid)
                     break
