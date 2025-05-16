@@ -176,10 +176,16 @@ class ValidatorProxy:
                 vulnerabilities_by_miner = []
                 for uid, pred in zip(valid_pred_uids, valid_preds):
                     for vuln in pred.vulnerabilities:
+                        parts = None
+                        if isinstance(vuln, Vulnerability):
+                            parts = vuln.model_dump()
+                        elif isinstance(vuln, dict):
+                            parts = vuln.__dict__()
+
                         vulnerabilities_by_miner.append(
                             VulnerabilityByMiner(
                                 miner_id=str(uid),  # Convert to string as required by the model
-                                **vuln.model_dump()  # Include all fields from the base Vulnerability
+                                **parts
                             )
                         )
                 
