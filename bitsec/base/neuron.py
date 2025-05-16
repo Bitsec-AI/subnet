@@ -91,9 +91,9 @@ class BaseNeuron(ABC):
         else:
             self.wallet = bt.wallet(config=self.config)
             
-            # Retry subtensor connection 3 times
+            # Retry subtensor connection, testnet is very flaky
             retry_count = 0
-            while retry_count < 3:
+            while retry_count < 20:
                 try:
                     bt.logging.info(f"Attempting to connect to subtensor... {retry_count}")
                     self.subtensor = bt.subtensor(config=self.config)
@@ -102,7 +102,7 @@ class BaseNeuron(ABC):
                 except TimeoutError as e:
                     retry_count += 1
                     bt.logging.error(f"TimeoutError: {e}")
-                    time.sleep(5 * retry_count)
+                    time.sleep(15 * retry_count)
                     bt.logging.info(f"Retrying subtensor connection... {retry_count}")
             
         bt.logging.info(f"Wallet: {self.wallet}")
