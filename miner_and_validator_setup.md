@@ -21,18 +21,18 @@ Send TAO to your tokens.
 
 Once all wallets have tokens, register the miner and validator to the subnet.
 
-## For TESTNET 209:
+## For TESTNET:
 
 ```
-btcli subnet register --wallet.name miner --netuid 209 --wallet.hotkey default --subtensor.chain_endpoint test
-btcli subnet register --wallet.name validator --netuid 209 --wallet.hotkey default --subtensor.chain_endpoint test
+btcli subnet register --wallet.name miner --netuid 350 --wallet.hotkey default --subtensor.chain_endpoint test
+btcli subnet register --wallet.name validator --netuid 350 --wallet.hotkey default --subtensor.chain_endpoint test
 ```
 
-## For MAINNET 60:
+## For MAINNET:
 
 ```
-btcli subnet register --wallet.name miner --netuid 60 --wallet.hotkey default --subtensor.chain_endpoint test
-btcli subnet register --wallet.name validator --netuid 60 --wallet.hotkey default --subtensor.chain_endpoint test
+btcli subnet register --wallet.name miner --netuid 60 --wallet.hotkey default --subtensor.chain_endpoint finney
+btcli subnet register --wallet.name validator --netuid 60 --wallet.hotkey default --subtensor.chain_endpoint finney
 ```
 
 # Step 4:
