@@ -97,6 +97,14 @@ async def forward(self):
     # Log the results for monitoring purposes.
     bt.logging.info(f"Received {len(responses)} responses")
 
+    # Log the cross-validation score, historical accuracy, and vulnerability classification bonus for each miner
+    for response in responses:
+        wandb.log({
+            "cross_validation_score": response.cross_validation_score,
+            "historical_accuracy": response.historical_accuracy,
+            "vulnerability_classification_bonus": response.vulnerability_classification_bonus
+        })
+
     # Adjust the scores based on responses from miners.
     rewards = get_rewards(expected_response=expected_response, responses=responses)
     #wandb.log({"rewards": rewards})

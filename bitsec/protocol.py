@@ -207,6 +207,18 @@ class PredictionResponse(pydantic.BaseModel):
     vulnerabilities: List[Vulnerability] = pydantic.Field(
         description="List of detected vulnerabilities"
     )
+    cross_validation_score: Optional[float] = pydantic.Field(
+        default=None,
+        description="Cross-validation score comparing miner’s results with the aggregate consensus"
+    )
+    historical_accuracy: Optional[float] = pydantic.Field(
+        default=None,
+        description="Historical accuracy score prioritizing miners with consistent past performance"
+    )
+    vulnerability_classification_bonus: Optional[float] = pydantic.Field(
+        default=None,
+        description="Bonus score for identifying novel or severe vulnerability classes"
+    )
 
     model_config = { "populate_by_name": True }
 

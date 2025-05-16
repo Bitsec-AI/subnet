@@ -108,6 +108,10 @@ class BaseNeuron(ABC):
         )
         self.step = 0
 
+        # Initialize dynamic identity staking parameters
+        self.dynamic_stake = 0
+        self.participation_weight = 1.0
+
     @abstractmethod
     async def forward(self, synapse: bt.Synapse) -> bt.Synapse:
         ...
@@ -131,6 +135,9 @@ class BaseNeuron(ABC):
 
         # Always save state.
         self.save_state()
+
+        # Update participation weight based on dynamic staking
+        self.update_participation_weight()
 
     def check_registered(self):
         # --- Check for registration.
@@ -177,3 +184,10 @@ class BaseNeuron(ABC):
         bt.logging.warning(
             "load_state() not implemented for this neuron. You can implement this function to load model checkpoints or other useful data."
         )
+
+    def update_participation_weight(self):
+        """
+        Update the participation weight based on the dynamic stake.
+        """
+        self.participation_weight = 1.0 + (self.dynamic_stake / 1000.0)
+        bt.logging.info(f"Updated participation weight to {self.participation_weight} based on dynamic stake {self.dynamic_stake}")

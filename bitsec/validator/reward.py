@@ -24,7 +24,7 @@ import pydantic
 from bitsec.utils.llm import chat_completion
 from bitsec.protocol import PredictionResponse
 
-def reward(expected_response: PredictionResponse, response: PredictionResponse) -> float:
+def reward(expected_response: PredictionResponse, response: PredictionResponse, dynamic_stake: float) -> float:
     """
     Reward the miner response.
 
@@ -36,6 +36,8 @@ def reward(expected_response: PredictionResponse, response: PredictionResponse) 
     score = jaccard_score(expected_response, response)
     
     # Add weights and other factors
+    participation_weight = 1.0 + (dynamic_stake / 1000.0)
+    score *= participation_weight
 
     return score
 
@@ -122,6 +124,7 @@ def jaccard_score(expected_response: PredictionResponse, response: PredictionRes
 def get_rewards(
     expected_response: PredictionResponse,
     responses: List[PredictionResponse],
+    dynamic_stake: float
 ) -> np.ndarray:
     """
     Returns an array of rewards for the given query and responses.
@@ -136,5 +139,30 @@ def get_rewards(
     # Get all the reward results by iteratively calling your reward() function.
     
     return np.array(
-        [reward(expected_response, response) for response in responses]
+        [reward(expected_response, response, dynamic_stake) for response in responses]
     )
+
+def cross_validation_scoring(miner_results, aggregate_consensus, dynamic_stake: float):
+    """
+    Implement cross-validation scoring to compare each miner’s results with the aggregate consensus.
+    """
+    score = sum(1 for result in miner_results if result in aggregate_consensus) / len(miner_results)
+    participation_weight = 1.0 + (dynamic_stake / 1000.0)
+    return score * participation_weight
+
+def historical_accuracy_weighting(miner_id, performance_history):
+    """
+    Add historical accuracy weighting to prioritize miners with consistent past performance.
+    """
+    return sum(performance_history[miner_id]) / len(performance_history[miner_id])
+
+def vulnerability_classification_bonus(vulnerability_class):
+    """
+    Include vulnerability classification bonus for identifying novel or severe classes.
+    """
+    bonus_mapping = {
+        "novel": 1.5,
+        "severe": 2.0,
+        "common": 1.0
+    }
+    return bonus_mapping.get(vulnerability_class, 1.0)

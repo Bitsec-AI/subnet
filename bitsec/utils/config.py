@@ -62,6 +62,18 @@ def check_config(cls, config: "bt.Config"):
         )
         bt.logging.register_primary_logger(events_logger.name)
 
+    # Validate new configuration options
+    if not (0 <= config.neuron.cross_validation_weight <= 1):
+        raise ValueError("cross_validation_weight must be between 0 and 1")
+    if not (0 <= config.neuron.historical_accuracy_weight <= 1):
+        raise ValueError("historical_accuracy_weight must be between 0 and 1")
+    if not (0 <= config.neuron.vulnerability_classification_bonus_weight <= 1):
+        raise ValueError("vulnerability_classification_bonus_weight must be between 0 and 1")
+    if not (0 <= config.neuron.dynamic_identity_stake <= 100):
+        raise ValueError("dynamic_identity_stake must be between 0 and 100")
+    if not (0 <= config.neuron.participation_weight <= 10):
+        raise ValueError("participation_weight must be between 0 and 10")
+
 
 def add_args(cls, parser):
     """
@@ -128,6 +140,20 @@ def add_args(cls, parser):
         default="",
     )
 
+    parser.add_argument(
+        "--neuron.dynamic_identity_stake",
+        type=float,
+        help="Dynamic identity stake for increased participation weight.",
+        default=0.0,
+    )
+
+    parser.add_argument(
+        "--neuron.participation_weight",
+        type=float,
+        help="Participation weight based on dynamic identity stake.",
+        default=1.0,
+    )
+
 
 def add_miner_args(cls, parser):
     """Add miner specific arguments to the parser."""
@@ -165,6 +191,20 @@ def add_miner_args(cls, parser):
         type=str,
         default="bitsecai",
         help="Wandb entity to log to.",
+    )
+
+    parser.add_argument(
+        "--neuron.dynamic_identity_stake",
+        type=float,
+        help="Dynamic identity stake for increased participation weight.",
+        default=0.0,
+    )
+
+    parser.add_argument(
+        "--neuron.participation_weight",
+        type=float,
+        help="Participation weight based on dynamic identity stake.",
+        default=1.0,
     )
 
 
@@ -249,6 +289,28 @@ def add_validator_args(cls, parser):
         type=int,
         help="The port to run the proxy on.",
         default=10913
+    )
+
+    # Add configuration options for cross-validation scoring, historical accuracy weighting, and vulnerability classification bonus
+    parser.add_argument(
+        "--neuron.cross_validation_weight",
+        type=float,
+        help="Weight for cross-validation scoring.",
+        default=0.5,
+    )
+
+    parser.add_argument(
+        "--neuron.historical_accuracy_weight",
+        type=float,
+        help="Weight for historical accuracy scoring.",
+        default=0.3,
+    )
+
+    parser.add_argument(
+        "--neuron.vulnerability_classification_bonus_weight",
+        type=float,
+        help="Weight for vulnerability classification bonus.",
+        default=0.2,
     )
 
 

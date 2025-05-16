@@ -33,6 +33,15 @@ Format the report in markdown:
 [rewritten code to fix vulnerability]
 ```
 
+### Cross-Validation Score
+[cross-validation score]
+
+### Historical Accuracy
+[historical accuracy]
+
+### Vulnerability Classification Bonus
+[vulnerability classification bonus]
+
 ---------
 Note: Do not include any other text than the sections above.
 Note: If any of the sections are not code, do not include the ``` code block.
