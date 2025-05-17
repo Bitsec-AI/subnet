@@ -22,7 +22,7 @@ from typing import List
 import bittensor as bt
 import pydantic
 from bitsec.utils.llm import chat_completion
-from bitsec.protocol import PredictionResponse
+from bitsec.protocol import PredictionResponse, Vulnerability
 
 def reward(expected_response: PredictionResponse, response: PredictionResponse) -> float:
     """
@@ -59,9 +59,18 @@ def jaccard_score(expected_response: PredictionResponse, response: PredictionRes
 
     score = 0.0
 
+    # Convert all vulnerabilities to Vulnerability objects
+    def ensure_vulnerability(vuln):
+        # Convert any dictionary vulnerabilities to Vulnerability objects
+        if isinstance(vuln, dict):
+            return Vulnerability.model_validate(vuln)
+        return vuln
+    expected_vulns = [ensure_vulnerability(v) for v in expected_response.vulnerabilities]
+    response_vulns = [ensure_vulnerability(v) for v in response.vulnerabilities]
+
     #### Compare categories
-    category_expected = set([vulnerability.category for vulnerability in expected_response.vulnerabilities])
-    category_response = set([vulnerability.category for vulnerability in response.vulnerabilities])
+    category_expected = set([vuln.category for vuln in expected_vulns])
+    category_response = set([vuln.category for vuln in response_vulns])
 
     category_intersection = category_expected.intersection(category_response)
     category_union = category_expected.union(category_response)
