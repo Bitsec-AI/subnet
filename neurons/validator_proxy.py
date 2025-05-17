@@ -1,4 +1,5 @@
 # credit: https://github.com/BitMind-AI/bitmind-subnet
+import traceback
 from fastapi import FastAPI, HTTPException, Depends, Request
 from concurrent.futures import ThreadPoolExecutor
 from starlette.concurrency import run_in_threadpool
@@ -169,20 +170,20 @@ class ValidatorProxy:
 
         # return predictions from miners
         valid_pred_idx = np.array([i for i, v in enumerate(responses) if v.prediction])
-        bt.logging.info(f"valid_pred_idx: {valid_pred_idx}")
         if len(valid_pred_idx) > 0:
             valid_preds = np.array(responses)[valid_pred_idx]
-            valid_pred_uids = np.array(miner_uids)[valid_pred_idx]
-            bt.logging.info(f"valid_preds: {valid_preds}")
-            bt.logging.info(f"valid_pred_uids: {valid_pred_uids}")
+
             if len(valid_preds) > 0:
-                # Merge all vulnerabilities from all miners into a single list
+                valid_pred_uids = np.array(miner_uids)[valid_pred_idx]
                 vulnerabilities_by_miner = []
                 predictions_by_miner = {}
+
+                # Merge all vulnerabilities from all miners into a single list
                 for uid, pred in zip(valid_pred_uids, valid_preds):
-                    bt.logging.info(f"uid: {uid}, pred: {pred}")
-                    for vuln in pred.vulnerabilities:
-                        parts = None
+                    try:
+                        bt.logging.info(f"uid: {uid}, pred: {pred}")
+                        for vuln in pred.vulnerabilities:
+                            parts = None
                         if isinstance(vuln, Vulnerability):
                             parts = vuln.model_dump()
                         elif isinstance(vuln, dict):
@@ -198,7 +199,10 @@ class ValidatorProxy:
                                 **parts
                             )
                         )
-                    predictions_by_miner[uid] = pred
+                        predictions_by_miner[uid] = pred
+                    except Exception as e:
+                        bt.logging.error(f"Error processing uid: {uid}, vulnerability: {vuln}, error: {e}")
+                        bt.logging.error(traceback.print_exc())
                 
                 data = {
                     'uids': [int(uid) for uid in valid_pred_uids],
