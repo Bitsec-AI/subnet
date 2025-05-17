@@ -207,7 +207,7 @@ class ValidatorProxy:
                 data = {
                     'uids': [int(uid) for uid in valid_pred_uids],
                     'vulnerabilities': [v.model_dump() for v in vulnerabilities_by_miner],
-                    'predictions_from_miners': {uid: p.model_dump() for uid, p in predictions_by_miner.items()},
+                    'predictions_from_miners': {str(uid): p.model_dump() for uid, p in predictions_by_miner.items()},
                     'ranks': [float(self.validator.metagraph.R[uid]) for uid in valid_pred_uids],
                     'incentives': [float(self.validator.metagraph.I[uid]) for uid in valid_pred_uids],
                     'emissions': [float(self.validator.metagraph.E[uid]) for uid in valid_pred_uids],
