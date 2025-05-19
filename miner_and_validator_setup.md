@@ -75,20 +75,20 @@ It will
 5. start it
 
 ## Check status
-- `systemctl --user status miner.service`
-- `systemctl --user status validator.service`
+- `systemctl --user status miner-mainnet.service`
+- `systemctl --user status validator-mainnet.service`
 
 ## Stop services
-- `systemctl --user stop miner.service`
-- `systemctl --user stop validator.service`
+- `systemctl --user stop miner-mainnet.service`
+- `systemctl --user stop validator-mainnet.service`
 
 ## Manually start services
-- `systemctl --user start miner.service`
-- `systemctl --user start validator.service`
+- `systemctl --user start miner-mainnet.service`
+- `systemctl --user start validator-mainnet.service`
 
 ## Check logs
-- `journalctl --user -u miner.service`
-- `journalctl --user -u validator.service`
+- `journalctl --user -u miner-mainnet.service`
+- `journalctl --user -u validator-mainnet.service`
 
 
 
