@@ -1,13 +1,19 @@
 #!/bin/bash
 
+# Used to check if validator-proxy is still running
+VALIDATOR_PROXY_PORT=8091
+
+# Check if the script is run as root
+if [ ${EUID} -ne 0 ]
+then
+	echo "This script must be run as root, so it can install the service file in /etc/systemd/system/"
+	exit 1
+fi
+
+
+
 # Get the absolute path of the current directory
 CURRENT_DIR=$(pwd)
-
-# Create the systemd user directory if it doesn't exist
-mkdir -p ~/.config/systemd/user/
-
-# Create logs directory
-mkdir -p logs
 
 # Function to create a service file
 create_service_file() {
@@ -21,10 +27,13 @@ create_service_file() {
         testnet_flag="--testnet"
     fi
 
-    local target_file=~/.config/systemd/user/${service_name}-${network_choice}.service
+    local target_file=/etc/systemd/system/${service_name}-${network_choice}.service
     local log_file=${CURRENT_DIR}/logs/${service_name}-${network_choice}.log
     local error_log_file=${CURRENT_DIR}/logs/${service_name}-${network_choice}-error.log
-    
+        
+    # Create logs directory
+    mkdir -p logs
+
     # Create the service file with the correct path
     cat > "$target_file" << EOF
 [Unit]
@@ -49,7 +58,7 @@ EOF
 
 # Health check
 ExecStartPre=/bin/sleep 10
-ExecStartPost=/bin/bash -c 'until curl -s http://localhost:\${PROXY_PORT:-8091}/healthcheck > /dev/null; do sleep 5; done'
+ExecStartPost=/bin/bash -c 'until curl -s http://localhost:\${VALIDATOR_PROXY_PORT}/healthcheck > /dev/null; do sleep 5; done'
 EOF
     fi
 
@@ -66,11 +75,11 @@ EOF
     echo "  - ${error_log_file}"
     
     # Reload systemd
-    systemctl --user daemon-reload
+    systemctl daemon-reload
     
     # Enable and start the service
-    systemctl --user enable ${service_name}-${network_choice}.service
-    systemctl --user start ${service_name}-${network_choice}.service
+    systemctl enable ${service_name}-${network_choice}.service
+    systemctl start ${service_name}-${network_choice}.service
 }
 
 # Ask which service to create
