@@ -22,8 +22,8 @@ create_service_file() {
     fi
 
     local target_file=~/.config/systemd/user/${service_name}-${network_choice}.service
-    local log_file=logs/${service_name}-${network_choice}.log
-    local error_log_file=logs/${service_name}-${network_choice}-error.log
+    local log_file=${CURRENT_DIR}/logs/${service_name}-${network_choice}.log
+    local error_log_file=${CURRENT_DIR}/logs/${service_name}-${network_choice}-error.log
     
     # Create the service file with the correct path
     cat > "$target_file" << EOF
