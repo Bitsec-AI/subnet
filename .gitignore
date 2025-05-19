@@ -4,6 +4,9 @@
 # Store PIDs of running processes
 *.pid
 
+# Logs
+logs/*
+
 # Mac
 .DS_Store
 

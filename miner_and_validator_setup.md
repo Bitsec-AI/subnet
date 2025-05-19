@@ -62,3 +62,33 @@ When generating synthetic vulnerabilities, you will eventually need to make sure
 1. If on a Mac, you may need to run `brew install libusb` first.
 2. `curl -L https://foundry.paradigm.xyz | bash`
 3. Then install by running: `foundryup`
+
+## Optional: Run as systemd services
+
+Run `bash scripts/systemd/install-services.sh`.
+
+It will 
+1. ask you if you want to install the miner or validator service
+2. if it should use the mainnet or testnet 
+3. create the service file in `~/.config/systemd/user/` 
+4. enable it 
+5. start it
+
+## Check status
+- `systemctl --user status miner.service`
+- `systemctl --user status validator.service`
+
+## Stop services
+- `systemctl --user stop miner.service`
+- `systemctl --user stop validator.service`
+
+## Manually start services
+- `systemctl --user start miner.service`
+- `systemctl --user start validator.service`
+
+## Check logs
+- `journalctl --user -u miner.service`
+- `journalctl --user -u validator.service`
+
+
+
