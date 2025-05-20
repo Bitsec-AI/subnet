@@ -83,21 +83,25 @@ EOF
     echo "Enabling service... systemctl enable bitsec-${service_name}-${network_choice}.service"
     systemctl enable bitsec-${service_name}-${network_choice}.service
     if [ $? -ne 0 ]; then  # If it returns an error, print the error text
-        echo "Error: systemctl enable bitsec-${service_name}-${network_choice}.service: $?"
+        systemctl status bitsec-${service_name}-${network_choice}.service
         exit 1
     fi
 
     echo "Starting service... systemctl start bitsec-${service_name}-${network_choice}.service"
     systemctl start bitsec-${service_name}-${network_choice}.service
     if [ $? -ne 0 ]; then  # If it returns an error, print the error text
-        echo "Error: systemctl start bitsec-${service_name}-${network_choice}.service: $?"
+        systemctl status bitsec-${service_name}-${network_choice}.service
         exit 1
     fi
 
-    echo "Success! Installed and started bitsec-${service_name}-${network_choice} service"
-    echo "For details, check the logs at:"
-    echo "  - ${log_file}"
-    echo "  - ${error_log_file}"
+    echo "Successfully started! Current status: systemctl status bitsec-${service_name}-${network_choice}.service"
+    systemctl status bitsec-${service_name}-${network_choice}.service
+
+    echo "Reminders: 
+    systemctl status bitsec-${service_name}-${network_choice}.service
+    systemctl stop bitsec-${service_name}-${network_choice}.service
+    systemctl disable bitsec-${service_name}-${network_choice}.service
+    tail -f ${log_file} ${error_log_file}"
 }
 
 # Ask which service to create
