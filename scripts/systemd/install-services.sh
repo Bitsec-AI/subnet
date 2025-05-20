@@ -12,7 +12,7 @@ fi
 
 # Check if the .env file exists
 if [ ! -f .env ]; then
-    echo "Error: .env file not found. Required for environment variables like OPENAI_API_KEY. Please create one in the root directory."
+    echo "Error: .env file not found. Required for environment variables like OPENAI_API_KEY. Please create one in the root directory e.g.  cp env.sample .env"
     exit 1
 fi
 
