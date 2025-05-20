@@ -1,4 +1,5 @@
 # credit: https://github.com/BitMind-AI/bitmind-subnet
+import traceback
 from fastapi import FastAPI, HTTPException, Depends, Request
 from concurrent.futures import ThreadPoolExecutor
 from starlette.concurrency import run_in_threadpool
@@ -49,6 +50,8 @@ class ValidatorProxy:
         )
         if self.validator.config.proxy.port:
             self.start_server()
+            port = self.validator.config.proxy.port
+            bt.logging.info(f"Validator proxy server up! Port {port} e.g.\n\tGET http://localhost:{port}/healthcheck\n\tPOST http://localhost:{port}/validator_proxy")
 
     def get_credentials(self):
         # with httpx.Client(timeout=httpx.Timeout(30)) as client:
@@ -152,7 +155,10 @@ class ValidatorProxy:
             bt.logging.warning("[ORGANIC] No recent miner uids found, sampling random uids")
             miner_uids = get_random_uids(self.validator, k=self.validator.config.neuron.sample_size)
 
-        bt.logging.info(f"[ORGANIC] Querying {len(miner_uids)} miners...")
+        bt.logging.info(f"[ORGANIC] Querying {len(miner_uids)} miners: {miner_uids}")
+        for uid in miner_uids:
+            bt.logging.info(f"[ORGANIC] {uid} axon: {metagraph.axons[uid]}")
+
         responses = await self.dendrite(
             # Send the query to selected miner axons in the network.
             axons=[metagraph.axons[uid] for uid in miner_uids],
@@ -166,23 +172,42 @@ class ValidatorProxy:
         valid_pred_idx = np.array([i for i, v in enumerate(responses) if v.prediction])
         if len(valid_pred_idx) > 0:
             valid_preds = np.array(responses)[valid_pred_idx]
-            valid_pred_uids = np.array(miner_uids)[valid_pred_idx]
+
             if len(valid_preds) > 0:
-                # Merge all vulnerabilities from all miners into a single list
+                valid_pred_uids = np.array(miner_uids)[valid_pred_idx]
                 vulnerabilities_by_miner = []
+                predictions_by_miner = {}
+
+                # Merge all vulnerabilities from all miners into a single list
                 for uid, pred in zip(valid_pred_uids, valid_preds):
-                    for vuln in pred.vulnerabilities:
+                    try:
+                        bt.logging.info(f"[ORGANIC] uid: {uid}, pred: {pred}")
+                        for vuln in pred.vulnerabilities:
+                            parts = None
+                        if isinstance(vuln, Vulnerability):
+                            parts = vuln.model_dump()
+                        elif isinstance(vuln, dict):
+                            # Convert dict to Vulnerability object first
+                            vuln_obj = Vulnerability.model_validate(vuln)
+                            parts = vuln_obj.model_dump()
+                        else:
+                            raise ValueError(f"Invalid vulnerability type: {type(vuln)}, {vuln}")
+                        bt.logging.info(f"[ORGANIC] vuln {vuln}, parts {parts}")
                         vulnerabilities_by_miner.append(
                             VulnerabilityByMiner(
                                 miner_id=str(uid),  # Convert to string as required by the model
-                                **vuln.model_dump()  # Include all fields from the base Vulnerability
+                                **parts
                             )
                         )
+                        predictions_by_miner[uid] = pred
+                    except Exception as e:
+                        bt.logging.error(f"Error processing uid: {uid}, vulnerability: {vuln}, error: {e}")
+                        bt.logging.error(traceback.print_exc())
                 
                 data = {
                     'uids': [int(uid) for uid in valid_pred_uids],
-                    'vulnerabilities': vulnerabilities_by_miner,
-                    'predictions_from_miners': valid_preds,
+                    'vulnerabilities': [v.model_dump() for v in vulnerabilities_by_miner],
+                    'predictions_from_miners': {str(uid): p.model_dump() for uid, p in predictions_by_miner.items()},
                     'ranks': [float(self.validator.metagraph.R[uid]) for uid in valid_pred_uids],
                     'incentives': [float(self.validator.metagraph.I[uid]) for uid in valid_pred_uids],
                     'emissions': [float(self.validator.metagraph.E[uid]) for uid in valid_pred_uids],

@@ -16,7 +16,9 @@
 # DEALINGS IN THE SOFTWARE.
 
 import copy
+import time
 import typing
+import websockets.exceptions
 
 import bittensor as bt
 
@@ -89,9 +91,22 @@ class BaseNeuron(ABC):
             )
         else:
             self.wallet = bt.wallet(config=self.config)
-            self.subtensor = bt.subtensor(config=self.config)
-            self.metagraph = self.subtensor.metagraph(self.config.netuid)
-
+            
+            # Retry subtensor connection, testnet is very flaky
+            retry_count = 0
+            max_retries = 20
+            while retry_count < max_retries:
+                try:
+                    bt.logging.info(f"Attempting to connect to subtensor... {retry_count}")
+                    self.subtensor = bt.subtensor(config=self.config)
+                    self.metagraph = self.subtensor.metagraph(self.config.netuid)
+                    break
+                except (TimeoutError, websockets.exceptions.InvalidStatus) as e:
+                    retry_count += 1
+                    bt.logging.error(f"{e.__class__.__name__}: {e}")
+                    time.sleep(15 * retry_count)
+                    bt.logging.info(f"Retrying subtensor connection... {retry_count}/{max_retries}")
+            
         bt.logging.info(f"Wallet: {self.wallet}")
         bt.logging.info(f"Subtensor: {self.subtensor}")
         bt.logging.info(f"Metagraph: {self.metagraph}")
