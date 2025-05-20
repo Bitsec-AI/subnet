@@ -80,12 +80,12 @@ EOF
     systemctl daemon-reload
     
     # Enable and start the service
-    echo "Enabling service: `systemctl enable ${service_name}-${network_choice}.service`"
-    systemctl enable ${service_name}-${network_choice}.service
-    echo "Starting service: `systemctl start ${service_name}-${network_choice}.service`"
-    systemctl start ${service_name}-${network_choice}.service
+    echo "Enabling service: `systemctl enable bitsec-${service_name}-${network_choice}.service`"
+    systemctl enable bitsec-${service_name}-${network_choice}.service
+    echo "Starting service: `systemctl start bitsec-${service_name}-${network_choice}.service`"
+    systemctl start bitsec-${service_name}-${network_choice}.service
 
-    echo "Success! Installed and started ${service_name}-${network_choice} service"
+    echo "Success! Installed and started bitsec-${service_name}-${network_choice} service"
     echo "For details, check the logs at:"
     echo "  - ${log_file}"
     echo "  - ${error_log_file}"
