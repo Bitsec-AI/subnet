@@ -10,7 +10,11 @@ then
 	exit 1
 fi
 
-
+# Check if the .env file exists
+if [ ! -f .env ]; then
+    echo "Error: .env file not found. Required for environment variables like OPENAI_API_KEY. Please create one in the root directory."
+    exit 1
+fi
 
 # Get the absolute path of the current directory
 CURRENT_DIR=$(pwd)
