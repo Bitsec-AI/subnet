@@ -34,7 +34,28 @@ create_service_file() {
     local target_file=/etc/systemd/system/bitsec-${service_name}-${network_choice}.service
     local log_file=${CURRENT_DIR}/logs/${service_name}-${network_choice}.log
     local error_log_file=${CURRENT_DIR}/logs/${service_name}-${network_choice}-error.log
-        
+    
+    # Check Has already been installed 
+    if [ -f ${target_file} ]; then
+        echo "Error: service ${target_file} already installed. Attempting to remove it..."
+        systemctl stop bitsec-${service_name}-${network_choice}.service
+        if [ $? -ne 0 ]; then
+            echo "Error: failed to stop service ${target_file}. Please manually remove the service file."
+            exit 1
+        fi
+
+        systemctl disable bitsec-${service_name}-${network_choice}.service
+        if [ $? -ne 0 ]; then
+            echo "Error: failed to disable service ${target_file}. Please manually remove the service file."
+            exit 1
+        fi
+
+        rm ${target_file}
+        echo "Successfully removed ${target_file}"
+        rm ${log_file} ${error_log_file}
+        echo "Successfully removed old logs ${log_file} ${error_log_file}"
+    fi
+
     # Create logs directory
     mkdir -p logs
 
@@ -50,16 +71,21 @@ WorkingDirectory=${CURRENT_DIR}
 Environment=PYTHONPATH=${CURRENT_DIR}
 Environment=PATH=${CURRENT_DIR}/venv/bin:${PATH}
 EnvironmentFile=${CURRENT_DIR}/.env
+
 # Add debug environment variables
 Environment=PYTHONUNBUFFERED=1
 Environment=DEBUG=1
+
 # Use absolute paths and explicit bash
 ExecStart=/bin/bash -c 'source ${CURRENT_DIR}/venv/bin/activate && ${CURRENT_DIR}/start-${service_name}.sh ${testnet_flag}'
 StandardOutput=append:${log_file}
 StandardError=append:${error_log_file}
-# Add user and group
+
+# To get wallet, set user and group
 User=${SUDO_USER:-$USER}
 Group=${SUDO_USER:-$USER}
+
+# Restart the service if it fails
 Restart=always
 RestartSec=10
 StartLimitInterval=0
@@ -69,9 +95,13 @@ EOF
     if [ "$service_name" = "validator" ]; then
         cat >> "$target_file" << EOF
 
-# Health check
-ExecStartPre=/bin/sleep 10
-ExecStartPost=/bin/bash -c 'until curl -s http://localhost:\${VALIDATOR_PROXY_PORT}/healthcheck > /dev/null; do sleep 5; done'
+# Watchdog for continuous health monitoring
+ExecStartPre=/bin/sleep 120
+WatchdogSec=30
+ExecStartPost=/bin/bash -c 'curl -s -f http://localhost:${VALIDATOR_PROXY_PORT}/healthcheck > /dev/null'
+ExecStartPost=/bin/bash -c 'while true; do curl -s -f http://localhost:${VALIDATOR_PROXY_PORT}/healthcheck > /dev/null || exit 1; sleep 30; done'
+TimeoutStartSec=300
+TimeoutStopSec=300
 EOF
     fi
 
@@ -93,8 +123,7 @@ EOF
     
     echo "Enabling service... systemctl enable bitsec-${service_name}-${network_choice}.service"
     systemctl enable bitsec-${service_name}-${network_choice}.service
-    if [ $? -ne 0 ]; then  # If it returns an error, print the error text
-        systemctl status bitsec-${service_name}-${network_choice}.service
+    if [ $? -ne 0 ]; then  # If it returns an error, print the logs
         tail ${log_file} ${error_log_file}
         echo "May be useful: 
             systemctl status bitsec-${service_name}-${network_choice}.service
@@ -106,8 +135,7 @@ EOF
 
     echo "Starting service... systemctl start bitsec-${service_name}-${network_choice}.service"
     systemctl start bitsec-${service_name}-${network_choice}.service
-    if [ $? -ne 0 ]; then  # If it returns an error, print the error text
-        systemctl status bitsec-${service_name}-${network_choice}.service
+    if [ $? -ne 0 ]; then  # If it returns an error, print the logs
         tail ${log_file} ${error_log_file}
         echo "May be useful: 
             systemctl status bitsec-${service_name}-${network_choice}.service

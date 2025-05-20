@@ -39,7 +39,7 @@ btcli subnet register --wallet.name validator --netuid 60 --wallet.hotkey defaul
 
 ## Miner
 
-If you are using mainnet, remember to pass the **mainnet** netuid to the miner: `./start-miner.sh --netuid 60`.
+If you are using testnet, remember to pass the **testnet** netuid to the miner: `./start-miner.sh --testnet`.
 
 If you get errors in any environment, try the following:
 
@@ -53,7 +53,7 @@ pip install -r requirements.txt
 
 ## Validator
 
-To start the validator, run `./start-validator.sh --netuid 60`. It will automatically check for updates and restart the validator if needed.
+To start the validator, run `./start-validator.sh --testnet`.
 
 ### Future:
 
