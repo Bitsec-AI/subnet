@@ -77,13 +77,13 @@ EOF
     echo "  - ${error_log_file}"
     
     # Reload systemd
-    echo "Reloading systemd: `systemctl daemon-reload`"
+    echo "Reloading systemd... systemctl daemon-reload"
     systemctl daemon-reload
     
     # Enable and start the service
-    echo "Enabling service: `systemctl enable bitsec-${service_name}-${network_choice}.service`"
+    echo "Enabling service... systemctl enable bitsec-${service_name}-${network_choice}.service"
     systemctl enable bitsec-${service_name}-${network_choice}.service
-    echo "Starting service: `systemctl start bitsec-${service_name}-${network_choice}.service`"
+    echo "Starting service... systemctl start bitsec-${service_name}-${network_choice}.service"
     systemctl start bitsec-${service_name}-${network_choice}.service
 
     echo "Success! Installed and started bitsec-${service_name}-${network_choice} service"
