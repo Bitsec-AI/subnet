@@ -75,11 +75,16 @@ EOF
     echo "  - ${error_log_file}"
     
     # Reload systemd
+    echo "Reloading systemd: `systemctl daemon-reload`"
     systemctl daemon-reload
     
     # Enable and start the service
+    echo "Enabling service: `systemctl enable ${service_name}-${network_choice}.service`"
     systemctl enable ${service_name}-${network_choice}.service
+    echo "Starting service: `systemctl start ${service_name}-${network_choice}.service`"
     systemctl start ${service_name}-${network_choice}.service
+
+    echo "Success! Installed and started ${service_name}-${network_choice} service"
 }
 
 # Ask which service to create
