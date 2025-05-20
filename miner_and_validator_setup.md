@@ -67,28 +67,29 @@ When generating synthetic vulnerabilities, you will eventually need to make sure
 
 Run `bash scripts/systemd/install-services.sh`.
 
-It will 
+It will: 
 1. ask you if you want to install the miner or validator service
 2. if it should use the mainnet or testnet 
-3. create the service file in `~/.config/systemd/user/` 
+3. create the service file in `/etc/systemd/system/` 
 4. enable it 
 5. start it
+6. tell you where the logs are
 
 ## Check status
-- `systemctl --user status miner-mainnet.service`
-- `systemctl --user status validator-mainnet.service`
+- `systemctl status miner-mainnet.service`
+- `systemctl status validator-mainnet.service`
 
 ## Stop services
-- `systemctl --user stop miner-mainnet.service`
-- `systemctl --user stop validator-mainnet.service`
+- `systemctl stop miner-mainnet.service`
+- `systemctl stop validator-mainnet.service`
 
 ## Manually start services
-- `systemctl --user start miner-mainnet.service`
-- `systemctl --user start validator-mainnet.service`
+- `systemctl start miner-mainnet.service`
+- `systemctl start validator-mainnet.service`
 
 ## Check logs
-- `journalctl --user -u miner-mainnet.service`
-- `journalctl --user -u validator-mainnet.service`
+- `journalctl -u miner-mainnet.service`
+- `journalctl -u validator-mainnet.service`
 
 
 

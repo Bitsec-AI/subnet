@@ -85,6 +85,9 @@ EOF
     systemctl start ${service_name}-${network_choice}.service
 
     echo "Success! Installed and started ${service_name}-${network_choice} service"
+    echo "For details, check the logs at:"
+    echo "  - ${log_file}"
+    echo "  - ${error_log_file}"
 }
 
 # Ask which service to create
