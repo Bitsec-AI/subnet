@@ -46,9 +46,16 @@ WorkingDirectory=${CURRENT_DIR}
 Environment=PYTHONPATH=${CURRENT_DIR}
 Environment=PATH=${CURRENT_DIR}/venv/bin:${PATH}
 EnvironmentFile=${CURRENT_DIR}/.env
-ExecStart=/bin/bash ${CURRENT_DIR}/start-${service_name}.sh ${testnet_flag}
+# Add debug environment variables
+Environment=PYTHONUNBUFFERED=1
+Environment=DEBUG=1
+# Use absolute paths and explicit bash
+ExecStart=/bin/bash -c 'source ${CURRENT_DIR}/venv/bin/activate && ${CURRENT_DIR}/start-${service_name}.sh ${testnet_flag}'
 StandardOutput=append:${log_file}
 StandardError=append:${error_log_file}
+# Add user and group
+User=${SUDO_USER:-$USER}
+Group=${SUDO_USER:-$USER}
 Restart=always
 RestartSec=10
 StartLimitInterval=0
