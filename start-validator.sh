@@ -1,6 +1,9 @@
 #!/bin/bash
 NETUID=60 # Default to mainnet
 
+# Activate virtual environment
+source venv/bin/activate
+
 echo "Starting validator with netuid $NETUID"
 python3 -m neurons.validator --netuid $NETUID --subtensor.chain_endpoint finney \
     --wallet.name validator --wallet.hotkey default \
