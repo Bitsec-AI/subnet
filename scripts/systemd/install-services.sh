@@ -27,7 +27,7 @@ create_service_file() {
         testnet_flag="--testnet"
     fi
 
-    local target_file=/etc/systemd/system/${service_name}-${network_choice}.service
+    local target_file=/etc/systemd/system/bitsec-${service_name}-${network_choice}.service
     local log_file=${CURRENT_DIR}/logs/${service_name}-${network_choice}.log
     local error_log_file=${CURRENT_DIR}/logs/${service_name}-${network_choice}-error.log
         
@@ -44,6 +44,7 @@ After=network.target
 Type=simple
 WorkingDirectory=${CURRENT_DIR}
 Environment=PYTHONPATH=${CURRENT_DIR}
+Environment="PATH=${CURRENT_DIR}/venv/bin:${PATH}"
 ExecStart=/bin/bash ${CURRENT_DIR}/start-${service_name}.sh ${testnet_flag}
 StandardOutput=append:${log_file}
 StandardError=append:${error_log_file}

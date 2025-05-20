@@ -31,8 +31,8 @@ btcli subnet register --wallet.name validator --netuid 209 --wallet.hotkey defau
 ## For MAINNET 60:
 
 ```
-btcli subnet register --wallet.name miner --netuid 60 --wallet.hotkey default --subtensor.chain_endpoint test
-btcli subnet register --wallet.name validator --netuid 60 --wallet.hotkey default --subtensor.chain_endpoint test
+btcli subnet register --wallet.name miner --netuid 60 --wallet.hotkey default --subtensor.chain_endpoint finney
+btcli subnet register --wallet.name validator --netuid 60 --wallet.hotkey default --subtensor.chain_endpoint finney
 ```
 
 # Step 4:
@@ -76,20 +76,28 @@ It will:
 6. tell you where the logs are
 
 ## Check status
-- `systemctl status miner-mainnet.service`
-- `systemctl status validator-mainnet.service`
+- `systemctl status bitsec-validator-mainnet.service`
+- `systemctl status validator-testnet.service`
+- `systemctl status bitsec-miner-mainnet.service`
+- `systemctl status bitsec-miner-testnet.service`
 
 ## Stop services
-- `systemctl stop miner-mainnet.service`
-- `systemctl stop validator-mainnet.service`
+- `systemctl stop bitsec-validator-mainnet.service`
+- `systemctl stop bitsec-validator-testnet.service`
+- `systemctl stop bitsec-miner-mainnet.service`
+- `systemctl stop bitsec-miner-testnet.service`
 
 ## Manually start services
-- `systemctl start miner-mainnet.service`
-- `systemctl start validator-mainnet.service`
+- `systemctl start bitsec-validator-mainnet.service`
+- `systemctl start bitsec-validator-testnet.service`
+- `systemctl start bitsec-miner-mainnet.service`
+- `systemctl start bitsec-miner-testnet.service`
 
 ## Check logs
-- `journalctl -u miner-mainnet.service`
-- `journalctl -u validator-mainnet.service`
+- `tail -f logs/bitsec-validator-mainnet.log`
+- `tail -f logs/bitsec-validator-testnet.log`
+- `tail -f logs/bitsec-miner-mainnet.log`
+- `tail -f logs/bitsec-miner-testnet.log`
 
 
 
