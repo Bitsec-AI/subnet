@@ -22,8 +22,24 @@ CURRENT_DIR=$(pwd)
 # Function to create a service file
 create_service_file() {
     local service_name=$1
-    
     local use_testnet=$2
+    
+    # Set ports based on service and network
+    local port
+    if [ "$service_name" = "validator" ]; then
+        if [ "$use_testnet" = "testnet" ]; then
+            port=8080  # Validator testnet
+        else
+            port=8090  # Validator mainnet
+        fi
+    else
+        if [ "$use_testnet" = "testnet" ]; then
+            port=9080  # Miner testnet
+        else
+            port=9090  # Miner mainnet
+        fi
+    fi
+
     local network_choice="mainnet"
     local testnet_flag=""
     if [ "$use_testnet" = "testnet" ]; then
@@ -77,7 +93,7 @@ Environment=PYTHONUNBUFFERED=1
 Environment=DEBUG=1
 
 # Use absolute paths and explicit bash
-ExecStart=/bin/bash -c 'source ${CURRENT_DIR}/venv/bin/activate && ${CURRENT_DIR}/start-${service_name}.sh ${testnet_flag}'
+ExecStart=/bin/bash -c 'source ${CURRENT_DIR}/venv/bin/activate && ${CURRENT_DIR}/start-${service_name}.sh ${testnet_flag} --port ${port}'
 StandardOutput=append:${log_file}
 StandardError=append:${error_log_file}
 
@@ -98,8 +114,8 @@ EOF
 # Watchdog for continuous health monitoring
 ExecStartPre=/bin/sleep 120
 WatchdogSec=30
-ExecStartPost=/bin/bash -c 'curl -s -f http://localhost:${VALIDATOR_PROXY_PORT}/healthcheck > /dev/null'
-ExecStartPost=/bin/bash -c 'while true; do curl -s -f http://localhost:${VALIDATOR_PROXY_PORT}/healthcheck > /dev/null || exit 1; sleep 30; done'
+ExecStartPost=/bin/bash -c 'curl -s -f http://localhost:${port}/healthcheck > /dev/null'
+ExecStartPost=/bin/bash -c 'while true; do curl -s -f http://localhost:${port}/healthcheck > /dev/null || exit 1; sleep 30; done'
 TimeoutStartSec=300
 TimeoutStopSec=300
 EOF
