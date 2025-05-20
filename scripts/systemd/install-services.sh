@@ -84,6 +84,12 @@ EOF
     systemctl enable bitsec-${service_name}-${network_choice}.service
     if [ $? -ne 0 ]; then  # If it returns an error, print the error text
         systemctl status bitsec-${service_name}-${network_choice}.service
+        tail ${log_file} ${error_log_file}
+        echo "May be useful: 
+            systemctl status bitsec-${service_name}-${network_choice}.service
+            systemctl stop bitsec-${service_name}-${network_choice}.service
+            systemctl disable bitsec-${service_name}-${network_choice}.service
+            tail -f ${log_file} ${error_log_file}"
         exit 1
     fi
 
@@ -91,6 +97,12 @@ EOF
     systemctl start bitsec-${service_name}-${network_choice}.service
     if [ $? -ne 0 ]; then  # If it returns an error, print the error text
         systemctl status bitsec-${service_name}-${network_choice}.service
+        tail ${log_file} ${error_log_file}
+        echo "May be useful: 
+            systemctl status bitsec-${service_name}-${network_choice}.service
+            systemctl stop bitsec-${service_name}-${network_choice}.service
+            systemctl disable bitsec-${service_name}-${network_choice}.service
+            tail -f ${log_file} ${error_log_file}"
         exit 1
     fi
 
