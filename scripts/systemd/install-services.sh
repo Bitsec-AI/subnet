@@ -44,7 +44,8 @@ After=network.target
 Type=simple
 WorkingDirectory=${CURRENT_DIR}
 Environment=PYTHONPATH=${CURRENT_DIR}
-Environment="PATH=${CURRENT_DIR}/venv/bin:${PATH}"
+Environment=PATH=${CURRENT_DIR}/venv/bin:${PATH}
+EnvironmentFile=${CURRENT_DIR}/.env
 ExecStart=/bin/bash ${CURRENT_DIR}/start-${service_name}.sh ${testnet_flag}
 StandardOutput=append:${log_file}
 StandardError=append:${error_log_file}
