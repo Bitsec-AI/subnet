@@ -2,6 +2,7 @@
 NETUID=60 # Default to mainnet
 
 # Activate virtual environment
+echo "Activating virtual environment"
 source venv/bin/activate
 
 echo "Starting validator with netuid $NETUID"
