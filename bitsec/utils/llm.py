@@ -24,7 +24,7 @@ if not os.getenv("OPENAI_API_KEY"):
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Default parameters
-DEFAULT_MODEL = "gpt-4o"
+DEFAULT_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
 DEFAULT_TEMPERATURE = 0.1
 DEFAULT_MAX_TOKENS = 10000
 

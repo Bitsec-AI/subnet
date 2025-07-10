@@ -1,8 +1,6 @@
-bittensor-cli==9.4.0
 bittensor==9.4.0
 starlette>=0.30.0
 pydantic>=2
-torch>=2
 numpy>=1
 setuptools>=68
 tenacity>=9

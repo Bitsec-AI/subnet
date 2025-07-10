@@ -17,10 +17,9 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-
-import os
+import asyncio
 import time
-import argparse
+import sys
 
 # Bittensor
 import bittensor as bt
@@ -28,10 +27,9 @@ import bittensor as bt
 # Logging
 import wandb
 from bitsec import __version__
-
-from neurons.validator_proxy import ValidatorProxy
-from bitsec.validator import forward
 from bitsec.base.validator import BaseValidatorNeuron
+from bitsec.validator import forward
+from neurons.validator_proxy import ValidatorProxy
 
 
 class Validator(BaseValidatorNeuron):
@@ -85,10 +83,23 @@ class Validator(BaseValidatorNeuron):
         # TODO(developer): Rewrite this function based on your protocol definition.
         return await forward(self)
 
+    def check_for_thread_exception(self):
+        if self.thread_exception is not None:
+            bt.logging.error(self.thread_exception)
+
+            self.dendrite.close_session()
+
+            wandb.finish()
+
+            if self.validator_proxy:
+                asyncio.run(self.validator_proxy.stop_server())
+
+            sys.exit(1)
 
 # The main function parses the configuration and runs the validator.
 if __name__ == "__main__":
     with Validator() as validator:
         while True:
+            validator.check_for_thread_exception()
             bt.logging.info(f"uid {validator.uid} tick")
             time.sleep(60)

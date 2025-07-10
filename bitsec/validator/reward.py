@@ -51,6 +51,9 @@ def jaccard_score(expected_response: PredictionResponse, response: PredictionRes
     Returns:
     - float: The Jaccard score.
     """
+    if response is None:
+        return 0.0
+
     if response.prediction != expected_response.prediction:
         return 0.0
     

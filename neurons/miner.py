@@ -21,6 +21,8 @@ import time
 import typing
 import argparse
 import bittensor as bt
+import sys
+import asyncio
 
 # Logging
 import wandb
@@ -206,9 +208,21 @@ class Miner(BaseMinerNeuron):
     def save_state(self):
         pass
 
+    def check_for_thread_exception(self):
+        if self.thread_exception is not None:
+            bt.logging.error(self.thread_exception)
+
+            wandb.finish()
+
+            if self.miner_proxy:
+                asyncio.run(self.miner_proxy.stop_server())
+
+            sys.exit(1)
+
 # This is the main function, which runs the miner.
 if __name__ == "__main__":
     with Miner() as miner:
         while True:
+            miner.check_for_thread_exception()
             bt.logging.info(f"uid {miner.uid} tick")
             time.sleep(5)

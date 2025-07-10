@@ -18,17 +18,17 @@
 # DEALINGS IN THE SOFTWARE.
 
 
-import copy
-import time
-import numpy as np
 import asyncio
 import argparse
+import copy
+import sys
 import threading
-import bittensor as bt
-
+import time
+import traceback
 from typing import List, Union
-from traceback import print_exception
 
+import bittensor as bt
+import numpy as np
 from bitsec.base.neuron import BaseNeuron
 from bitsec.base.utils.weight_utils import (
     process_weights_for_netuid,
@@ -84,6 +84,7 @@ class BaseValidatorNeuron(BaseNeuron):
         self.is_running: bool = False
         self.thread: Union[threading.Thread, None] = None
         self.lock = asyncio.Lock()
+        self.thread_exception: str | None = None
 
         # Initialize set to track first-time miner connections
         self.seen_miners = set()
@@ -178,12 +179,13 @@ class BaseValidatorNeuron(BaseNeuron):
         except KeyboardInterrupt:
             self.axon.stop()
             bt.logging.success("Validator killed by keyboard interrupt.")
-            exit()
+            sys.exit()
 
         # In case of unforeseen errors, the validator will log the error and continue operations.
         except Exception as err:
-            bt.logging.error(f"Error during validation: {str(err)}")
-            bt.logging.debug(str(print_exception(type(err), err, err.__traceback__)))
+            bt.logging.error(f"Error during validation")
+            self.thread_exception = traceback.format_exc()
+            raise
 
     def run_in_background_thread(self):
         """
@@ -213,7 +215,7 @@ class BaseValidatorNeuron(BaseNeuron):
         self.run_in_background_thread()
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, exc_tb):
         """
         Stops the validator's background operations upon exiting the context.
         This method facilitates the use of the validator in a 'with' statement.
@@ -223,7 +225,7 @@ class BaseValidatorNeuron(BaseNeuron):
                       None if the context was exited without an exception.
             exc_value: The instance of the exception that caused the context to be exited.
                        None if the context was exited without an exception.
-            traceback: A traceback object encoding the stack trace.
+            exc_tb: A traceback object encoding the stack trace.
                        None if the context was exited without an exception.
         """
         if self.is_running:

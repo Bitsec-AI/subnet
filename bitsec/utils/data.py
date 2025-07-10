@@ -47,7 +47,7 @@ def verify_solidity_compilation(code: str) -> bool:
             
         # Initialize Foundry project
         try:
-            init_result = subprocess.run(["forge", "init", "--no-commit", "--force"], cwd=tmpdir, capture_output=True)
+            init_result = subprocess.run(["forge", "init", "--force"], cwd=tmpdir, capture_output=True)
             init_result.check_returncode()  # This will raise CalledProcessError if forge init fails
         except subprocess.CalledProcessError as e:
             raise ValueError(f"Forge not installed: {e.stderr.decode()}")

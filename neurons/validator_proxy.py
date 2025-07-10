@@ -3,6 +3,7 @@ import traceback
 from fastapi import FastAPI, HTTPException, Depends, Request
 from concurrent.futures import ThreadPoolExecutor
 from starlette.concurrency import run_in_threadpool
+from uvicorn import Config, Server
 import bittensor as bt
 import uvicorn
 import os
@@ -93,10 +94,25 @@ class ValidatorProxy:
         self.verify_credentials = verify_credentials
 
     def start_server(self):
-        self.executor = ThreadPoolExecutor(max_workers=1)
-        self.executor.submit(
-            uvicorn.run, self.app, host="0.0.0.0", port=self.validator.config.proxy.port
+        config = Config(
+            app=self.app,
+            host="0.0.0.0",
+            port=self.validator.config.proxy.port,
+            log_level="info",
         )
+        self.uvicorn_server = Server(config)
+
+        def run_uvicorn():
+            asyncio.run(self.uvicorn_server.serve())
+
+        self.executor = ThreadPoolExecutor(max_workers=1)
+        self.executor.submit(run_uvicorn)
+
+    async def stop_server(self):
+        if self.uvicorn_server and self.uvicorn_server.started:
+            self.uvicorn_server.should_exit = True
+
+        self.executor.shutdown(wait=True)
 
     # def authenticate_token(self, public_key_bytes):
     #     public_key_bytes = base64.b64decode(public_key_bytes)

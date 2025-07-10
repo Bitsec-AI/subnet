@@ -95,13 +95,9 @@ async def forward(self):
     response_time = time.time() - start_time
     #wandb.log({"response_time": response_time})
 
-    # Keep valid responses only
-    filter_mask = [r is not None for r in responses]
-    miner_uids = miner_uids[filter_mask]
-    responses = [r for r in responses if r is not None]
-
     # Log the results for monitoring purposes.
-    bt.logging.info(f"Received {len(responses)} responses")
+    num_responses = len([r for r in responses if r is not None])
+    bt.logging.info(f"Received {num_responses} responses")
 
     # Adjust the scores based on responses from miners.
     rewards = get_rewards(expected_response=expected_response, responses=responses)
@@ -111,7 +107,7 @@ async def forward(self):
     # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
     self.update_scores(rewards, miner_uids)
 
-    response_dicts = [response.model_dump() for response in responses]
+    response_dicts = [response.model_dump() for response in responses if response]
     log_msg = {
         "miner_uids": json.dumps(miner_uids.tolist()),
         "rewards": json.dumps(rewards.tolist()),

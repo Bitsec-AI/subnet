@@ -69,6 +69,7 @@ class BaseMinerNeuron(BaseNeuron):
         self.is_running: bool = False
         self.thread: Union[threading.Thread, None] = None
         self.lock = asyncio.Lock()
+        self.thread_exception: str | None = None
 
     def run(self):
         """
@@ -107,7 +108,8 @@ class BaseMinerNeuron(BaseNeuron):
             bt.logging.info(f"📡 Serving on {self.axon.external_ip}:{self.axon.external_port}")
         except Exception as e:
             bt.logging.error(f"❌ Failed to register miner axon with network: {str(e)}")
-            raise e
+            self.thread_exception = traceback.format_exc()
+            raise
 
         # Start  starts the miner's axon, making it active on the network.
         self.axon.start()
@@ -134,14 +136,17 @@ class BaseMinerNeuron(BaseNeuron):
                 self.step += 1
 
         # If someone intentionally stops the miner, it'll safely terminate operations.
-        except KeyboardInterrupt:
+        except KeyboardInterrupt as e:
             self.axon.stop()
             bt.logging.success("Miner killed by keyboard interrupt.")
-            exit()
+            self.thread_exception = traceback.format_exc()
+            raise
 
         # In case of unforeseen errors, the miner will log the error and continue operations.
         except Exception as e:
             bt.logging.error(traceback.format_exc())
+            self.thread_exception = traceback.format_exc()
+            raise
 
     def run_in_background_thread(self):
         """

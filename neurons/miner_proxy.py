@@ -1,6 +1,7 @@
 # credit: https://github.com/BitMind-AI/bitmind-subnet
 from fastapi import FastAPI, Depends, Request
 from concurrent.futures import ThreadPoolExecutor
+from uvicorn import Config, Server
 import bittensor as bt
 import uvicorn
 import asyncio
@@ -11,7 +12,9 @@ class MinerProxy:
         miner,
     ):
         self.miner = miner
+        self.executor: ThreadPoolExecutor | None = None
         # self.dendrite = bt.dendrite(wallet=miner.wallet)
+
         self.app = FastAPI()
         self.app.add_api_route(
             "/",
@@ -33,10 +36,25 @@ class MinerProxy:
             bt.logging.info(f"Miner proxy server up! Port {port} e.g.\n\tGET http://localhost:{port}/healthcheck")
 
     def start_server(self):
-        self.executor = ThreadPoolExecutor(max_workers=1)
-        self.executor.submit(
-            uvicorn.run, self.app, host="0.0.0.0", port=self.miner.config.proxy.port
+        config = Config(
+            app=self.app,
+            host="0.0.0.0",
+            port=self.miner.config.proxy.port,
+            log_level="info",
         )
+        self.uvicorn_server = Server(config)
+
+        def run_uvicorn():
+            asyncio.run(self.uvicorn_server.serve())
+
+        self.executor = ThreadPoolExecutor(max_workers=1)
+        self.executor.submit(run_uvicorn)
+
+    async def stop_server(self):
+        if self.uvicorn_server and self.uvicorn_server.started:
+            self.uvicorn_server.should_exit = True
+
+        self.executor.shutdown(wait=True)
 
     async def healthcheck(self, request: Request):
         return {'status': 'healthy'}
