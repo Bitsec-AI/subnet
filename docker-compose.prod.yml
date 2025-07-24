@@ -1,0 +1,15 @@
+name: mainnet
+
+services:
+  validator:
+    build: .
+    command: ./start-validator.sh --proxy.port 10914
+    network_mode: "host"
+    env_file: .env.prod
+    volumes:
+      - ./:/app
+      - ${MAINNET_WALLET_PATH:-~/.bittensor/wallets}:/root/.bittensor/wallets/
+    working_dir: /app
+    deploy:
+      restart_policy:
+        condition: unless-stopped
