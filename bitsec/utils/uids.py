@@ -45,6 +45,15 @@ def get_random_uids(
         uid_is_available = check_uid_availability(
             self.metagraph, uid, self.config.neuron.vpermit_tao_limit
         )
+
+        if self.axon.external_ip == self.metagraph.axons[uid].ip and self.uid != uid:
+            bt.logging.info(
+                f"Miner UID {uid} on same IP. port: {self.metagraph.axons[uid].port} "
+                f"available: {uid_is_available} "
+                f"vpermit: {self.metagraph.validator_permit[uid]} "
+                f"stake: {self.metagraph.S[uid]}"
+            )
+
         uid_is_not_excluded = exclude is None or uid not in exclude
 
         if uid_is_available:
