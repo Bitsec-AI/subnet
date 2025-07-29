@@ -51,7 +51,7 @@ def get_random_uids(
                 f"Miner UID {uid} on same IP. port: {self.metagraph.axons[uid].port} "
                 f"available: {uid_is_available} "
                 f"vpermit: {self.metagraph.validator_permit[uid]} "
-                f"stake: {self.metagraph.S[uid]}"
+                f"stake: {self.metagraph.S[uid]:.1f}"
             )
 
         uid_is_not_excluded = exclude is None or uid not in exclude

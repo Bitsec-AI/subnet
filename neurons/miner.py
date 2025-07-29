@@ -87,6 +87,11 @@ class Miner(BaseMinerNeuron):
         the miner's intended operation. This method demonstrates a basic transformation of input data.
         """
         try:
+            hotkey = synapse.dendrite.hotkey
+            uid = self.metagraph.hotkeys.index(hotkey) if hotkey in self.metagraph.hotkeys else None
+
+            bt.logging.info(f"Code received from UID {uid} IP: {synapse.dendrite.ip} Hotkey: {hotkey[:6]}")
+
             challenge = synapse.code
             synapse.response = predict(challenge)
         except Exception as e:
