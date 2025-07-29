@@ -9,6 +9,9 @@ PROXY_PORT=10913 # Used on DigitalOcean
 COMMAND_WITH_PATH="python3"
 WALLET_PREFIX=""
 
+MINER_PORT="${MINER_PORT:-$PORT}"
+echo "Using port: $MINER_PORT"
+
 for arg in "$@"; do
   if [ "$arg" = "--test" ] || [ "$arg" = "--testnet" ]; then
     ENV="test"
@@ -30,9 +33,9 @@ if [[ -d "venv" && -f "venv/bin/activate" ]]; then
     COMMAND_WITH_PATH="venv/bin/python3"
 fi
 
-echo "Starting miner in $ENV environment with netuid $NETUID on port $PORT"
+echo "Starting miner in $ENV environment with netuid $NETUID on port $MINER_PORT"
 $COMMAND_WITH_PATH -m neurons.miner --netuid $NETUID \
     --subtensor.chain_endpoint $NETWORK --subtensor.network $NETWORK \
     --wallet.name "${WALLET_PREFIX}miner" --wallet.hotkey default \
-    --axon.port $PORT --axon.external_port $PORT \
+    --axon.port $MINER_PORT --axon.external_port $MINER_PORT \
     --logging.debug --proxy.port $PROXY_PORT

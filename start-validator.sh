@@ -9,6 +9,8 @@ PROXY_PORT=10913 # Used on DigitalOcean
 COMMAND_WITH_PATH="python3"
 WALLET_PREFIX=""
 
+VALIDATOR_PORT="${VALIDATOR_PORT:-$PORT}"
+
 for arg in "$@"; do
   if [ "$arg" = "--test" ] || [ "$arg" = "--testnet" ]; then
     ENV="test"
@@ -30,9 +32,9 @@ if [[ -d "venv" && -f "venv/bin/activate" ]]; then
     COMMAND_WITH_PATH="venv/bin/python3"
 fi
 
-echo "Starting validator in $ENV environment with netuid $NETUID on port $PORT and proxy port $PROXY_PORT"
+echo "Starting validator in $ENV environment with netuid $NETUID on port $VALIDATOR_PORT and proxy port $PROXY_PORT"
 $COMMAND_WITH_PATH -m neurons.validator --netuid $NETUID \
     --subtensor.chain_endpoint $NETWORK --subtensor.network $NETWORK \
     --wallet.name "${WALLET_PREFIX}validator" --wallet.hotkey default \
-    --axon.port $PORT --axon.external_port $PORT \
+    --axon.port $VALIDATOR_PORT --axon.external_port $VALIDATOR_PORT \
     --logging.debug --proxy.port $PROXY_PORT
