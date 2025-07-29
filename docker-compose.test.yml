@@ -4,27 +4,21 @@ services:
   miner:
     build: .
     command: ./start-miner.sh --test
+    restart: unless-stopped
     network_mode: "host"
     env_file: .env.test
     volumes:
       - ./:/app
       - ${BT_WALLET_PATH:-~/.bittensor/wallets}:/root/.bittensor/wallets/
     working_dir: /app
-    deploy:
-      restart_policy:
-        condition: unless-stopped
-        delay: 1m
 
   validator:
     build: .
     command: ./start-validator.sh --test --proxy.port 10914
+    restart: unless-stopped
     network_mode: "host"
     env_file: .env.test
     volumes:
       - ./:/app
       - ${BT_WALLET_PATH:-~/.bittensor/wallets}:/root/.bittensor/wallets/
     working_dir: /app
-    deploy:
-      restart_policy:
-        condition: unless-stopped
-        delay: 1m
