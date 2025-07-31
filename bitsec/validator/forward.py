@@ -107,8 +107,14 @@ async def forward(self):
     # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
     self.update_scores(rewards, miner_uids)
 
+    active_miner_uids = [
+        int(uid) for uid, r
+        in zip(miner_uids, responses)
+        if r is not None
+    ]
     response_dicts = [response.model_dump() for response in responses if response]
     log_msg = {
+        "active_miner_uids": json.dumps(active_miner_uids),
         "miner_uids": json.dumps(miner_uids.tolist()),
         "rewards": json.dumps(rewards.tolist()),
         "challenge": challenge,
