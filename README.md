@@ -1,3 +1,5 @@
+⚠️ This repo is deprecated. Active development is in [Bitsec-AI/sandbox](https://github.com/Bitsec-AI/sandbox).
+
 <h1 align="center">Bitsec Subnet (Bittensor mainnet 60 / testnet 209)</h1>
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
