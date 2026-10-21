@@ -16,10 +16,14 @@ The following is a set of guidelines for contributing to the Bittensor ecosystem
 
 
 ## How Can I Contribute?
-TODO(developer): Define your desired contribution procedure.
+Open a focused GitHub issue or pull request against this repository. Keep
+changes scoped to one behavior, test, or documentation improvement, and include
+reproduction steps or verification output when relevant.
 
 ## Communication Channels
-TODO(developer): Place your communication channels here
+For real-time project discussion, use the Bittensor Discord and look for the
+subnet 60 channel. For public project updates, follow the BitsecAI X account
+linked from the repository README.
 
 > Please follow the Bittensor Subnet [style guide](./STYLE.md) regardless of your contribution type. 
 
@@ -72,7 +76,7 @@ Please follow these steps to have your contribution considered by the maintainer
 *Before* creating the PR:
 1. Read the [development workflow](./DEVELOPMENT_WORKFLOW.md) defined for this repository to understand our workflow.
 2. Ensure your PR meets the criteria stated in the 'Pull Request Philosophy' section.
-3. Include relevant tests for any fixed bugs or new features as stated in the [testing guide](./TESTING.md).
+3. Include relevant tests for any fixed bugs or new features and verify the applicable `tests/` target with `pytest`.
 4. Ensure your commit messages are clear and concise. Include the issue number if applicable.
 5. If you have multiple commits, rebase them into a single commit using `git rebase -i`.
 6. Explain what your changes do and why you think they should be merged in the PR description consistent with the [style guide](./STYLE.md).
@@ -99,9 +103,9 @@ After you submit a pull request, it will be reviewed by the maintainers. They ma
 > Note: Be sure to merge the latest from "upstream" before making a pull request:
 
 ```bash
-git remote add upstream https://github.com/opentensor/bittensor.git # TODO(developer): replace with your repo URL
+git remote add upstream https://github.com/Bitsec-AI/subnet.git
 git fetch upstream
-git merge upstream/<your-branch-name>
+git merge upstream/main
 git push origin <your-branch-name>
 ```
 
